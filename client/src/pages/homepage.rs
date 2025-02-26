@@ -1,21 +1,13 @@
 use dioxus::prelude::*;
 use crate::route::Route;
-
+use crate::comp::game_display::*;
 
 /// Home page
 #[component]
 pub fn Home() -> Element {
     rsx! {
         article {
-            header {
-                "default header"
-            }
-
-            "Body"
-
-            footer {
-                "default footer"
-            }
+            GameDisplay {}
         }
 
     }

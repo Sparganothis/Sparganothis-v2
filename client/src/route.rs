@@ -48,7 +48,7 @@ fn Nav() -> Element {
 fn NavbarLayout() -> Element {
     rsx! {
         div {
-            class: "container",
+            class: "container-fluid",
             Nav {}
             main {
                 Outlet::<Route> {}
