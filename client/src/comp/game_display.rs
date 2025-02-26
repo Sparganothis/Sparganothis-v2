@@ -1,6 +1,8 @@
 use dioxus::prelude::*;
 
 const INTER_BOX_PADDING : &'static str = "0.1cqmin";
+const GAMEBOARD_GRID_COLOR : &'static str = "rgba(95, 67, 33, 0.44)";
+const GAMEBOARD_BOX_EMPTY_COLOR : &'static str = "rgba(17, 37, 78, 0.54)";
 
 #[component]
 pub fn GameDisplay() -> Element {
@@ -8,11 +10,10 @@ pub fn GameDisplay() -> Element {
         div {
             style: "
                 width: 100%;
-                height: 80dvh;
+                height: 100%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 1px solid blue;
                 container-type:size;
             ",
 
@@ -20,20 +21,20 @@ pub fn GameDisplay() -> Element {
                 style: "
                 width: calc(min(100cqw, 50cqh));
                 height: calc(min(100cqh, min(100cqh, 200cqw)));
-                border: 1px solid yellow;
+                border: {INTER_BOX_PADDING} solid yellow;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                border: 1px solid green;
+                border: {INTER_BOX_PADDING} solid {GAMEBOARD_GRID_COLOR};
                 ",
                             
                 div {
                     style: "
-                        border: 1px solid red;
-                        padding: 1px;
+                        border: {INTER_BOX_PADDING} solid red;
+                        padding: {INTER_BOX_PADDING};
                         width: 100%;
                         height: 100%;
-                        border: 0.1vmin solid  rgba(95, 67, 33, 0.44);
+                        border: {INTER_BOX_PADDING} solid  {GAMEBOARD_GRID_COLOR};
                         container-type:size;
                     ",
                     GameDisplayInner{}
@@ -66,8 +67,8 @@ fn GameBoardDisplay() -> Element {
                 grid-row-gap: 0px;
                 width: 100%;
                 height: 100%;
-                background-color:rgba(95, 67, 33, 0.44);
-                padding: 0.1vmin;
+                background-color:{GAMEBOARD_GRID_COLOR};
+                padding: {INTER_BOX_PADDING};
             ",
 
             for _row_id in 0..row_count {
@@ -84,14 +85,14 @@ fn GridCell() -> Element {
     rsx! {
         div {
             style: "
-                width: calc(100cqw/10-0.1vmin);
-                height: calc(100cqh/20-0.1vmin);
-                padding: 0.1vmin;
+                width: calc(100cqw/10-{INTER_BOX_PADDING});
+                height: calc(100cqh/20-{INTER_BOX_PADDING});
+                padding: {INTER_BOX_PADDING};
             ",
             div {
                 style: "
-                border: 0.1vmin solid rgba(95, 67, 33, 0.44); 
-                background-color: rgba(17, 37, 78, 0.54);
+                border: {INTER_BOX_PADDING} solid {GAMEBOARD_GRID_COLOR}; 
+                background-color: {GAMEBOARD_BOX_EMPTY_COLOR};
                 width: 100%;
                 height: 100%;
                 aspect-ratio: 1/1;

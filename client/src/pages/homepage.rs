@@ -7,6 +7,7 @@ use crate::comp::game_display::*;
 pub fn Home() -> Element {
     rsx! {
         article {
+            style: "height: 80dvh",
             GameDisplay {}
         }
 

@@ -1,5 +1,5 @@
 [workspace]
-members = ['client']
+members = ['client', "game_v2"]
 resolver = "2"
 
 [workspace.package]
