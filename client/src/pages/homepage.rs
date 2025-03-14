@@ -36,7 +36,6 @@ pub fn Home() -> Element {
         article { style: "height: 80dvh; display: flex;",
             // style: "display: flex;",
             GameDisplay { game_state }
-        
         }
     }
 }

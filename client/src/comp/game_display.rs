@@ -29,8 +29,7 @@ fn get_cell_color(cell_value: Option<CellValue>) -> &'static str {
 #[component]
 pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
-        div {
-            style: "
+        div { style: "
                 width: 100%;
                 height: 100%;
                 display: flex;
@@ -39,19 +38,15 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                 container-type:size;
             ",
 
-            div {
-                style: " 
+            div { style: " 
                     width: 30%;
                     height: 100%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                ",
-            
-            }
+                " }
 
-            div {
-                style: " 
+            div { style: " 
                     width: 40%;
                     height: 100%;
                     display: flex;
@@ -59,21 +54,16 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                     justify-content: center;
                 ",
 
-                GameDisplayInner {
-                    game_state: game_state
-                }
+                GameDisplayInner { game_state }
             }
 
-            div {
-                style: " 
+            div { style: " 
                     width: 30%;
                     height: 100%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                ",
-
-            }
+                " }
         }
     }
 }
@@ -83,16 +73,14 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
     let hold_press = use_memo(move || game_state.read().last_action == TetAction::Hold);
     let hold_color = use_memo(move || if *hold_press.read() { "rgb(128, 0, 0)" } else { "rgb(0, 0, 0)" });
     rsx! {
-        div {
-            style: "
+        div { style: "
                 width: 100%;
                 height: 100%;
                 display: flex;
                 align-items: start;
                 justify-content: end;
             ",
-            div {
-                style: "
+            div { style: "
                     width: 50%;
                     font-size: 15cqmin;
                     font-weight: bold;
@@ -101,14 +89,11 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
                 ",
                 "Hold"
             }
-            div {
-                style: "
+            div { style: "
                     width: 50%;
                     align:right;
                 ",
-                GameBoardDisplayHoldGrid {
-                    game_state: game_state
-                }
+                GameBoardDisplayHoldGrid { game_state }
             }
         }
     }
@@ -119,26 +104,21 @@ fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
     let next_press = use_memo(move || game_state.read().last_action == TetAction::HardDrop );
     let next_color = use_memo(move || if *next_press.read() { "rgb(128, 0, 0)" } else { "rgb(0, 0, 0)" });
     rsx! {
-        div {
-            style: "
+        div { style: "
                 width: 100%;
                 height: 100%;
                 display: flex;
                 align-items: start;
                 justify-content: start;
             ",
-            div {
-                style: "
+            div { style: "
                     width: 50%;
                     margin-bottom: auto;
                     align:left;
                 ",
-                GameBoardDisplayNextGrid {
-                    game_state: game_state
-                }
+                GameBoardDisplayNextGrid { game_state }
             }
-            div {
-                style: "
+            div { style: "
                     width: 50%;
                     font-size: 15cqmin;
                     font-weight: bold;
@@ -155,8 +135,7 @@ fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
 #[component]
 fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
-        div {
-            style: "
+        div { style: "
                 width: 100%;
                 height: 100%;
                 display: flex;
@@ -164,8 +143,7 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
                 justify-content: center;
                 container-type:size;
             ",
-            div {
-                style: "
+            div { style: "
                     position: relative;
                     width: calc(min(100cqw, 50cqh));
                     height: calc(min(100cqh, min(100cqh, 200cqw)));
@@ -174,45 +152,36 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
                     justify-content: center;
                     container-type:size;
                 ",
-                div {
-                    style: "
+                div { style: "
                     position:absolute;
                         top: 0; 
                         left: -74cqw;
                         width: 73cqw;
                         height: 99cqh;
                     ",
-                    GameDetailsLeftPane {
-                        game_state: game_state
-                    }
+                    GameDetailsLeftPane { game_state }
                 }
 
-                div {
-                    style: "
+                div { style: "
                         padding: {INTER_BOX_PADDING};
                         width: 100%;
                         height: 100%;
                         container-type:size;
                         display: flex;
                     ",
-                    GameBoardDisplayMainGrid{
-                        game_state: game_state
-                    }
+                    GameBoardDisplayMainGrid { game_state }
                 }
-                div {
-                    style: "
+                div { style: "
                     position:absolute;
                         top: 0; 
                         left: 101cqw;
                         width: 73cqw;
                         height: 99cqh;
                     ",
-                    GameDetailsRightPane {
-                        game_state: game_state
-                    }
+                    GameDetailsRightPane { game_state }
                 }
             }
-
+        
         }
     }
 }
@@ -222,9 +191,7 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
 fn GameBoardDisplayMainGrid(game_state: ReadOnlySignal<GameState>) -> Element {
     let main_board = use_memo(move || game_state.read().main_board);
     rsx! {
-        BoardGrid {
-            board: main_board
-        }
+        BoardGrid { board: main_board }
     }
 }
 
@@ -232,18 +199,14 @@ fn GameBoardDisplayMainGrid(game_state: ReadOnlySignal<GameState>) -> Element {
 fn GameBoardDisplayNextGrid(game_state: ReadOnlySignal<GameState>) -> Element {
     let next_board = use_memo(move || game_state.read().get_next_board());
     rsx! {
-        BoardGrid {
-            board: next_board
-        }
+        BoardGrid { board: next_board }
     }
 }
 #[component]
 fn GameBoardDisplayHoldGrid(game_state: ReadOnlySignal<GameState>) -> Element {
     let hold_board = use_memo(move || game_state.read().get_hold_board());
     rsx! {
-        BoardGrid {
-            board: hold_board
-        }
+        BoardGrid { board: hold_board }
     }
 }
 
@@ -254,21 +217,21 @@ fn BoardGrid<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatrix<R
     let row_count = (R as i8).min(20);
     rsx! {
         GameBoardGridParent {
-            column_count: column_count,
-            row_count: row_count,
+            column_count,
+            row_count,
             children: rsx! {
                 for row_id in 0..row_count {
                     for col_id in 0..column_count {
                         BoardGridCell {
-                            board: board,
+                            board,
                             row: (row_count - 1 - row_id) as i8,
                             col: col_id as i8,
-                            row_count: row_count,
-                            col_count: column_count
+                            row_count,
+                            col_count: column_count,
                         }
                     }
                 }
-            }
+            },
         }
     }
 }
@@ -278,11 +241,11 @@ fn BoardGridCell<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatr
     let cell = use_memo(move || board.read().get_cell(row, col));
     rsx! {
         GridCellDisplay {
-            cell: cell,
-            row: row,
-            col: col,
-            row_count: row_count,
-            col_count: col_count
+            cell,
+            row,
+            col,
+            row_count,
+            col_count,
         }
     }
 }
@@ -290,8 +253,7 @@ fn BoardGridCell<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatr
 #[component]
 fn GameBoardGridParent(column_count: i8, row_count: i8, children: Element) -> Element {
     rsx! {
-        div {
-            style: "
+        div { style: "
                 position: relative;
                 display: grid;
                 grid-template-columns: repeat({column_count}, minmax(0, 1fr));
@@ -314,8 +276,7 @@ fn GameBoardGridParent(column_count: i8, row_count: i8, children: Element) -> El
 fn GridCellDisplay(cell: ReadOnlySignal<Option<CellValue>>, row: i8, col: i8, row_count: i8, col_count: i8) -> Element {
     let cell_color = use_memo(move || get_cell_color(cell.read().clone()));
     rsx! {
-        div {
-            style: "
+        div { style: "
                 posiition: absolute;
                 width: calc(100cqw/{col_count}-{INTER_BOX_PADDING});
                 height: calc(100cqh/{row_count}-{INTER_BOX_PADDING});
@@ -323,15 +284,13 @@ fn GridCellDisplay(cell: ReadOnlySignal<Option<CellValue>>, row: i8, col: i8, ro
                 left: calc((100cqw/{col_count}-{INTER_BOX_PADDING}) * {col});
                 padding: {INTER_BOX_PADDING};
             ",
-            div {
-                style: "
+            div { style: "
                 background-color: {cell_color};
                 width: 100%;
                 height: 100%;
                 aspect-ratio: 1/1;
                 border: 0.1cqmin solid {GAMEBOARD_GRID_COLOR};
-                "
-            }
+                " }
         }
     }
 }

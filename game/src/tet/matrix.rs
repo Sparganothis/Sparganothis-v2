@@ -58,6 +58,14 @@ pub struct BoardMatrix<const R: usize = 40, const C: usize = 10> {
     #[serde_as(as = "[_; R]")]
     vv: [CellValueRow10; R],
 }
+impl<const R: usize, const C: usize> BoardMatrix<R, C> {
+    pub const fn c_num_rows() -> usize {
+        R
+    }
+    pub const fn c_num_cols() -> usize {
+        C
+    }
+}
 
 pub const SIDE_BOARD_WIDTH: usize = 4;
 pub type BoardMatrixHold = BoardMatrix<3, SIDE_BOARD_WIDTH>;
