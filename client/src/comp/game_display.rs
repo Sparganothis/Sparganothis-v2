@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
 
 const INTER_BOX_PADDING : &'static str = "0.1cqmin";
-const GAMEBOARD_GRID_COLOR : &'static str = "rgba(95, 67, 33, 0.44)";
-const GAMEBOARD_BOX_EMPTY_COLOR : &'static str = "rgba(17, 37, 78, 0.54)";
+const GAMEBOARD_GRID_COLOR : &'static str = "rgba(109, 20, 20, 0.44)";
+const GAMEBOARD_BOX_EMPTY_COLOR : &'static str = "rgba(28, 16, 99, 0.54)";
 
 #[component]
 pub fn GameDisplay() -> Element {

@@ -1,7 +1,0 @@
-[package]
-name = "game_v2"
-version.workspace = true
-authors.workspace = true
-edition.workspace = true
-
-[dependencies]
