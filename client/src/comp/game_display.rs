@@ -8,12 +8,12 @@ const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";
 fn get_tet_color(tet: &Tet) -> &'static str {
     match tet {
         Tet::I => "rgb(40, 218, 182)", // Cyan
-        Tet::J => "rgb(26, 53, 196)",   // Blue
+        Tet::J => "rgb(26, 53, 196)",  // Blue
         Tet::L => "rgb(223, 131, 20)", // Orange
         Tet::O => "rgb(228, 196, 15)", // Yellow
-        Tet::S => "rgb(31, 204, 89)",   // Green
+        Tet::S => "rgb(31, 204, 89)",  // Green
         Tet::T => "rgb(199, 41, 151)", // Purple
-        Tet::Z => "rgb(197, 57, 32)",   // Red
+        Tet::Z => "rgb(197, 57, 32)",  // Red
     }
 }
 
@@ -38,7 +38,7 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                 container-type:size;
             ",
 
-            div { style: " 
+            div { style: "
                     width: 30%;
                     height: 100%;
                     display: flex;
@@ -46,7 +46,7 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                     justify-content: center;
                 " }
 
-            div { style: " 
+            div { style: "
                     width: 40%;
                     height: 100%;
                     display: flex;
@@ -57,7 +57,7 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                 GameDisplayInner { game_state }
             }
 
-            div { style: " 
+            div { style: "
                     width: 30%;
                     height: 100%;
                     display: flex;
@@ -110,7 +110,6 @@ fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
     }
 }
 
-
 #[component]
 fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
@@ -160,11 +159,10 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
                     GameDetailsRightPane { game_state }
                 }
             }
-        
+
         }
     }
 }
-
 
 #[component]
 fn GameBoardDisplayMainGrid(game_state: ReadOnlySignal<GameState>) -> Element {
@@ -188,7 +186,6 @@ fn GameBoardDisplayHoldGrid(game_state: ReadOnlySignal<GameState>) -> Element {
         BoardGrid { board: hold_board }
     }
 }
-
 
 #[component]
 fn BoardGrid<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatrix<R, C>>) -> Element {
@@ -216,7 +213,13 @@ fn BoardGrid<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatrix<R
 }
 
 #[component]
-fn BoardGridCell<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatrix<R, C>>, row: i8, col: i8, row_count: i8, col_count: i8) -> Element {
+fn BoardGridCell<const R: usize, const C: usize>(
+    board: ReadOnlySignal<BoardMatrix<R, C>>,
+    row: i8,
+    col: i8,
+    row_count: i8,
+    col_count: i8,
+) -> Element {
     let cell = use_memo(move || board.read().get_cell(row, col));
     rsx! {
         GridCellDisplay {
@@ -252,7 +255,13 @@ fn GameBoardGridParent(column_count: i8, row_count: i8, children: Element) -> El
 }
 
 #[component]
-fn GridCellDisplay(cell: ReadOnlySignal<Option<CellValue>>, row: i8, col: i8, row_count: i8, col_count: i8) -> Element {
+fn GridCellDisplay(
+    cell: ReadOnlySignal<Option<CellValue>>,
+    row: i8,
+    col: i8,
+    row_count: i8,
+    col_count: i8,
+) -> Element {
     let cell_color = use_memo(move || get_cell_color(cell.read().clone()));
     rsx! {
         div { style: "

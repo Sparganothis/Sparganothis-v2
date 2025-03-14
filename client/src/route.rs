@@ -9,8 +9,19 @@ pub enum Route {
     #[layout(NavbarLayout)]
     #[route("/")]
     Home {},
-    #[route("/blog/:id")]
-    Blog { id: i32 },
+    #[route("/chat/:id")]
+    ChatPage { id: i8 },
+
+    #[route("/:..x")]
+    NotFound { x: Vec<String> },
+}
+
+#[component]
+fn NotFound(x: Vec<String>) -> Element {
+    let url = x.join("/");
+    rsx! {
+        h1 { "Not Found: /{url}" }
+    }
 }
 
 #[component]
@@ -27,7 +38,7 @@ fn Nav() -> Element {
                     Link { to: Route::Home {}, "Home" }
                 }
                 li {
-                    Link { to: Route::Blog { id: 1 }, "Blog" }
+                    Link { to: Route::ChatPage { id: 1 }, "Chat" }
                 }
             }
         }

@@ -1,4 +1,6 @@
+pub mod app;
 pub(crate) mod comp;
-pub mod constants;
-mod pages;
-pub mod route;
+pub(crate) mod constants;
+pub(crate) mod localstorage;
+pub(crate) mod pages;
+pub(crate) mod route;
