@@ -70,8 +70,6 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
 
 #[component]
 fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
-    let hold_press = use_memo(move || game_state.read().last_action == TetAction::Hold);
-    let hold_color = use_memo(move || if *hold_press.read() { "rgb(128, 0, 0)" } else { "rgb(0, 0, 0)" });
     rsx! {
         div { style: "
                 width: 100%;
@@ -80,15 +78,6 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
                 align-items: start;
                 justify-content: end;
             ",
-            div { style: "
-                    width: 50%;
-                    font-size: 15cqmin;
-                    font-weight: bold;
-                    text-align: center;
-                    color: {hold_color};
-                ",
-                "Hold"
-            }
             div { style: "
                     width: 50%;
                     align:right;
@@ -101,8 +90,6 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
 
 #[component]
 fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
-    let next_press = use_memo(move || game_state.read().last_action == TetAction::HardDrop );
-    let next_color = use_memo(move || if *next_press.read() { "rgb(128, 0, 0)" } else { "rgb(0, 0, 0)" });
     rsx! {
         div { style: "
                 width: 100%;
@@ -118,15 +105,7 @@ fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
                 ",
                 GameBoardDisplayNextGrid { game_state }
             }
-            div { style: "
-                    width: 50%;
-                    font-size: 15cqmin;
-                    font-weight: bold;
-                    text-align: center;
-                    color: {next_color};
-                ",
-                "Next"
-            }
+
         }
     }
 }
