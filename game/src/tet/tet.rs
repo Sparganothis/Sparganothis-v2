@@ -1,6 +1,6 @@
 use super::rot::{RotState, Shape};
 use once_cell::sync::Lazy;
-use rand::Rng;
+use rand::{seq::IndexedRandom, Rng};
 use serde::{Deserialize, Serialize};
 
 #[derive(
@@ -122,10 +122,9 @@ impl Tet {
         }
     }
     pub fn random() -> Self {
-        use rand::seq::SliceRandom;
-        use rand::thread_rng;
+        use rand::rng;
         let choices = Self::all();
-        let mut rng = thread_rng();
+        let mut rng = rng();
         *choices.choose(&mut rng).unwrap()
     }
     #[inline(always)]
@@ -177,9 +176,8 @@ impl TetAction {
         }
     }
     pub fn random() -> Self {
-        use rand::seq::SliceRandom;
-        use rand::thread_rng;
-        if thread_rng().gen_bool(0.5) {
+        use rand::rng;
+        if rng().random_bool(0.5) {
             Self::SoftDrop
         } else {
             let choices = [
@@ -191,7 +189,7 @@ impl TetAction {
                 Self::RotateLeft,
                 Self::RotateRight,
             ];
-            let mut rng = thread_rng();
+            let mut rng = rng();
             *choices.choose(&mut rng).unwrap()
         }
     }

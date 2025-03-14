@@ -1,6 +1,9 @@
 use super::game_state::GameReplayEvent;
 use super::tet::Tet;
-use rand::{Rng, SeedableRng};
+use rand::{
+    distr::{Distribution, StandardUniform},
+    Rng, SeedableRng,
+};
 use rand_chacha::ChaCha20Rng;
 pub type GameSeed = <ChaCha20Rng as SeedableRng>::Seed;
 
@@ -11,15 +14,15 @@ fn get_rng(seed: &GameSeed) -> ChaCha20Rng {
 }
 
 pub fn get_random_seed() -> GameSeed {
-    (&mut rand::thread_rng()).gen()
+    (&mut rand::rng()).random()
 }
 
 pub fn get_determinist_val<T>(seed: &GameSeed) -> T
 where
-    rand::distributions::Standard: rand::distributions::Distribution<T>,
+    StandardUniform: Distribution<T>,
 {
     let mut rng = get_rng(seed);
-    rng.gen::<T>()
+    rng.random::<T>()
 }
 
 pub fn shuffle_tets(seed: &GameSeed, event_time: i64) -> (Vec<Tet>, GameSeed) {
@@ -33,7 +36,7 @@ pub fn shuffle_tets(seed: &GameSeed, event_time: i64) -> (Vec<Tet>, GameSeed) {
     use rand::prelude::SliceRandom;
     let mut rng = get_rng(&seed);
     v.shuffle(&mut rng);
-    let new_seed = rng.gen();
+    let new_seed = rng.random();
     (v, new_seed)
 }
 
@@ -49,7 +52,7 @@ pub fn accept_event(
     let event_idx = event_idx.to_le_bytes();
 
     let mut rng = get_rng(seed);
-    let more_bytes: [u8; 16] = rng.gen(); // 4 + 8 + 4 + 16 = 32
+    let more_bytes: [u8; 16] = rng.random(); // 4 + 8 + 4 + 16 = 32
 
     let all_bytes: Vec<u8> = event_hash
         .iter()
@@ -69,7 +72,7 @@ pub fn accept_event(
     };
     let mut new_gen = get_rng(&new_seed);
 
-    new_gen.gen()
+    new_gen.random()
 }
 
 #[cfg(test)]

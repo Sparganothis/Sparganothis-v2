@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 
-use crate::pages::*;
 use crate::constants::*;
+use crate::pages::*;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -19,40 +19,28 @@ fn Nav() -> Element {
         nav {
             ul {
                 li {
-                    strong {
-                        "{APP_TITLE}"
-                    }
+                    strong { "{APP_TITLE}" }
                 }
             }
             ul {
                 li {
-                    Link {
-                        to: Route::Home {},
-                        "Home"
-                    }
+                    Link { to: Route::Home {}, "Home" }
                 }
                 li {
-                    Link {
-                        to: Route::Blog { id: 1 },
-                        "Blog"
-                    }
+                    Link { to: Route::Blog { id: 1 }, "Blog" }
                 }
             }
         }
     }
 }
 
-
 /// Shared navbar component.
 #[component]
 fn NavbarLayout() -> Element {
     rsx! {
-        div {
-            class: "container-fluid",
+        div { class: "container-fluid",
             Nav {}
-            main {
-                Outlet::<Route> {}
-            }
+            main { Outlet::<Route> {} }
         }
     }
 }
