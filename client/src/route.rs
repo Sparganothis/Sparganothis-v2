@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::constants::*;
+use crate::network::NetworkConnectionStatusIcon;
 use crate::pages::*;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -34,6 +35,9 @@ fn Nav() -> Element {
                 }
             }
             ul {
+                NetworkConnectionStatusIcon {}
+            }
+            ul {
                 li {
                     Link { to: Route::Home {}, "Home" }
                 }
@@ -51,7 +55,11 @@ fn NavbarLayout() -> Element {
     rsx! {
         div { class: "container-fluid",
             Nav {}
-            main { Outlet::<Route> {} }
+            main {
+                style: "
+                overflow: auto;
+                ",
+                 Outlet::<Route> {} }
         }
     }
 }

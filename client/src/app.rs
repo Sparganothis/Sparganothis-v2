@@ -1,4 +1,7 @@
-use crate::{constants::APP_TITLE, localstorage::LocalStorageParent, route::Route};
+use crate::{
+    constants::APP_TITLE, localstorage::LocalStorageParent, network::NetworkConnectionParent,
+    route::Route,
+};
 use dioxus::prelude::*;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -21,10 +24,11 @@ pub fn App() -> Element {
               height:100dvh;
               margin:0;
               padding:0; 
-              overflow:hidden;
             ",
-            LocalStorageParent {
-                Router::<Route> {}
+            NetworkConnectionParent {
+                LocalStorageParent {
+                    Router::<Route> {}
+                }
             }
         }
     }

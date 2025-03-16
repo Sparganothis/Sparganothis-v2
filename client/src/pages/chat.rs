@@ -1,4 +1,7 @@
 use dioxus::prelude::*;
+use iroh::SecretKey;
+use protocol::global_matchmaker::GlobalMatchmaker;
+use tracing::info;
 use uuid::Uuid;
 
 use crate::{localstorage::LocalStorageContext, route::Route};
@@ -27,17 +30,18 @@ fn ChatRoom(id: ReadOnlySignal<i8>) -> Element {
         let _i = id.read();
         *history.write() = ChatHistory::default();
     });
-    let id = *id.read();
+    let chatroom_id = *id.read();
     rsx! {
         div {
-            ChatHistoryDisplay { id, history }
-            ChatInput { id, history }
+            ChatHistoryDisplay { chatroom_id, history }
+            ChatInput { chatroom_id, history }
         }
     }
 }
 #[derive(Clone, Debug, PartialEq)]
 struct ChatMessage {
     pub user_id: Uuid,
+    pub chatroom_id: i8,
     pub message: String,
     pub timestamp: chrono::DateTime<chrono::Utc>,
 }
@@ -48,12 +52,12 @@ struct ChatHistory {
 }
 
 #[component]
-fn ChatHistoryDisplay(id: i8, history: ReadOnlySignal<ChatHistory>) -> Element {
+fn ChatHistoryDisplay(chatroom_id: i8, history: ReadOnlySignal<ChatHistory>) -> Element {
     rsx! {
         article {
             for message in history.read().messages.iter() {
                 ChatMessageDisplay { message: message.clone() }
-            } 
+            }
             if history.read().messages.is_empty() {
                 p {
                     "No messages."
@@ -75,14 +79,15 @@ fn ChatMessageDisplay(message: ChatMessage) -> Element {
 }
 
 #[component]
-fn ChatInput(id: i8, history: Signal<ChatHistory>) -> Element {
+fn ChatInput(chatroom_id: i8, history: Signal<ChatHistory>) -> Element {
     let user_uuid = use_context::<LocalStorageContext>().user_id;
     let mut message_input = use_signal(String::new);
-    let send_message = move |_e|  {
+    let mut send_message = move || {
         let mut _i = message_input.write();
         let message = _i.clone();
         let message = ChatMessage {
             user_id: user_uuid.read().clone(),
+            chatroom_id: chatroom_id,
             message,
             timestamp: chrono::Utc::now(),
         };
@@ -97,13 +102,18 @@ fn ChatInput(id: i8, history: Signal<ChatHistory>) -> Element {
                 oninput: move |e| {
                     *message_input.write() = e.value();
                 },
+                onkeyup: move |e| {
+                    if e.key() == Key::Enter {
+                        send_message();
+                    }
+                }
             }
-            button { onclick: send_message, "Send" }
+            button { onclick: move |_| send_message(), "Send" }
 
         }
     }
 }
 
 fn do_send_message(message: ChatMessage) {
-    println!("Sending message...");
+    info!("Sending message...");
 }

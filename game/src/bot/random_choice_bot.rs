@@ -118,8 +118,8 @@ where
     }
     let mut all_action_chains = get_all_move_chains();
 
-    use rand::seq::SliceRandom;
     use rand::rng;
+    use rand::seq::SliceRandom;
     let mut rng = rng();
     all_action_chains.shuffle(&mut rng);
     all_action_chains.sort_by_key(|k| k.len());

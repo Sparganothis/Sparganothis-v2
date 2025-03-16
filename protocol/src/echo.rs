@@ -1,0 +1,71 @@
+use crate::global_matchmaker::{GlobalMatchmaker, CONNECT_TIMEOUT};
+use anyhow::Result;
+use iroh::{
+    endpoint::{Connecting, Connection},
+    protocol::ProtocolHandler, NodeId,
+};
+use n0_future::boxed::BoxFuture;
+use tracing::{info, warn};
+
+#[derive(Debug, Clone)]
+pub struct Echo {
+    own_endpoint_node_id: NodeId,
+}
+
+impl Echo {
+    pub const ALPN: &[u8] = b"sparganothis/global-matchmaker-echo/0";
+    pub fn new(own_endpoint_node_id: NodeId) -> Self {
+        Self { own_endpoint_node_id }
+    }
+}
+
+impl ProtocolHandler for Echo {
+    /// The `accept` method is called for each incoming connection for our ALPN.
+    ///
+    /// The returned future runs on a newly spawned tokio task, so it can run as long as
+    /// the connection lasts.
+    fn accept(&self, connecting: Connecting) -> BoxFuture<Result<()>> {
+        Box::pin(self.clone().handle_connecting(connecting))
+    }
+}
+
+impl Echo {
+    async fn handle_connecting(self, connecting: Connecting) -> Result<()> {
+        // Wait for the connection to be fully established.
+        let connection = connecting.await?;
+
+        let res = self.handle_connection(&connection).await;
+        if let Err(e) = res.as_ref() {
+            warn!("Failed to handle connection: {e}");
+        }
+
+        res
+    }
+    async fn handle_connection(&self, connection: &Connection) -> Result<()> {
+        // We can get the remote's node id from the connection.
+        let response_own_node_id = self.own_endpoint_node_id
+            .as_bytes()
+            .clone();
+
+        // Our protocol is a simple request-response protocol, so we expect the
+        // connecting peer to open a single bi-directional stream.
+        let (mut send, mut recv) = connection.accept_bi().await?;
+
+        let mut recv_buf = vec![0; 32];
+        n0_future::time::timeout(CONNECT_TIMEOUT, recv.read_exact(&mut recv_buf)).await??;
+        if recv_buf != connection.remote_node_id()?.as_bytes().to_vec() {
+            return Err(anyhow::anyhow!("Invalid node id"));
+        }
+
+        n0_future::time::timeout(CONNECT_TIMEOUT, send.write_all(&response_own_node_id)).await??;
+
+        // By calling `finish` on the send stream we signal that we will not send anything
+        // further, which makes the receive stream on the other end terminate.
+        send.finish()?;
+
+        // Wait until the remote closes the connection, which it does once it
+        // received the response.
+        connection.closed().await;
+        Ok(())
+    }
+}

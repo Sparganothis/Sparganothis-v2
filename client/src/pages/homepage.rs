@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, time::Duration};
 
 use crate::comp::game_display::*;
+use crate::localstorage::LocalStorageContext;
 use crate::route::Route;
 use dioxus::logger::tracing::info;
 use dioxus::prelude::*;
@@ -9,7 +10,6 @@ use game::{
     bot::{wordpress_blog_bot::WordpressBlogBot, TetBot},
     tet::{GameState, TetAction},
 };
-use crate::localstorage::LocalStorageContext;
 use uuid::Uuid;
 /// Home page
 #[component]

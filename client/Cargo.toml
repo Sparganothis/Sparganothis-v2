@@ -10,6 +10,7 @@ edition.workspace = true
 dioxus = { version = "0.6.0", features = ["router"] }
 dioxus-sdk = { version = "0.6.0", features = ["timing", "storage"] }
 game = { path = "../game" }
+protocol = { path = "../protocol" }
 
 uuid = { workspace = true }
 
@@ -18,6 +19,7 @@ async-channel = "2.3.1"
 clap = { version = "4.5.30", features = ["derive"], optional = true }
 console_error_panic_hook = "0.1.7"
 getrandom = { version = "0.2", features = ["js"] }
+rand = { version = "0.8" }
 iroh = { version = "0.33", default-features = false }
 n0-future = "0.1.2"
 serde = "1.0.217"
