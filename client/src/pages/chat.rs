@@ -1,64 +1,89 @@
 use dioxus::prelude::*;
-use tracing::info;
+use n0_future::StreamExt;
+use protocol::{_const::GLOBAL_CHAT_TOPIC_ID, chat::{ChatEvent, ChatEventStreamError}, global_matchmaker::GlobalMatchmaker};
+use tracing::{info, warn};
 use uuid::Uuid;
 
-use crate::{localstorage::LocalStorageContext, route::Route};
+use crate::{localstorage::LocalStorageContext, network::NetworkState, route::Route};
 /// Blog page
 #[component]
-pub fn ChatPage(id: i8) -> Element {
-    let user_uuid = use_context::<LocalStorageContext>().user_id;
+pub fn GlobalChatPage() -> Element {
     rsx! {
-        div { id: "blog",
-            h1 { "This is Chatroom #{id}!" }
-            h3 { "User ID = {user_uuid}" }
-
-            ChatRoom { id }
-
-            Link { to: Route::ChatPage { id: id.wrapping_add(-1) }, "Previous" }
-            span { " <---> " }
-            Link { to: Route::ChatPage { id: id.wrapping_add(1) }, "Next" }
-        }
+        ChatRoom { id: GLOBAL_CHAT_TOPIC_ID.to_string() }
     }
 }
 
 #[component]
-fn ChatRoom(id: ReadOnlySignal<i8>) -> Element {
+fn ChatRoom(id: ReadOnlySignal<String>) -> Element {
     let mut history = use_signal(ChatHistory::default);
+    let mm = use_context::<NetworkState>().global_mm;
+    let _ = use_resource(move || {
+        let mm =  mm.read().clone();
+        async move {
+            let Some(mm) = mm else {
+                return;
+            };
+            let Some(controller) = mm.global_chat_controller().await else {
+                return;
+            };
+            let mut recv = controller.receiver();
+            while let Some(event) = recv.next().await {
+                history.write().messages.push(event.map_err(|e| e.to_string()));
+            }
+    }});
+
     use_effect(move || {
-        let _i = id.read();
+        let _i = id.read().clone();
+        let _i2 = use_context::<NetworkState>().is_connected.read().clone();
         *history.write() = ChatHistory::default();
     });
-    let chatroom_id = *id.read();
+    let chatroom_id = id.read().clone();
     rsx! {
         div {
-            ChatHistoryDisplay { chatroom_id, history }
-            ChatInput { chatroom_id, history }
+            class: "chat-window-container",
+            div {
+                class: "chat-left-pane",
+            }
+            div {
+                class: "chat-main-pane",
+                div {
+                    class: "chat-main",
+                    ChatHistoryDisplay { chatroom_id: chatroom_id.clone(), history }
+                }
+                div {
+                    class: "chat-bottom",
+                    ChatInput { chatroom_id: chatroom_id.clone(), history }
+                }
+            }
         }
     }
-}
-#[derive(Clone, Debug, PartialEq)]
-struct ChatMessage {
-    pub user_id: Uuid,
-    pub chatroom_id: i8,
-    pub message: String,
-    pub timestamp: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default)]
 struct ChatHistory {
-    pub messages: Vec<ChatMessage>,
+    pub messages: Vec<Result<ChatEvent, String>>,
 }
 
 #[component]
-fn ChatHistoryDisplay(chatroom_id: i8, history: ReadOnlySignal<ChatHistory>) -> Element {
+fn ChatHistoryDisplay(chatroom_id: String, history: ReadOnlySignal<ChatHistory>) -> Element {
     rsx! {
-        article {
-            for message in history.read().messages.iter() {
-                ChatMessageDisplay { message: message.clone() }
-            }
-            if history.read().messages.is_empty() {
-                p {
-                    "No messages."
+        div {
+            style: "
+                height: 100%;
+                overflow: hidden;
+            ",
+            article {
+                style: "
+                    height: 100%;
+                    overflow: scroll;
+                ",
+                for message in history.read().messages.iter() {
+                    ChatMessageDisplay { message: message.clone() }
+                }
+                if history.read().messages.is_empty() {
+                    p {
+                        "No messages."
+                    }
                 }
             }
         }
@@ -66,35 +91,45 @@ fn ChatHistoryDisplay(chatroom_id: i8, history: ReadOnlySignal<ChatHistory>) -> 
 }
 
 #[component]
-fn ChatMessageDisplay(message: ChatMessage) -> Element {
+fn ChatMessageDisplay(message: Result<ChatEvent, String>) -> Element {
     rsx! {
         article {
-            h3 { "Message from {message.user_id}" }
-            p { "{message.message}" }
-            p { "{message.timestamp.to_rfc3339()}" }
+            onmounted: move |_e| async move {
+                let _e = _e.scroll_to(ScrollBehavior::Smooth).await;
+                if let Err(e) = _e {
+                    warn!("Failed to scroll to bottom: {}", e);
+                }
+            },
+            pre {
+                "{message:#?}"
+            }
         }
     }
 }
 
 #[component]
-fn ChatInput(chatroom_id: i8, history: Signal<ChatHistory>) -> Element {
-    let user_uuid = use_context::<LocalStorageContext>().user_id;
+fn ChatInput(chatroom_id: String, history: Signal<ChatHistory>) -> Element {
     let mut message_input = use_signal(String::new);
-    let mut send_message = move || {
+    let userinfo = use_context::<LocalStorageContext>().user_secrets.read().clone();
+    let nickname = userinfo.user_identity().nickname().to_string();
+    let userid = userinfo.user_identity().user_id().clone();
+
+    let mm = use_context::<NetworkState>().global_mm;
+    let send_message = Callback::new(move |_:()| {
         let mut _i = message_input.write();
         let message = _i.clone();
-        let message = ChatMessage {
-            user_id: user_uuid.read().clone(),
-            chatroom_id: chatroom_id,
-            message,
-            timestamp: chrono::Utc::now(),
-        };
-        do_send_message(message.clone());
-        history.write().messages.push(message);
         _i.clear();
-    };
+        chat_send_message(mm.clone(), chatroom_id.clone(), message.clone());
+        history.write().messages.push(Ok(ChatEvent::MessageReceived {
+            from:  userid.clone() ,
+            text: message.clone(),
+            nickname:nickname.clone(),
+            sent_timestamp: 0,
+        }));
+    });
     rsx! {
         article {
+            role: "group",
             input {
                 value: "{message_input.read()}",
                 oninput: move |e| {
@@ -102,16 +137,29 @@ fn ChatInput(chatroom_id: i8, history: Signal<ChatHistory>) -> Element {
                 },
                 onkeyup: move |e| {
                     if e.key() == Key::Enter {
-                        send_message();
+                        send_message.call(());
                     }
                 }
             }
-            button { onclick: move |_| send_message(), "Send" }
-
+            button { onclick: move |_| send_message.call(()), "Send" }
         }
     }
 }
 
-fn do_send_message(_message: ChatMessage) {
-    info!("Sending message...");
+fn chat_send_message(mm: ReadOnlySignal<Option<GlobalMatchmaker>>, _chatroom_id: String, message: String) {
+    let Some(mm) = mm.read().clone() else {
+        return;
+    };
+    spawn(async move {
+        let Some(controller) = mm.global_chat_controller().await else {
+            return;
+        };
+        let sender = controller.sender();
+        match sender.send(message).await {
+            Ok(_) => (),
+            Err(e) => {
+                warn!("Failed to send message: {}", e);
+            }
+        }
+    });
 }

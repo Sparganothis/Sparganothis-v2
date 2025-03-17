@@ -14,11 +14,12 @@ use n0_future::{
     time::{Duration, SystemTime},
     StreamExt,
 };
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
-use tracing::{debug, info, warn};
+use tracing::{debug, error, info, warn};
 
-pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(35);
+pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(5);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ChatTicket {
@@ -81,7 +82,7 @@ pub struct ChatSender {
 impl ChatSender {
     pub async fn send(&self, text: String) -> Result<()> {
         let nickname = self.nickname.lock().expect("poisened").clone();
-        let message = Message::Message { text, nickname };
+        let message = ChatMessage::Message { text, nickname };
         let signed_message = SignedMessage::sign_and_encode(&self.secret_key, message)?;
         self.sender.broadcast(signed_message.into()).await?;
         Ok(())
@@ -93,7 +94,7 @@ impl ChatSender {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum ChatEvent {
     #[serde(rename_all = "camelCase")]
@@ -136,12 +137,12 @@ impl TryFrom<iroh_gossip::net::Event> for ChatEvent {
                     let message = SignedMessage::verify_and_decode(&message.content)
                         .context("failed to parse and verify signed message")?;
                     match message.message {
-                        Message::Presence { nickname } => Self::Presence {
+                        ChatMessage::Presence { nickname } => Self::Presence {
                             from: message.from,
                             nickname,
                             sent_timestamp: message.timestamp,
                         },
-                        Message::Message { text, nickname } => Self::MessageReceived {
+                        ChatMessage::Message { text, nickname } => Self::MessageReceived {
                             from: message.from,
                             text,
                             nickname,
@@ -177,7 +178,7 @@ impl SignedMessage {
         })
     }
 
-    pub fn sign_and_encode(secret_key: &SecretKey, message: Message) -> Result<Vec<u8>> {
+    pub fn sign_and_encode(secret_key: &SecretKey, message: ChatMessage) -> Result<Vec<u8>> {
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap()
@@ -198,11 +199,11 @@ impl SignedMessage {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum WireMessage {
-    VO { timestamp: u64, message: Message },
+    VO { timestamp: u64, message: ChatMessage },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Message {
+pub enum ChatMessage {
     Presence { nickname: String },
     Message { text: String, nickname: String },
 }
@@ -211,7 +212,7 @@ pub enum Message {
 pub struct ReceivedMessage {
     timestamp: u64,
     from: NodeId,
-    message: Message,
+    message: ChatMessage,
 }
 
 pub type ChatEventStream = std::pin::Pin<
@@ -227,7 +228,7 @@ pub fn join_chat(
     secret_key: SecretKey,
     nickname: String,
     ticket: &ChatTicket,
-) -> Result<(ChatSender, ChatEventStream)> {
+) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
     let bootstrap = ticket.bootstrap.iter().cloned().collect();
     info!(?bootstrap, "joining {topic_id}");
@@ -248,7 +249,7 @@ pub fn join_chat(
         async move {
             loop {
                 let nickname = nickname.lock().expect("poisened").clone();
-                let message = Message::Presence { nickname };
+                let message = ChatMessage::Presence { nickname };
                 debug!("send presence {message:?}");
                 let signed_message = SignedMessage::sign_and_encode(&secret_key, message)
                     .expect("failed to encode message");
@@ -256,8 +257,9 @@ pub fn join_chat(
                     tracing::warn!("presence task failed to broadcast: {err}");
                     break;
                 }
+                let wait = PRESENCE_INTERVAL + Duration::from_secs(rand::thread_rng().gen_range(0..3));
                 n0_future::future::race(
-                    n0_future::time::sleep(PRESENCE_INTERVAL),
+                    n0_future::time::sleep(wait),
                     trigger_presence.notified(),
                 )
                 .await;
@@ -310,5 +312,89 @@ pub fn join_chat(
         trigger_presence,
         _presence_task: Arc::new(presence_task),
     };
-    Ok((sender, Box::pin(receiver)))
+    Ok(ChatControllerRaw {
+        sender,
+        receiver: Box::pin(receiver),
+    }.into())
+}
+
+#[derive(Clone)]
+pub struct ChatController {
+    inner: Arc<ChatControllerInner>,
+}
+
+impl ChatController {
+    pub fn sender(&self) -> ChatSender {
+        self.inner.sender.clone()
+    }
+    pub fn receiver(&self) ->  ChatEventReceiver {
+        self.inner.receiver.clone()
+    }
+    pub async fn shutdown(&self) -> Result<()> {
+        self.inner.receiver.close();
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct ChatEventStreamError(Arc<anyhow::Error>);
+
+impl ChatEventStreamError {
+    pub fn original_err(&self) -> &anyhow::Error {
+        &self.0
+    }
+}
+
+impl std::fmt::Debug for ChatEventStreamError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ChatEventStreamError({:#?})", self.0)
+    }
+}
+
+impl std::fmt::Display for ChatEventStreamError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ChatEventStreamError({})", self.0)
+    }
+}
+
+impl std::error::Error for ChatEventStreamError {}
+
+
+pub type ChatEventReceiver = async_broadcast::Receiver<Result<ChatEvent,   ChatEventStreamError>>;
+
+struct ChatControllerInner {
+    sender: ChatSender,
+    receiver: ChatEventReceiver,
+    _recv_broadcast_task: AbortOnDropHandle<()>,
+}
+
+struct ChatControllerRaw {
+    pub sender: ChatSender,
+    pub receiver: ChatEventStream,
+}
+
+
+impl Into<ChatController> for ChatControllerRaw {
+    fn into(self) -> ChatController {
+        let ChatControllerRaw { sender, mut receiver } = self;
+        let ( mut b_sender, b_recv) = async_broadcast::broadcast(1);
+        b_sender.set_overflow(true);
+        let task = AbortOnDropHandle::new(task::spawn(async move {
+            while let Some(event) = receiver.next().await {
+                let event = event.map_err(|e| ChatEventStreamError(Arc::new(e)));
+                let _r = b_sender.broadcast(event).await;
+                if let Err(err) = _r {
+                    error!("chat controller raw receiver stream error: {err}");
+                    break;
+                }
+            }
+        }));
+        ChatController {
+            inner: Arc::new(ChatControllerInner {
+                sender,
+                receiver: b_recv,
+                _recv_broadcast_task: task,
+            }),
+        }
+    }
 }

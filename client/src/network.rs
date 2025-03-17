@@ -1,29 +1,37 @@
+use std::sync::Arc;
+
 use dioxus::prelude::*;
 use iroh::SecretKey;
 use n0_future::StreamExt;
-use protocol::global_matchmaker::GlobalMatchmaker;
+use protocol::{chat::ChatEvent, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets};
 use tracing::warn;
 
-use crate::comp::modal::ModalArticle;
+use crate::{comp::modal::ModalArticle, localstorage::LocalStorageContext};
 
 #[derive(Clone)]
 pub struct NetworkState {
     pub global_mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
     pub global_mm_loading: ReadOnlySignal<bool>,
+    pub is_connected: ReadOnlySignal<bool>,
     pub reset_network: Callback<()>,
 }
+
 
 #[component]
 pub fn NetworkConnectionParent(children: Element) -> Element {
     let mut mm_signal = use_signal(move || None);
     let mut mm_signal_loading = use_signal(move || false);
+    let mut is_connected = use_signal(move || false);
     let mm_signal_ = mm_signal.clone();
 
     let _coro = use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
         mm_signal_loading.set(true);
-        let mut c = match client_connect().await {
+        is_connected.set(false);
+        let user_secrets = use_context::<LocalStorageContext>().user_secrets.peek().clone();
+        let mut c = match client_connect(user_secrets.clone()).await {
             Ok(client) => {
                 mm_signal.set(Some(client.clone()));
+                is_connected.set(true);
                 Some(client)
             }
             Err(e) => {
@@ -36,15 +44,17 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         while let Some(_x) = m_b.next().await {
             mm_signal.set(None);
             mm_signal_loading.set(true);
+            is_connected.set(false);
             if let Some(client) = c.take() {
                 if let Err(e) = client.shutdown().await {
                     warn!("Failed to shutdown global matchmaker: {e}");
                 }
                 drop(client);
             }
-            c = match client_connect().await {
+            c = match client_connect(user_secrets.clone()).await {
                 Ok(client) => {
                     mm_signal.set(Some(client.clone()));
+                    is_connected.set(true);
                     Some(client)
                 }
                 Err(e) => {
@@ -62,6 +72,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         global_mm: mm_signal_.into(),
         global_mm_loading: mm_signal_loading.into(),
         reset_network: reset_network.clone(),
+        is_connected: is_connected.into(),
     });
 
     rsx! {
@@ -69,9 +80,8 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     }
 }
 
-pub async fn client_connect() -> anyhow::Result<GlobalMatchmaker> {
-    let random_key = SecretKey::generate(rand::thread_rng());
-    let global_mm = GlobalMatchmaker::new(random_key).await?;
+pub async fn client_connect(user_secrets: Arc<UserIdentitySecrets>) -> anyhow::Result<GlobalMatchmaker> {
+    let global_mm = GlobalMatchmaker::new(user_secrets).await?;
     Ok(global_mm)
 }
 
@@ -81,6 +91,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
         global_mm,
         reset_network,
         global_mm_loading,
+        ..
     } = use_context::<NetworkState>();
 
     let net_txt = use_memo(move || {
@@ -144,7 +155,7 @@ fn NetworkConnectionDebugInfo() -> Element {
             let Some(mm) = mm else {
                 return "No network connection".to_string();
             };
-            mm.display_debug_info().await
+            mm.display_debug_info().await.unwrap_or_else(|e| e.to_string())
         }
     });
     rsx! {

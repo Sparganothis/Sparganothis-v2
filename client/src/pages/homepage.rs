@@ -1,7 +1,6 @@
 use std::{collections::VecDeque, time::Duration};
 
-use crate::comp::game_display::*;
-use crate::localstorage::LocalStorageContext;
+use crate::comp::{game_display::*, user_info_display::CurrentUserInfoDisplay};
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
 use game::{
@@ -11,7 +10,7 @@ use game::{
 /// Home page
 #[component]
 pub fn Home() -> Element {
-    let user_uuid = use_context::<LocalStorageContext>().user_id;
+
     let mut game_state = use_signal(GameState::empty);
     let mut pending_actions = use_signal(VecDeque::<TetAction>::new);
     use_interval(Duration::from_secs_f32(0.1), move || {
@@ -36,9 +35,6 @@ pub fn Home() -> Element {
     });
 
     rsx! {
-        h1 {
-            "{user_uuid}"
-        }
         article { style: "height: 80dvh; display: flex;",
             // style: "display: flex;",
             GameDisplay { game_state }

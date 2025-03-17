@@ -9,7 +9,7 @@ use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 
 use crate::{
     chat::{
-        join_chat, ChatEventStream, ChatSender, ChatTicket,
+        join_chat, ChatController, ChatTicket
     },
     echo::Echo,
 };
@@ -77,7 +77,7 @@ impl MainNode {
     ///
     /// Returns a [`ChatSender`] to send messages or change our nickname
     /// and a stream of [`Event`] items for incoming messages and other event.s
-    pub fn join_chat(&self, ticket: &ChatTicket) -> Result<(ChatSender, ChatEventStream)> {
+    pub fn join_chat(&self, ticket: &ChatTicket) -> Result<ChatController> {
         join_chat(
             self.gossip.clone(),
             self.secret_key.clone(),

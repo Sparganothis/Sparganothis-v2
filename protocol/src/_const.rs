@@ -1,0 +1,1 @@
+pub const GLOBAL_CHAT_TOPIC_ID: &'static str = "global";

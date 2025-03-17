@@ -1,21 +1,20 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
-use iroh::SecretKey;
 use protocol::{
     chat::ChatEvent,
-    global_matchmaker::{GlobalChatController, GlobalMatchmaker},
+    global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_stream::StreamExt;
-use tracing::info;
+use tracing:: info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
-    let random_key = SecretKey::generate(rand::thread_rng());
-    let global_mm = GlobalMatchmaker::new(random_key).await?;
+    let id = UserIdentitySecrets::generate();
+    let global_mm = GlobalMatchmaker::new(Arc::new(id)).await?;
 
     let _mm = global_mm.clone();
     let _a = tokio::spawn(async move {
@@ -26,27 +25,6 @@ async fn main() -> Result<()> {
     _a.abort();
 
     global_mm.shutdown().await?;
-
-    // let node = EchoNode::spawn().await?;
-    //      Command::Connect { node_id, payload } => {
-    //         let mut events = node.connect(node_id, payload);
-    //         while let Some(event) = events.next().await {
-    //             println!("event {event:?}");
-    //         }
-    //     }
-    //     Command::Accept => {
-    //         println!("connect to this node:");
-    //         println!(
-    //             "cargo run -- connect {} {}",
-    //             node.endpoint().node_id(),
-    //             "hello-please-echo-back"
-    //         );
-    //         let mut events = node.accept_events();
-    //         while let Some(event) = events.next().await {
-    //             println!("event {event:?}");
-    //         }
-    //     }
-    println!("* main closed.");
 
     std::process::exit(0);
 
@@ -60,17 +38,16 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
     // println!("{}", our_ticket.serialize());
 
     println!("* waiting for peers ...");
-    let mut controllers = global_mm.take_global_chat_controllers().await;
-    let GlobalChatController {
-        sender,
-        mut receiver,
-    } = controllers.take().unwrap();
+    let controller = global_mm.global_chat_controller().await.unwrap();
+    let sender = controller.sender();
+    let mut receiver = controller.receiver();
 
     println!("* join OK");
 
     let receive = tokio::task::spawn(async move {
         let mut names = HashMap::new();
-        while let Some(event) = receiver.try_next().await? {
+        while let Some(event) = receiver.next().await {
+            let event= event?;
             match event {
                 ChatEvent::Joined { neighbors } => {
                     println!("* swarm joined");
@@ -90,7 +67,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                             println!("* {from_short} is now known as {nickname}")
                         }
                     }
-                    names.insert(from, nickname.clone());
+                    names.insert(from, nickname.to_string());
                 }
                 ChatEvent::MessageReceived {
                     from,

@@ -1,7 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::constants::*;
-use crate::network::NetworkConnectionStatusIcon;
+use crate::comp::nav::Nav;
 use crate::pages::*;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -10,8 +9,12 @@ pub enum Route {
     #[layout(NavbarLayout)]
     #[route("/")]
     Home {},
-    #[route("/chat/:id")]
-    ChatPage { id: i8 },
+
+    #[route("/my-profile")]
+    MyProfilePage {},
+
+    #[route("/chat")]
+    GlobalChatPage {},
 
     #[route("/:..x")]
     NotFound { x: Vec<String> },
@@ -25,39 +28,26 @@ fn NotFound(x: Vec<String>) -> Element {
     }
 }
 
-#[component]
-fn Nav() -> Element {
-    rsx! {
-        nav {
-            ul {
-                li {
-                    strong { "{APP_TITLE}" }
-                }
-            }
-            ul {
-                NetworkConnectionStatusIcon {}
-            }
-            ul {
-                li {
-                    Link { to: Route::Home {}, "Home" }
-                }
-                li {
-                    Link { to: Route::ChatPage { id: 1 }, "Chat" }
-                }
-            }
-        }
-    }
-}
-
 /// Shared navbar component.
 #[component]
 fn NavbarLayout() -> Element {
     rsx! {
-        div { class: "container-fluid",
-            Nav {}
+        div {
+            class: "container-fluid", 
+            style:  "
+                height: 99%;
+                display: flex; 
+                flex-direction: column;
+            ",
+
+            div {
+                style: "height: calc(max(7%, 80px));",
+                Nav {}
+            }
             main {
                 style: "
-                overflow: auto;
+                    overflow: auto;
+                    height: calc(100% - (max(7%, 80px)));
                 ",
                  Outlet::<Route> {} }
         }
