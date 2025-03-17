@@ -112,6 +112,6 @@ fn ChatInput(chatroom_id: i8, history: Signal<ChatHistory>) -> Element {
     }
 }
 
-fn do_send_message(message: ChatMessage) {
+fn do_send_message(_message: ChatMessage) {
     info!("Sending message...");
 }

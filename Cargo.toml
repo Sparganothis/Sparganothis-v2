@@ -19,10 +19,13 @@ iroh-net-report = {path = "lib/iroh/iroh-net-report", default-features = false}
 
 
 
-
-[workspace.lints]
+[workspace.lints.rust]
+missing_debug_implementations = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(iroh_docsrs)", "cfg(iroh_loom)"] }
 
 [workspace.lints.clippy]
+unused-async = "warn"
+
 
 
 [profile.dev]

@@ -6,7 +6,6 @@ use iroh::{
     Endpoint, NodeId, SecretKey,
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
-use n0_future::StreamExt;
 
 use crate::{
     chat::{

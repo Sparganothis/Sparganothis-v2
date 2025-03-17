@@ -43,8 +43,8 @@ pub struct BootstrapNodeInfo {
     bs_idx: usize,
     bootstrap_id: NodeId,
     own_id: NodeId,
-    ping_secs: f32,
-    connect_secs: f32,
+    _ping_secs: f32,
+    _connect_secs: f32,
 }
 
 const GLOBAL_PERIODIC_TASK_INTERVAL: Duration = Duration::from_secs(5);
@@ -370,8 +370,8 @@ impl GlobalMatchmaker {
                             bootstrap_id: bs_node_id,
                             own_id: recv_pubkey,
                             bs_idx: i,
-                            ping_secs,
-                            connect_secs,
+                            _ping_secs: ping_secs,
+                            _connect_secs: connect_secs,
                         })
                     })()
                     .await,
