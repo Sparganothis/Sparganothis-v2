@@ -1,6 +1,4 @@
 use dioxus::prelude::*;
-use iroh::SecretKey;
-use protocol::global_matchmaker::GlobalMatchmaker;
 use tracing::info;
 use uuid::Uuid;
 

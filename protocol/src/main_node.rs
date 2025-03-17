@@ -1,31 +1,18 @@
-use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
-use async_channel::Sender;
 use iroh::{
-    endpoint::{Connecting, Connection, RemoteInfo},
+    endpoint::RemoteInfo,
     protocol::{ProtocolHandler, Router},
     Endpoint, NodeId, SecretKey,
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
-use n0_future::{
-    boxed::{BoxFuture, BoxStream},
-    task::{self, AbortOnDropHandle},
-    Stream, StreamExt,
-};
-use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
-use tokio::sync::{broadcast, Notify};
-use tokio_stream::wrappers::BroadcastStream;
-use tracing::{debug, info, warn};
+use n0_future::StreamExt;
 
 use crate::{
     chat::{
-        join_chat, ChatEvent, ChatEventStream, ChatSender, ChatTicket, Message, SignedMessage,
-        PRESENCE_INTERVAL,
+        join_chat, ChatEventStream, ChatSender, ChatTicket,
     },
     echo::Echo,
-    global_matchmaker::GlobalMatchmaker,
 };
 
 #[derive(Debug, Clone)]

@@ -1,5 +1,4 @@
 use dioxus::prelude::*;
-use tracing::info;
 #[component]
 pub fn ModalArticle(on_close: Callback<()>, title: Element, body: Element) -> Element {
     rsx! {

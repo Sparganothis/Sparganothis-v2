@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use anyhow::Result;
 use iroh::SecretKey;
 use protocol::{
-    chat::{ChatEvent, ChatTicket, TopicId},
+    chat::ChatEvent,
     global_matchmaker::{GlobalChatController, GlobalMatchmaker},
 };
 use tokio::io::{AsyncBufReadExt, BufReader};

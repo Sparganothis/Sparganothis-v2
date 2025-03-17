@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use iroh::SecretKey;
 use n0_future::StreamExt;
 use protocol::global_matchmaker::GlobalMatchmaker;
-use tracing::{info, warn};
+use tracing::warn;
 
 use crate::comp::modal::ModalArticle;
 

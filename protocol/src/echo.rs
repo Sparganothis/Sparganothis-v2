@@ -1,12 +1,12 @@
-use crate::global_matchmaker::{GlobalMatchmaker, CONNECT_TIMEOUT};
+use crate::global_matchmaker::CONNECT_TIMEOUT;
 use anyhow::Result;
 use iroh::{
-    endpoint::{Connecting, Connection},
+    endpoint::Connection,
     protocol::ProtocolHandler,
     NodeId,
 };
 use n0_future::boxed::BoxFuture;
-use tracing::{info, warn};
+use tracing::warn;
 
 #[derive(Debug, Clone)]
 pub struct Echo {

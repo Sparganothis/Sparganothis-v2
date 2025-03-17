@@ -6,16 +6,12 @@ use std::{
 
 use anyhow::{Context, Result};
 use iroh::{
-    endpoint::{Connection, VarInt},
-    protocol::Router,
+    endpoint::VarInt,
     Endpoint, NodeId, PublicKey, SecretKey,
 };
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
-use tokio::{
-    sync::{broadcast, Mutex},
-    time::Instant,
-};
+use tokio::sync::Mutex;
 use tracing::{info, warn};
 
 use crate::{

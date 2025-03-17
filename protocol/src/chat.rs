@@ -5,12 +5,11 @@ use std::{
 
 use anyhow::{Context, Result};
 pub use iroh::NodeId;
-use iroh::{endpoint::RemoteInfo, protocol::Router, Endpoint, PublicKey, SecretKey};
+use iroh::{PublicKey, SecretKey};
 use iroh_base::{ticket::Ticket, Signature};
-use iroh_gossip::net::{Gossip, GossipEvent, GossipSender, GOSSIP_ALPN};
+use iroh_gossip::net::{Gossip, GossipEvent, GossipSender};
 pub use iroh_gossip::proto::TopicId;
 use n0_future::{
-    boxed::BoxStream,
     task::{self, AbortOnDropHandle},
     time::{Duration, SystemTime},
     StreamExt,

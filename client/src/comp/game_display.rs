@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use game::tet::{BoardMatrix, BoardMatrixNext, CellValue, GameState, Tet, TetAction};
+use game::tet::{BoardMatrix, CellValue, GameState, Tet};
 
 const INTER_BOX_PADDING: &'static str = "0px";
 const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";

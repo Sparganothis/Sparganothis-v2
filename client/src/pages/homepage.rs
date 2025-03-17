@@ -2,15 +2,12 @@ use std::{collections::VecDeque, time::Duration};
 
 use crate::comp::game_display::*;
 use crate::localstorage::LocalStorageContext;
-use crate::route::Route;
-use dioxus::logger::tracing::info;
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
 use game::{
     bot::{wordpress_blog_bot::WordpressBlogBot, TetBot},
     tet::{GameState, TetAction},
 };
-use uuid::Uuid;
 /// Home page
 #[component]
 pub fn Home() -> Element {
