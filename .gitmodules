@@ -1,0 +1,3 @@
+[submodule "lib/iroh"]
+	path = lib/iroh
+	url = https://github.com/n0-computer/iroh

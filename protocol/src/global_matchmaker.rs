@@ -80,7 +80,10 @@ async fn global_periodic_task_iteration_1(mm: GlobalMatchmaker) -> Result<()> {
 async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
     if mm.bs_endpoint().await.is_none() {
         mm.connect_to_bootstrap().await?;
-        mm.spawn_bootstrap_endpoint().await?;
+        let added = mm.spawn_bootstrap_endpoint().await?;
+        if added {
+            mm.connect_bootstrap_chat().await?;
+        }
     }
 
     Ok(())
@@ -205,21 +208,34 @@ impl GlobalMatchmaker {
     }
 
     async fn connect_global_chats(&self) -> Result<()> {
+        self.connect_bootstrap_chat().await?;
         info!("connect_global_chats(): joining normal chat");
-        let ticket = ChatTicket::new_str_bs("global-chat", self.bootstrap_nodes_set().await);
+        let ticket = self.get_global_chat_ticket().await?;
         let (sender, receiver) = self.own_node().await.join_chat(&ticket)?;
-        sender.send("Hello, world!".to_string()).await?;
         let c1 = GlobalChatController {
             sender,
-            receiver: receiver,
+            receiver,
         };
         {
             info!("connect_global_chats(): saving normal chat controller...");
             self.0.lock().await.global_chat_controller = Some(c1);
             info!("connect_global_chats(): saved.");
         }
+
+        info!("connect_global_chats(): done.");
+        Ok(())
+    }
+
+    pub async fn get_global_chat_ticket(&self) -> Result<ChatTicket> {
+        let nodes = self.bootstrap_nodes_set().await;
+        let ticket = ChatTicket::new_str_bs("global-chat", nodes);
+        Ok(ticket)
+    }
+
+    async fn connect_bootstrap_chat(&self) -> Result<()> {
         if let Some(node2) = self.bs_node().await {
             info!("connect_global_chats(): joining bootstrap chat");
+            let ticket = self.get_global_chat_ticket().await?;
             let (sender, mut receiver) = node2.join_chat(&ticket)?;
             let _task = AbortOnDropHandle::new(n0_future::task::spawn(async move {
                 match sender.send("Hello, world!".to_string()).await {
@@ -244,9 +260,8 @@ impl GlobalMatchmaker {
                 self.0.lock().await._bs_global_chat_task = Some(_task);
             }
         } else {
-            info!("connect_global_chats(): no bootstrap node, skipping bootstrap chat.");
+            info!("connect_bootstrap_chat(): no bootstrap node, skipping bootstrap chat.");
         }
-        info!("connect_global_chats(): done.");
         Ok(())
     }
 
@@ -260,11 +275,11 @@ impl GlobalMatchmaker {
         self.0.lock().await.known_bootstrap_nodes.clone()
     }
 
-    pub async fn spawn_bootstrap_endpoint(&self) -> Result<()> {
+    pub async fn spawn_bootstrap_endpoint(&self) -> Result<bool> {
         let own_id = self.own_endpoint().await.node_id();
         let nickname = self.own_node().await.nickname().to_string();
         let boostrap_idx = {
-            let mut inner = self.0.lock().await;
+            let inner = self.0.lock().await;
             let all_bs_idx = BOOTSTRAP_SECRET_KEYS
                 .iter()
                 .enumerate()
@@ -277,8 +292,8 @@ impl GlobalMatchmaker {
                 .collect::<HashSet<_>>();
             let free_bs_idx = all_bs_idx.difference(&present_bs_idx).collect::<Vec<_>>();
             if free_bs_idx.is_empty() {
-                info!("no free bootstrap idx, exiting.");
-                return Ok(());
+                // info!("no free bootstrap idx, exiting.");
+                return Ok(false);
             }
             let rand = rand::thread_rng().gen_range(0..free_bs_idx.len());
             *free_bs_idx[rand]
@@ -314,9 +329,10 @@ impl GlobalMatchmaker {
             if let Some(old_endpoint) = old_endpoint {
                 old_endpoint.shutdown().await?;
             }
+            return Ok(false);
         }
 
-        Ok(())
+        Ok(true)
     }
 
     pub async fn connect_to_bootstrap(&self) -> Result<()> {
@@ -346,6 +362,9 @@ impl GlobalMatchmaker {
                         let t2 = n0_future::time::Instant::now();
                         let ping_secs = (t2 - t1).as_secs_f32();
 
+                        connection.close(VarInt::from(0_u32), "ok".as_bytes());
+                        drop(connection);
+
                         anyhow::Ok(BootstrapNodeInfo {
                             bootstrap_id: bs_node_id,
                             own_id: recv_pubkey,
@@ -364,7 +383,7 @@ impl GlobalMatchmaker {
                     let mut inner = self.0.lock().await;
                     let _r = inner.known_bootstrap_nodes.insert(info.bs_idx, info);
                     if _r.is_none() {
-                        info!("added connection to foreign bootstrap node #{i}");
+                        info!("added connection to bootstrap node #{i}");
                     }
                 }
                 Err(_e) => {
@@ -396,6 +415,15 @@ impl GlobalMatchmaker {
             }
             if let Some(bootstrap_endpoint) = inner.bootstrap_endpoint.take() {
                 bootstrap_endpoint.shutdown().await?;
+            }
+            if let Some(x) = inner.global_chat_controller.take() {
+                drop(x);
+            }
+            if let Some(x) = inner._bs_global_chat_task.take() {
+                drop(x);
+            }
+            if let Some(x) = inner._periodic_task.take() {
+                drop(x);
             }
         }
         info!("shutdown complete");

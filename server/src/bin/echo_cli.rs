@@ -14,11 +14,10 @@ async fn main() -> Result<()> {
     let random_key = SecretKey::generate(rand::thread_rng());
     let global_mm = GlobalMatchmaker::new(random_key).await?;
 
-    let new_random_ticket = ChatTicket::new_str_bs("global-chat", global_mm.bootstrap_nodes_set().await);
 
     let _mm = global_mm.clone();
     let _a = tokio::spawn(async move {
-        cli_chat_window(_mm, new_random_ticket).await.unwrap();
+        cli_chat_window(_mm).await.unwrap();
     });
 
     tokio::signal::ctrl_c().await?;
@@ -45,12 +44,15 @@ async fn main() -> Result<()> {
     //             println!("event {event:?}");
     //         }
     //     }
+    println!("* main closed.");
 
-    Ok(())
+    std::process::exit(0);
+
+    // Ok(())
 }
 
 
-async fn cli_chat_window(global_mm: GlobalMatchmaker, ticket: ChatTicket) -> Result<()> {
+async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
 
     // let mut our_ticket = ticket.clone();
     // our_ticket.bootstrap = [node.node_id()].into_iter().collect();
@@ -127,14 +129,16 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker, ticket: ChatTicket) -> Res
             println!("* sending message: {line}");
             sender.send(line.to_string()).await?;
         }
+        println!("* sender closed.");
         anyhow::Ok(())
     });
 
     // TODO: Clean shutown.
     receive.await??;
+    // println!("* receive closed.");
     send.await??;
 
-    info!("* chat window closed.");
+    info!("* CLI chat closed.");
 
     
     Ok(())

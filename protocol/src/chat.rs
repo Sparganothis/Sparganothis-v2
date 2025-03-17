@@ -19,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{debug, info, warn};
 
-pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(5);
+pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(35);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ChatTicket {
