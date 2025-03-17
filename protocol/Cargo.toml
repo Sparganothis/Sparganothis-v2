@@ -6,7 +6,7 @@ edition.workspace = true
 
 [dependencies]
 iroh.workspace = true
-random_word = { version = "0.5.0", features = ["fr"] }
+random_word = { version = "0.5.0", features = ["de"] }
 anyhow = "1"
 blake3 = { version = "1", package = "iroh-blake3" }
 hex = "0.4"

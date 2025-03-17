@@ -1,7 +1,7 @@
 use iroh::PublicKey;
 
 fn get_nickname_from_seed(seed: u32) -> String {
-    let all = random_word::all(random_word::Lang::Fr);
+    let all = random_word::all(random_word::Lang::De);
 
     let idx = seed as usize % all.len();
 
