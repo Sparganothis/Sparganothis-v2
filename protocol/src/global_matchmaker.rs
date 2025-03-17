@@ -18,14 +18,18 @@ use tokio::{
 };
 use tracing::{info, warn};
 
-use crate::{_bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _random_word::get_nickname_from_pubkey, chat::{ChatSender, ChatTicket, ChatEventStream}, echo::Echo, main_node::MainNode};
+use crate::{
+    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
+    _random_word::get_nickname_from_pubkey,
+    chat::{ChatEventStream, ChatSender, ChatTicket},
+    echo::Echo,
+    main_node::MainNode,
+};
 
 pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Clone)]
 pub struct GlobalMatchmaker(Arc<Mutex<GlobalMatchmakerInner>>);
-
-
 
 struct GlobalMatchmakerInner {
     own_private_key: SecretKey,
@@ -125,7 +129,11 @@ impl GlobalMatchmaker {
             .known_bootstrap_nodes
             .values()
             .map(|bs| vec![bs.bootstrap_id, bs.own_id])
-            .collect::<Vec<_>>().iter().flatten().copied().collect()
+            .collect::<Vec<_>>()
+            .iter()
+            .flatten()
+            .copied()
+            .collect()
     }
     pub async fn own_endpoint(&self) -> Endpoint {
         self.0
@@ -138,13 +146,7 @@ impl GlobalMatchmaker {
             .clone()
     }
     pub async fn own_node(&self) -> MainNode {
-        self.0
-            .lock()
-            .await
-            .own_endpoint
-            .as_ref()
-            .unwrap()
-            .clone()
+        self.0.lock().await.own_endpoint.as_ref().unwrap().clone()
     }
     pub async fn bs_node(&self) -> Option<MainNode> {
         self.0
@@ -169,7 +171,12 @@ impl GlobalMatchmaker {
     pub async fn new(own_private_key: SecretKey) -> Result<Self> {
         let num = 3;
         for i in 0..num {
-            match Self::new_try_once(own_private_key.clone(), get_nickname_from_pubkey(own_private_key.public())).await {
+            match Self::new_try_once(
+                own_private_key.clone(),
+                get_nickname_from_pubkey(own_private_key.public()),
+            )
+            .await
+            {
                 Ok(mm) => {
                     return Ok(mm);
                 }
@@ -195,7 +202,7 @@ impl GlobalMatchmaker {
 
             mm
         };
-        
+
         mm.connect_global_chats().await?;
 
         let periodic_task =
@@ -212,10 +219,7 @@ impl GlobalMatchmaker {
         info!("connect_global_chats(): joining normal chat");
         let ticket = self.get_global_chat_ticket().await?;
         let (sender, receiver) = self.own_node().await.join_chat(&ticket)?;
-        let c1 = GlobalChatController {
-            sender,
-            receiver,
-        };
+        let c1 = GlobalChatController { sender, receiver };
         {
             info!("connect_global_chats(): saving normal chat controller...");
             self.0.lock().await.global_chat_controller = Some(c1);
@@ -254,7 +258,6 @@ impl GlobalMatchmaker {
                         let _ = sender.send("Still here.".to_string()).await;
                     }
                 }
-                
             }));
             {
                 self.0.lock().await._bs_global_chat_task = Some(_task);
@@ -304,10 +307,8 @@ impl GlobalMatchmaker {
             let bootstrap_key = SecretKey::from_bytes(&BOOTSTRAP_SECRET_KEYS[boostrap_idx]);
 
             let nickname = format!("{} (bootstrap)", nickname);
-            let bootstrap_endpoint = MainNode::spawn(
-                nickname, 
-                bootstrap_key.clone(),
-                 Some(own_id)).await?;
+            let bootstrap_endpoint =
+                MainNode::spawn(nickname, bootstrap_key.clone(), Some(own_id)).await?;
             inner.bootstrap_key = Some(bootstrap_key);
             inner.bootstrap_endpoint = Some(bootstrap_endpoint);
         }
@@ -321,7 +322,11 @@ impl GlobalMatchmaker {
             .context("faild to find ourselves")?;
         if our_bs.own_id != self.own_endpoint().await.node_id() {
             warn!("our own bootstrap node id does not match the known bootstrap node id");
-            warn!("\n our_bs.own_id: {:#?}\n own_endpoint: {:#?}", our_bs.own_id, self.own_endpoint().await.node_id());
+            warn!(
+                "\n our_bs.own_id: {:#?}\n own_endpoint: {:#?}",
+                our_bs.own_id,
+                self.own_endpoint().await.node_id()
+            );
             let mut inner = self.0.lock().await;
             let old_endpoint = inner.bootstrap_endpoint.take();
             inner.bootstrap_endpoint = None;
@@ -430,7 +435,6 @@ impl GlobalMatchmaker {
         Ok(())
     }
 }
-
 
 pub struct GlobalChatController {
     pub sender: ChatSender,

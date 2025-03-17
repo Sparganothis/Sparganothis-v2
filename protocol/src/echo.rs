@@ -2,7 +2,8 @@ use crate::global_matchmaker::{GlobalMatchmaker, CONNECT_TIMEOUT};
 use anyhow::Result;
 use iroh::{
     endpoint::{Connecting, Connection},
-    protocol::ProtocolHandler, NodeId,
+    protocol::ProtocolHandler,
+    NodeId,
 };
 use n0_future::boxed::BoxFuture;
 use tracing::{info, warn};
@@ -15,7 +16,9 @@ pub struct Echo {
 impl Echo {
     pub const ALPN: &[u8] = b"sparganothis/global-matchmaker-echo/0";
     pub fn new(own_endpoint_node_id: NodeId) -> Self {
-        Self { own_endpoint_node_id }
+        Self {
+            own_endpoint_node_id,
+        }
     }
 }
 
@@ -41,9 +44,7 @@ impl Echo {
     }
     async fn handle_connection2(&self, connection: &Connection) -> Result<()> {
         // We can get the remote's node id from the connection.
-        let response_own_node_id = self.own_endpoint_node_id
-            .as_bytes()
-            .clone();
+        let response_own_node_id = self.own_endpoint_node_id.as_bytes().clone();
 
         // Our protocol is a simple request-response protocol, so we expect the
         // connecting peer to open a single bi-directional stream.

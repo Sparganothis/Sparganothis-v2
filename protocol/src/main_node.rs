@@ -20,7 +20,10 @@ use tokio_stream::wrappers::BroadcastStream;
 use tracing::{debug, info, warn};
 
 use crate::{
-    chat::{join_chat, ChatSender, ChatTicket, ChatEvent, ChatEventStream, Message, SignedMessage, PRESENCE_INTERVAL},
+    chat::{
+        join_chat, ChatEvent, ChatEventStream, ChatSender, ChatTicket, Message, SignedMessage,
+        PRESENCE_INTERVAL,
+    },
     echo::Echo,
     global_matchmaker::GlobalMatchmaker,
 };
@@ -34,7 +37,11 @@ pub struct MainNode {
 }
 
 impl MainNode {
-    pub async fn spawn(nickname: String,secret_key: SecretKey, own_endpoint_node_id: Option<NodeId>) -> Result<Self> {
+    pub async fn spawn(
+        nickname: String,
+        secret_key: SecretKey,
+        own_endpoint_node_id: Option<NodeId>,
+    ) -> Result<Self> {
         let endpoint = Endpoint::builder()
             .secret_key(secret_key.clone())
             .discovery_n0()
@@ -84,10 +91,7 @@ impl MainNode {
     ///
     /// Returns a [`ChatSender`] to send messages or change our nickname
     /// and a stream of [`Event`] items for incoming messages and other event.s
-    pub fn join_chat(
-        &self,
-        ticket: &ChatTicket,
-    ) -> Result<(ChatSender, ChatEventStream)> {
+    pub fn join_chat(&self, ticket: &ChatTicket) -> Result<(ChatSender, ChatEventStream)> {
         join_chat(
             self.gossip.clone(),
             self.secret_key.clone(),

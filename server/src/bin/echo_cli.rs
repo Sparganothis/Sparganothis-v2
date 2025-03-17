@@ -2,7 +2,10 @@ use std::collections::HashMap;
 
 use anyhow::Result;
 use iroh::SecretKey;
-use protocol::{chat::{ChatTicket, ChatEvent, TopicId}, global_matchmaker::{GlobalChatController, GlobalMatchmaker}};
+use protocol::{
+    chat::{ChatEvent, ChatTicket, TopicId},
+    global_matchmaker::{GlobalChatController, GlobalMatchmaker},
+};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_stream::StreamExt;
 use tracing::info;
@@ -13,7 +16,6 @@ async fn main() -> Result<()> {
 
     let random_key = SecretKey::generate(rand::thread_rng());
     let global_mm = GlobalMatchmaker::new(random_key).await?;
-
 
     let _mm = global_mm.clone();
     let _a = tokio::spawn(async move {
@@ -51,9 +53,7 @@ async fn main() -> Result<()> {
     // Ok(())
 }
 
-
 async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
-
     // let mut our_ticket = ticket.clone();
     // our_ticket.bootstrap = [node.node_id()].into_iter().collect();
     // println!("* ticket to join this chat:");
@@ -61,7 +61,10 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
 
     println!("* waiting for peers ...");
     let mut controllers = global_mm.take_global_chat_controllers().await;
-    let GlobalChatController { sender, mut receiver } = controllers.take().unwrap();
+    let GlobalChatController {
+        sender,
+        mut receiver,
+    } = controllers.take().unwrap();
 
     println!("* join OK");
 
@@ -140,7 +143,5 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
 
     info!("* CLI chat closed.");
 
-    
     Ok(())
-
 }

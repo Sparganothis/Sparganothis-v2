@@ -29,7 +29,7 @@ pub struct ChatTicket {
 
 impl ChatTicket {
     pub fn new_str_bs(topic_id: &str, bs: BTreeSet<NodeId>) -> Self {
-        let mut topic_bytes = [0;32];
+        let mut topic_bytes = [0; 32];
         let topic_str = topic_id.as_bytes().to_vec();
         assert!(topic_str.len() <= 30);
         topic_bytes[..topic_str.len()].copy_from_slice(&topic_str);
@@ -215,14 +215,20 @@ pub struct ReceivedMessage {
     message: Message,
 }
 
-pub type ChatEventStream = std::pin::Pin<Box<(dyn tokio_stream::Stream<Item = Result<crate::chat::ChatEvent, anyhow::Error>> + std::marker::Send + 'static)>>;
+pub type ChatEventStream = std::pin::Pin<
+    Box<
+        (dyn tokio_stream::Stream<Item = Result<crate::chat::ChatEvent, anyhow::Error>>
+             + std::marker::Send
+             + 'static),
+    >,
+>;
 
 pub fn join_chat(
     gossip: Gossip,
     secret_key: SecretKey,
     nickname: String,
     ticket: &ChatTicket,
-) -> Result<(ChatSender,    ChatEventStream)> {
+) -> Result<(ChatSender, ChatEventStream)> {
     let topic_id = ticket.topic_id;
     let bootstrap = ticket.bootstrap.iter().cloned().collect();
     info!(?bootstrap, "joining {topic_id}");
