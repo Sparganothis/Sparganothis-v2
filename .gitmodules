@@ -1,3 +1,6 @@
 [submodule "lib/iroh"]
 	path = lib/iroh
 	url = https://github.com/n0-computer/iroh
+[submodule "lib/iroh-gossip"]
+	path = lib/iroh-gossip
+	url = https://github.com/n0-computer/iroh-gossip

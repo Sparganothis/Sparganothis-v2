@@ -24,24 +24,22 @@ impl ProtocolHandler for Echo {
     ///
     /// The returned future runs on a newly spawned tokio task, so it can run as long as
     /// the connection lasts.
-    fn accept(&self, connecting: Connecting) -> BoxFuture<Result<()>> {
-        Box::pin(self.clone().handle_connecting(connecting))
+    fn accept(&self, connection: Connection) -> BoxFuture<Result<()>> {
+        Box::pin(self.clone().handle_connection(connection))
     }
 }
 
 impl Echo {
-    async fn handle_connecting(self, connecting: Connecting) -> Result<()> {
-        // Wait for the connection to be fully established.
-        let connection = connecting.await?;
-
-        let res = self.handle_connection(&connection).await;
+    async fn handle_connection(self, connection: Connection) -> Result<()> {
+        // We can get the remote's node id from the connection.
+        let res = self.handle_connection2(&connection).await;
         if let Err(e) = res.as_ref() {
             warn!("Failed to handle connection: {e}");
         }
 
         res
     }
-    async fn handle_connection(&self, connection: &Connection) -> Result<()> {
+    async fn handle_connection2(&self, connection: &Connection) -> Result<()> {
         // We can get the remote's node id from the connection.
         let response_own_node_id = self.own_endpoint_node_id
             .as_bytes()
