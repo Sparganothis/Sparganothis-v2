@@ -5,20 +5,17 @@ use dioxus::prelude::*;
 use iroh::{NodeId, PublicKey};
 use n0_future::StreamExt;
 use protocol::{
-    _const::{GLOBAL_CHAT_TOPIC_ID, PRESENCE_INTERVAL},
+    _const::PRESENCE_INTERVAL,
     chat::{
-        timestamp_now, ChatController, ChatEventStreamError, ChatMessage,
+        timestamp_now, ChatController, ChatMessage,
         NetworkEvent, ReceivedMessage,
     },
     global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
 };
-use tracing::{info, warn};
-use uuid::Uuid;
+use tracing::warn;
 
-use crate::{
-    localstorage::LocalStorageContext, network::NetworkState, route::Route,
-};
+use crate::network::NetworkState;
 /// Blog page
 #[component]
 pub fn GlobalChatPage() -> Element {
@@ -196,7 +193,7 @@ fn ChatPresenceDisplayItem(
     let identity = identity.read().clone();
     rsx! {
         div {
-            style: "width: 90%;",
+            style: "width: calc(90%-30px);",
             "data-tooltip": "
                 {identity.user_id().fmt_short()}@{identity.node_id().fmt_short()}
                 (last seen: {last_seen_txt})
@@ -293,7 +290,15 @@ fn ChatMessageDisplay(message: ReceivedMessage, user_id: PublicKey) -> Element {
         div {
             style: "width: 100%; height: fit-content; display: flex; justify-content: {align};",
             article {
-                style: "max-width: 70%; min-width: 30%; width: fit-content; text-align: {align}; float: {align};",
+                style: "
+                    max-width: 70%;
+                    min-width: 30%; 
+                    width: fit-content; 
+                    text-align: {align}; 
+                    float: {align};
+                    padding: 10px;
+                    margin: 10px;
+                ",
                 onmounted: move |_e| async move {
                     let _e = _e.scroll_to(ScrollBehavior::Smooth).await;
                     if let Err(e) = _e {
@@ -302,10 +307,11 @@ fn ChatMessageDisplay(message: ReceivedMessage, user_id: PublicKey) -> Element {
                 },
                 header {
                     style: "display: flex; justify-content: space-between;",
-                    span {
+                    b {
                         "{from_nickname}"
                     }
                     small {
+                        style: "color: #666;",
                         "{from_user_id}@{from_node_id}"
                     }
                 }
@@ -313,7 +319,7 @@ fn ChatMessageDisplay(message: ReceivedMessage, user_id: PublicKey) -> Element {
                     "{text}"
                 }
                 footer {
-                    style: "padding-top: 0px; margin-top: 0px;",
+                    style: "padding-top: 0px; margin-top: 0px; color: #666;",
                     small {
                         "{last_seen_txt}"
                     }
@@ -343,7 +349,7 @@ fn ChatInput(
     let disabled = use_memo(move || {
         let m = message_input.read().clone();
         let is_connected = is_connected.read().clone();
-        if m.trim().len() <= 2 {
+        if m.trim().len() < 1 {
             return true;
         }
         if !is_connected {
@@ -361,6 +367,10 @@ fn ChatInput(
                 },
                 onkeyup: move |e| {
                     if e.key() == Key::Enter {
+                        if *disabled.read() {
+                            e.prevent_default();
+                            return;
+                        }
                         send_message.call(());
                     }
                 }

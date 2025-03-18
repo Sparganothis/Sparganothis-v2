@@ -84,6 +84,7 @@ impl ChatSender {
         let message = ChatMessage::Message { text };
         let signed_message = SignedMessage::sign_and_encode(
             &self.node_secret_key.as_ref(),
+            &self.user_secrets.as_ref().secret_key(),
             message,
             self.node_identity.clone(),
         )?;
@@ -141,22 +142,32 @@ impl TryFrom<iroh_gossip::net::Event> for NetworkEvent {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SignedMessage {
-    from: PublicKey,
+    node_pubkey: PublicKey,
+    user_pubkey: PublicKey,
     data: Vec<u8>,
-    signature: Signature,
+    node_signature: Signature,
+    user_signature: Signature,
 }
 
 impl SignedMessage {
     pub fn verify_and_decode(bytes: &[u8]) -> Result<ReceivedMessage> {
         let signed_message: Self = postcard::from_bytes(bytes)?;
-        let key: PublicKey = signed_message.from;
-        key.verify(&signed_message.data, &signed_message.signature)?;
         let message: WireMessage = postcard::from_bytes(&signed_message.data)?;
         let WireMessage::VO {
             timestamp,
             message,
             from,
         } = message;
+        if from.user_id() != &signed_message.user_pubkey {
+            return Err(anyhow::anyhow!("user id mismatch"));
+        }
+        if from.node_id() != &signed_message.node_pubkey {
+            return Err(anyhow::anyhow!("node id mismatch"));
+        }
+
+        signed_message.node_pubkey.verify(&signed_message.data, &signed_message.node_signature)?;
+        signed_message.user_pubkey.verify(&signed_message.data, &signed_message.user_signature)?;
+
         Ok(ReceivedMessage {
             from,
             timestamp,
@@ -165,7 +176,8 @@ impl SignedMessage {
     }
 
     pub fn sign_and_encode(
-        secret_key: &SecretKey,
+        node_secret_key: &SecretKey,
+        user_secret_key: &SecretKey,
         message: ChatMessage,
         from: Arc<NodeIdentity>,
     ) -> Result<Vec<u8>> {
@@ -176,12 +188,14 @@ impl SignedMessage {
             from: from.as_ref().clone(),
         };
         let data = postcard::to_stdvec(&wire_message)?;
-        let signature = secret_key.sign(&data);
-        let from: PublicKey = secret_key.public();
+        let node_signature = node_secret_key.sign(&data);
+        let user_signature = user_secret_key.sign(&data);
         let signed_message = Self {
-            from,
+            node_pubkey: node_secret_key.public(),
+            user_pubkey: user_secret_key.public(),
             data,
-            signature,
+            node_signature,
+            user_signature,
         };
         let encoded = postcard::to_stdvec(&signed_message)?;
         Ok(encoded)
@@ -257,6 +271,7 @@ pub fn join_chat(
                 debug!("send presence {message:?}");
                 let signed_message = SignedMessage::sign_and_encode(
                     &node_secret_key,
+                    &user_secrets.as_ref().secret_key(),
                     message,
                     node_identity.clone(),
                 )

@@ -11,7 +11,7 @@ use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 use crate::{
     chat::{join_chat, ChatController, ChatTicket},
     echo::Echo,
-    user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
+    user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]

@@ -33,6 +33,9 @@ impl UserIdentitySecrets {
     pub fn user_identity(&self) -> &UserIdentity {
         &self.user_identity
     }
+    pub fn secret_key(&self) -> &SecretKey {
+        &self._user_private_key
+    }
     pub fn generate() -> Self {
         let _user_private_key = SecretKey::generate(rand::thread_rng());
         let user_id = _user_private_key.public();

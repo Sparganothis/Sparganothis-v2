@@ -1,43 +1,30 @@
 .chat-window-container {
-    display: flex;
-    flex-direction: row;
-    border: 1px solid red;
-    height: calc(100% - 20px);
-    overflow: hidden;
-    margin: 0px; padding: 0px;
-  }
-  .chat-left-pane { 
-    border: 1px solid blue;
-    overflow: scroll;
-    height: calc(100% - 10px);
-    width: 20%;
-    margin: 0px; padding: 0px;
+  display: flex;
+  flex-direction: row;
+  height: calc(100% - 20px);
+  overflow: hidden;
+  margin: 0px; padding: 0px;
 }
-  .chat-main-pane {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid green;
-    height: calc(100% - 10px);
-    width: 80%;
-    margin: 0px; padding: 0px;
-  }
-  .chat-bottom { 
-    border: 1px solid yellow;
-    height: 110px;
-    margin: 0px; padding: 0px;
-  }
-  .chat-main { 
-    border: 1px solid orange;
-    overflow: scroll;
-    height: calc(99% - 120px);
-    margin: 0px; padding: 0px;
-  }
-body  {
-    scrollbar-width: 10px;
-  }
-body::-webkit-scrollbar {
-    width: 10px;
-    }
-body::-webkit-scrollbar-track {
-    background: #f1f1f1;
+.chat-left-pane { 
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: calc(100% - 10px);
+  width: 20%;
+  margin: 0px; padding: 0px;
+}
+.chat-main-pane {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 10px);
+  width: 80%;
+  margin: 0px; padding: 0px;
+}
+.chat-bottom { 
+  height: 110px;
+  margin: 0px; padding: 0px;
+}
+.chat-main { 
+  overflow: auto;
+  height: calc(99% - 120px);
+  margin: 0px; padding: 0px;
 }

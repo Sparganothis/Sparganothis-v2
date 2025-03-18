@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, time::Duration};
 
-use crate::comp::{game_display::*, user_info_display::CurrentUserInfoDisplay};
+use crate::comp::game_display::*;
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
 use game::{

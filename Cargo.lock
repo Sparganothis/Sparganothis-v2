@@ -855,6 +855,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tracing-subscriber-wasm",
+ "tracing-wasm",
  "uuid",
  "wasm-bindgen",
  "wasm-bindgen-futures",

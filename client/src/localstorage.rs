@@ -6,16 +6,17 @@ use protocol::user_identity::UserIdentitySecrets;
 
 #[derive(Clone)]
 pub struct LocalStorageContext {
-    pub user_secrets: Signal<Arc<UserIdentitySecrets>>,
+    pub user_secrets: ReadOnlySignal<Arc<UserIdentitySecrets>>,
 }
 
 #[component]
 pub fn LocalStorageParent(children: Element) -> Element {
     let user_secrets =
         use_synced_storage::<LocalStorage, Arc<UserIdentitySecrets>>(
-            "user_secrets2".to_string(),
+            "user_secrets_3".to_string(),
             || Arc::new(UserIdentitySecrets::generate()),
         );
+    let user_secrets = use_memo(move || user_secrets.read().clone()).into();
     use_context_provider(move || LocalStorageContext { user_secrets });
 
     children
