@@ -121,7 +121,7 @@ fn ChatInput(chatroom_id: String, history: Signal<ChatHistory>) -> Element {
         _i.clear();
         chat_send_message(mm.clone(), chatroom_id.clone(), message.clone());
         history.write().messages.push(Ok(ChatEvent::MessageReceived {
-            from:  userid.clone() ,
+            node_id:  userid.clone() ,
             text: message.clone(),
             nickname:nickname.clone(),
             sent_timestamp: 0,

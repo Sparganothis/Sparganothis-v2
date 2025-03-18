@@ -73,7 +73,7 @@ impl Ticket for ChatTicket {
 #[derive(Debug, Clone)]
 pub struct ChatSender {
     nickname: Arc<Mutex<String>>,
-    secret_key: SecretKey,
+    node_secret_key: SecretKey,
     sender: GossipSender,
     trigger_presence: Arc<Notify>,
     _presence_task: Arc<AbortOnDropHandle<()>>,
@@ -83,7 +83,7 @@ impl ChatSender {
     pub async fn send(&self, text: String) -> Result<()> {
         let nickname = self.nickname.lock().expect("poisened").clone();
         let message = ChatMessage::Message { text, nickname };
-        let signed_message = SignedMessage::sign_and_encode(&self.secret_key, message)?;
+        let signed_message = SignedMessage::sign_and_encode(&self.node_secret_key, message)?;
         self.sender.broadcast(signed_message.into()).await?;
         Ok(())
     }
@@ -103,14 +103,14 @@ pub enum ChatEvent {
     },
     #[serde(rename_all = "camelCase")]
     MessageReceived {
-        from: NodeId,
+        node_id: NodeId,
         text: String,
         nickname: String,
         sent_timestamp: u64,
     },
     #[serde(rename_all = "camelCase")]
     Presence {
-        from: NodeId,
+        node_id: NodeId,
         nickname: String,
         sent_timestamp: u64,
     },
@@ -138,12 +138,12 @@ impl TryFrom<iroh_gossip::net::Event> for ChatEvent {
                         .context("failed to parse and verify signed message")?;
                     match message.message {
                         ChatMessage::Presence { nickname } => Self::Presence {
-                            from: message.from,
+                            node_id: message.from,
                             nickname,
                             sent_timestamp: message.timestamp,
                         },
                         ChatMessage::Message { text, nickname } => Self::MessageReceived {
-                            from: message.from,
+                            node_id: message.from,
                             text,
                             nickname,
                             sent_timestamp: message.timestamp,
@@ -306,7 +306,7 @@ pub fn join_chat(
     });
 
     let sender = ChatSender {
-        secret_key: secret_key.clone(),
+        node_secret_key: secret_key.clone(),
         nickname,
         sender,
         trigger_presence,

@@ -11,23 +11,24 @@ use crate::{
     chat::{
         join_chat, ChatController, ChatTicket
     },
-    echo::Echo,
+    echo::Echo, user_identity::NodeIdentity,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MainNode {
     secret_key: SecretKey,
     router: Router,
     gossip: Gossip,
-    nickname: String,
+    node_identity: NodeIdentity,
 }
 
 impl MainNode {
     pub async fn spawn(
-        nickname: String,
+        node_identity: NodeIdentity,
         secret_key: SecretKey,
         own_endpoint_node_id: Option<NodeId>,
     ) -> Result<Self> {
+        assert!(secret_key.public() == *node_identity.node_id());
         let endpoint = Endpoint::builder()
             .secret_key(secret_key.clone())
             .discovery_n0()
@@ -45,14 +46,13 @@ impl MainNode {
             router,
             secret_key,
             gossip,
-            nickname,
+            node_identity,
         })
     }
 
-    pub fn nickname(&self) -> &str {
-        &self.nickname
+    pub fn nickname(&self) -> String {
+        self.node_identity.nickname()
     }
-
     pub fn endpoint(&self) -> &Endpoint {
         self.router.endpoint()
     }
@@ -65,14 +65,12 @@ impl MainNode {
             .remote_info_iter()
             .collect::<Vec<_>>()
     }
-
     pub async fn shutdown(&self) -> Result<()> {
         let _ = self.router.shutdown().await;
         self.gossip.shutdown().await;
         self.endpoint().close().await;
         Ok(())
     }
-
     /// Joins a chat channel from a ticket.
     ///
     /// Returns a [`ChatSender`] to send messages or change our nickname
@@ -81,7 +79,7 @@ impl MainNode {
         join_chat(
             self.gossip.clone(),
             self.secret_key.clone(),
-            self.nickname.clone(),
+            self.nickname(),
             ticket,
         )
     }

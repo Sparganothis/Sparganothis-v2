@@ -15,7 +15,7 @@ use tokio::sync::Mutex;
 use tracing::{info, warn};
 
 use crate::{
-    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _const::GLOBAL_CHAT_TOPIC_ID, chat::{ChatController, ChatTicket}, echo::Echo, main_node::MainNode, user_identity::UserIdentitySecrets
+    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _const::GLOBAL_CHAT_TOPIC_ID, chat::{ChatController, ChatTicket}, echo::Echo, main_node::MainNode, user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets}
 };
 
 pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
@@ -25,6 +25,7 @@ pub struct GlobalMatchmaker(Arc<Mutex<GlobalMatchmakerInner>>, Arc<UserIdentityS
 
 struct GlobalMatchmakerInner {
     own_private_key: SecretKey,
+    user_identity: UserIdentity,
     own_endpoint: Option<MainNode>,
     bootstrap_key: Option<SecretKey>,
     bootstrap_endpoint: Option<MainNode>,
@@ -109,13 +110,18 @@ impl GlobalMatchmaker {
             global_chat_controller: None,
             bs_global_chat_controller: None,
             _bs_global_chat_task: None,
+            user_identity: user.user_identity().clone(),
         })), user.clone(), Arc::new(own_private_key.public()));
 
-        let own_endpoint = MainNode::spawn(user.user_identity().nickname().to_string(), own_private_key.clone(), None).await?;
+        let node_identity = NodeIdentity::new(user.user_identity().clone(), own_private_key.public(), None);
+        let own_endpoint = MainNode::spawn(node_identity, own_private_key.clone(), None).await?;
         {
             mm.0.lock().await.own_endpoint = Some(own_endpoint)
         };
         Ok(mm)
+    }
+    pub async fn user_identity(&self) -> UserIdentity {
+        self.0.lock().await.user_identity.clone()
     }
     pub async fn bootstrap_nodes_set(&self) -> BTreeSet<NodeId> {
         self.0
@@ -274,17 +280,16 @@ impl GlobalMatchmaker {
         let own_id = own_node.node_id();
         let nickname = own_node.nickname().to_string();
         let boostrap_idx = {
-            let inner = self.0.lock().await;
             let all_bs_idx = BOOTSTRAP_SECRET_KEYS
                 .iter()
                 .enumerate()
                 .map(|(i, _)| i)
                 .collect::<HashSet<_>>();
-            let present_bs_idx = inner
+            let present_bs_idx =  {self.0.lock().await
                 .known_bootstrap_nodes
                 .keys()
                 .cloned()
-                .collect::<HashSet<_>>();
+                .collect::<HashSet<_>>()};
             let free_bs_idx = all_bs_idx.difference(&present_bs_idx).collect::<Vec<_>>();
             if free_bs_idx.is_empty() {
                 // info!("no free bootstrap idx, exiting.");
@@ -294,13 +299,14 @@ impl GlobalMatchmaker {
             *free_bs_idx[rand]
         };
         info!("Spawning new bootstrap endpoint #{boostrap_idx}");
-        {
-            let mut inner = self.0.lock().await;
             let bootstrap_key = SecretKey::from_bytes(&BOOTSTRAP_SECRET_KEYS[boostrap_idx]);
 
-            let nickname = format!("{} (bootstrap #{})", nickname, boostrap_idx);
+            let node_identity = NodeIdentity::new(self.user_identity().await, bootstrap_key.public(), Some(boostrap_idx as u32));
             let bootstrap_endpoint =
-                MainNode::spawn(nickname, bootstrap_key.clone(), Some(own_id)).await?;
+                MainNode::spawn(node_identity, bootstrap_key.clone(), Some(own_id)).await?;
+        {
+                
+            let mut inner = self.0.lock().await;
             inner.bootstrap_key = Some(bootstrap_key);
             inner.bootstrap_endpoint = Some(bootstrap_endpoint);
         }
@@ -319,10 +325,11 @@ impl GlobalMatchmaker {
                 our_bs.own_id,
                 self.own_endpoint().await.context("spawn_bootstrap_endpoint: no endpoint")?.node_id()
             );
-            let mut inner = self.0.lock().await;
+            let old_endpoint = {let mut inner = self.0.lock().await;
             let old_endpoint = inner.bootstrap_endpoint.take();
             inner.bootstrap_endpoint = None;
             inner.bootstrap_key = None;
+            old_endpoint};
             if let Some(old_endpoint) = old_endpoint {
                 old_endpoint.shutdown().await?;
             }

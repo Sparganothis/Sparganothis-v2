@@ -56,7 +56,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                     }
                 }
                 ChatEvent::Presence {
-                    from,
+                    node_id: from,
                     nickname,
                     sent_timestamp: _,
                 } => {
@@ -70,7 +70,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                     names.insert(from, nickname.to_string());
                 }
                 ChatEvent::MessageReceived {
-                    from,
+                    node_id: from,
                     text,
                     nickname,
                     sent_timestamp: _,

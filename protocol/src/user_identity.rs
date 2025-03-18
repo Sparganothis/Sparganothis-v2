@@ -27,8 +27,6 @@ impl PartialEq for UserIdentitySecrets {
     }
 }
 
-
-
 impl UserIdentitySecrets {
     pub fn user_identity(&self) -> &UserIdentity {
         &self.user_identity
@@ -44,3 +42,31 @@ impl UserIdentitySecrets {
         Self { _user_private_key, user_identity }
     }
 }
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct NodeIdentity {
+    user_identity: UserIdentity,
+    node_id: PublicKey,
+    bootstrap_idx: Option<u32>,
+}
+
+impl NodeIdentity {
+    pub fn nickname(&self) -> String {
+        if let Some(bootstrap_idx) = self.bootstrap_idx {
+            format!("{} (bootstrap #{})", self.user_identity.nickname(), bootstrap_idx)
+        } else {
+            self.user_identity.nickname().to_string()
+        }
+    }
+    pub fn user_id(&self) -> &PublicKey {
+        &self.user_identity.user_id()
+    }
+    pub fn node_id(&self) -> &PublicKey {
+        &self.node_id
+    }
+    pub fn new(user_identity: UserIdentity, node_id: PublicKey, bootstrap_idx: Option<u32>) -> Self {
+        Self { user_identity, node_id, bootstrap_idx }
+    }
+}
+    
+    
