@@ -1,26 +1,41 @@
 use dioxus::prelude::*;
-use protocol::user_identity::UserIdentity;
+use protocol::user_identity::{NodeIdentity, UserIdentity};
 
-use crate::localstorage::LocalStorageContext;
+use crate::{localstorage::LocalStorageContext, network::NetworkState};
 
 #[component]
 pub fn CurrentUserInfoDisplay() -> Element {
     let user = use_context::<LocalStorageContext>().user_secrets;
     let user_id = use_memo(move || user.read().user_identity().clone());
+
+    let node_info = use_context::<NetworkState>().global_mm;
+    let node_id = use_memo(move ||{
+        if let Some(mm) = node_info.read().clone() {
+            Some(mm.own_node_identity().clone())
+        } else {
+            None
+        }
+    });
+    let node_id : ReadOnlySignal<Option<NodeIdentity>> = node_id.into();
     rsx! {
-        UserInfoDisplay { info: user_id.read().clone() }
+        UserInfoDisplay { info: user_id.read().clone(), node_id }
     }
 }
 
 #[component]
-pub fn UserInfoDisplay(info: UserIdentity) -> Element {
+pub fn UserInfoDisplay(info: UserIdentity, node_id: ReadOnlySignal<Option<NodeIdentity>>) -> Element {
     rsx! {
         div {
             h1 {
-                "{info.nickname()}"
+                "Nickname: ", i { "{info.nickname()}" }
             }
-            h3 {
-                "{info.user_id()}"
+            h4 {
+                "User ID: {info.user_id()}"
+            }
+            if let Some(node_id) = node_id.read().as_ref() {
+                h5 {
+                    "Node ID: {node_id.node_id()}"
+                }
             }
         }
     }

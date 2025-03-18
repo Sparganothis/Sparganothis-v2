@@ -24,7 +24,7 @@ pub fn Nav() -> Element {
             }
             ul {
                 li {
-                    Link { to: Route::MyProfilePage {}, "{my_nickname}" }
+                    Link { to: Route::MyProfilePage {}, b {"{my_nickname}"} }
                 }
                 li {
                     Link { to: Route::GlobalChatPage {  }, "Chat" }
