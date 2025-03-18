@@ -114,7 +114,7 @@ impl GlobalMatchmaker {
         })), user.clone(), Arc::new(own_private_key.public()));
 
         let node_identity = NodeIdentity::new(user.user_identity().clone(), own_private_key.public(), None);
-        let own_endpoint = MainNode::spawn(node_identity, own_private_key.clone(), None).await?;
+        let own_endpoint = MainNode::spawn(node_identity, Arc::new(own_private_key), None, user.clone()).await?;
         {
             mm.0.lock().await.own_endpoint = Some(own_endpoint)
         };
@@ -303,7 +303,7 @@ impl GlobalMatchmaker {
 
             let node_identity = NodeIdentity::new(self.user_identity().await, bootstrap_key.public(), Some(boostrap_idx as u32));
             let bootstrap_endpoint =
-                MainNode::spawn(node_identity, bootstrap_key.clone(), Some(own_id)).await?;
+                MainNode::spawn(node_identity, Arc::new(bootstrap_key.clone()), Some(own_id), self.1.clone()).await?;
         {
                 
             let mut inner = self.0.lock().await;

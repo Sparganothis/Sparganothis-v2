@@ -1,6 +1,6 @@
 use iroh::{PublicKey, SecretKey};
 
-#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct UserIdentity {
     user_id: PublicKey,
     user_nickname: String
@@ -15,7 +15,7 @@ impl UserIdentity {
     }
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct UserIdentitySecrets {
     _user_private_key: SecretKey,
     user_identity: UserIdentity,    

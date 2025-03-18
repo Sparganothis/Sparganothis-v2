@@ -1,4 +1,6 @@
 
+use std::sync::Arc;
+
 use anyhow::Result;
 use iroh::{
     endpoint::RemoteInfo,
@@ -11,26 +13,28 @@ use crate::{
     chat::{
         join_chat, ChatController, ChatTicket
     },
-    echo::Echo, user_identity::NodeIdentity,
+    echo::Echo, user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]
 pub struct MainNode {
-    secret_key: SecretKey,
+    node_secret_key: Arc<SecretKey>,
     router: Router,
     gossip: Gossip,
     node_identity: NodeIdentity,
+    user_secrets: Arc<UserIdentitySecrets>,
 }
 
 impl MainNode {
     pub async fn spawn(
         node_identity: NodeIdentity,
-        secret_key: SecretKey,
+        node_secret_key: Arc<SecretKey>,
         own_endpoint_node_id: Option<NodeId>,
+        user_secrets: Arc<UserIdentitySecrets>,
     ) -> Result<Self> {
-        assert!(secret_key.public() == *node_identity.node_id());
+        assert!(node_secret_key.public() == *node_identity.node_id());
         let endpoint = Endpoint::builder()
-            .secret_key(secret_key.clone())
+            .secret_key(node_secret_key.as_ref().clone())
             .discovery_n0()
             .alpns(vec![Echo::ALPN.to_vec(), GOSSIP_ALPN.to_vec()])
             .bind()
@@ -44,9 +48,10 @@ impl MainNode {
             .await?;
         Ok(Self {
             router,
-            secret_key,
+            node_secret_key,
             gossip,
             node_identity,
+            user_secrets,
         })
     }
 
@@ -78,9 +83,9 @@ impl MainNode {
     pub fn join_chat(&self, ticket: &ChatTicket) -> Result<ChatController> {
         join_chat(
             self.gossip.clone(),
-            self.secret_key.clone(),
-            self.nickname(),
+            self.node_secret_key.clone(),
             ticket,
+            self.user_secrets.clone(),
         )
     }
 }

@@ -19,6 +19,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{debug, error, info, warn};
 
+use crate::user_identity::UserIdentitySecrets;
+
 pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(5);
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -72,8 +74,8 @@ impl Ticket for ChatTicket {
 
 #[derive(Debug, Clone)]
 pub struct ChatSender {
-    nickname: Arc<Mutex<String>>,
-    node_secret_key: SecretKey,
+    user_secrets: Arc<UserIdentitySecrets>,
+    node_secret_key: Arc<SecretKey>,
     sender: GossipSender,
     trigger_presence: Arc<Notify>,
     _presence_task: Arc<AbortOnDropHandle<()>>,
@@ -81,16 +83,11 @@ pub struct ChatSender {
 
 impl ChatSender {
     pub async fn send(&self, text: String) -> Result<()> {
-        let nickname = self.nickname.lock().expect("poisened").clone();
+        let nickname = self.user_secrets.user_identity().nickname().to_string();
         let message = ChatMessage::Message { text, nickname };
-        let signed_message = SignedMessage::sign_and_encode(&self.node_secret_key, message)?;
+        let signed_message = SignedMessage::sign_and_encode(&self.node_secret_key.as_ref(), message)?;
         self.sender.broadcast(signed_message.into()).await?;
         Ok(())
-    }
-
-    pub fn set_nickname(&self, name: String) {
-        *self.nickname.lock().expect("poisened") = name;
-        self.trigger_presence.notify_waiters();
     }
 }
 
@@ -225,9 +222,9 @@ pub type ChatEventStream = std::pin::Pin<
 
 pub fn join_chat(
     gossip: Gossip,
-    secret_key: SecretKey,
-    nickname: String,
+    node_secret_key: Arc<SecretKey>,
     ticket: &ChatTicket,
+    user_secrets: Arc<UserIdentitySecrets>,
 ) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
     let bootstrap = ticket.bootstrap.iter().cloned().collect();
@@ -235,23 +232,22 @@ pub fn join_chat(
     let gossip_topic = gossip.subscribe(topic_id, bootstrap)?;
     let (sender, receiver) = gossip_topic.split();
 
-    let nickname = Arc::new(Mutex::new(nickname));
     let trigger_presence = Arc::new(Notify::new());
 
     // We spawn a task that occasionally sens a Presence message with our nickname.
     // This allows to track which peers are online currently.
     let presence_task = AbortOnDropHandle::new(task::spawn({
-        let secret_key = secret_key.clone();
+        let node_secret_key = node_secret_key.clone();
         let sender = sender.clone();
         let trigger_presence = trigger_presence.clone();
-        let nickname = nickname.clone();
 
+        let user_secrets = user_secrets.clone();
         async move {
             loop {
-                let nickname = nickname.lock().expect("poisened").clone();
+                let nickname = user_secrets.user_identity().nickname().to_string();
                 let message = ChatMessage::Presence { nickname };
                 debug!("send presence {message:?}");
-                let signed_message = SignedMessage::sign_and_encode(&secret_key, message)
+                let signed_message = SignedMessage::sign_and_encode(&node_secret_key, message)
                     .expect("failed to encode message");
                 if let Err(err) = sender.broadcast(signed_message.into()).await {
                     tracing::warn!("presence task failed to broadcast: {err}");
@@ -306,11 +302,11 @@ pub fn join_chat(
     });
 
     let sender = ChatSender {
-        node_secret_key: secret_key.clone(),
-        nickname,
+        node_secret_key: node_secret_key.clone(),
         sender,
         trigger_presence,
         _presence_task: Arc::new(presence_task),
+        user_secrets: user_secrets.clone(),
     };
     Ok(ChatControllerRaw {
         sender,
