@@ -33,6 +33,7 @@ wasm-bindgen = "=0.2.100"
 wasm-bindgen-futures = "0.4.50"
 wasm-streams = "0.4.2"
 chrono = "0.4.40"
+pretty-duration = "0.1.1"
 
 
 [features]

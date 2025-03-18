@@ -33,7 +33,7 @@ fn NotFound(x: Vec<String>) -> Element {
 fn NavbarLayout() -> Element {
     rsx! {
         div {
-            class: "container-fluid", 
+            class: "container-fluid",
             style:  "
                 height: 99%;
                 display: flex; 

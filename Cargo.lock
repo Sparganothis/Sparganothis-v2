@@ -845,6 +845,7 @@ dependencies = [
  "getrandom 0.2.15",
  "iroh",
  "n0-future",
+ "pretty-duration",
  "protocol",
  "rand 0.8.5",
  "serde",
@@ -5684,6 +5685,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "925383efa346730478fb4838dbe9137d2a47675ad789c546d150a6e1dd4ab31c"
 
 [[package]]
+name = "pretty-duration"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8868e7264af614b3634ff0abbe37b178e61000611b8a75221aea40221924aba"
+
+[[package]]
 name = "pretty_assertions"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5822,6 +5829,7 @@ dependencies = [
  "anyhow",
  "async-broadcast",
  "async-channel",
+ "chrono",
  "hex",
  "iroh",
  "iroh-base",

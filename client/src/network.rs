@@ -3,7 +3,9 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use iroh::SecretKey;
 use n0_future::StreamExt;
-use protocol::{chat::ChatEvent, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets};
+use protocol::{
+    chat::NetworkEvent, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
+};
 use tracing::warn;
 
 use crate::{comp::modal::ModalArticle, localstorage::LocalStorageContext};
@@ -16,7 +18,6 @@ pub struct NetworkState {
     pub reset_network: Callback<()>,
 }
 
-
 #[component]
 pub fn NetworkConnectionParent(children: Element) -> Element {
     let mut mm_signal = use_signal(move || None);
@@ -27,7 +28,10 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     let _coro = use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
         mm_signal_loading.set(true);
         is_connected.set(false);
-        let user_secrets = use_context::<LocalStorageContext>().user_secrets.peek().clone();
+        let user_secrets = use_context::<LocalStorageContext>()
+            .user_secrets
+            .peek()
+            .clone();
         let mut c = match client_connect(user_secrets.clone()).await {
             Ok(client) => {
                 mm_signal.set(Some(client.clone()));
@@ -80,7 +84,9 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     }
 }
 
-pub async fn client_connect(user_secrets: Arc<UserIdentitySecrets>) -> anyhow::Result<GlobalMatchmaker> {
+pub async fn client_connect(
+    user_secrets: Arc<UserIdentitySecrets>,
+) -> anyhow::Result<GlobalMatchmaker> {
     let global_mm = GlobalMatchmaker::new(user_secrets).await?;
     Ok(global_mm)
 }
@@ -155,7 +161,9 @@ fn NetworkConnectionDebugInfo() -> Element {
             let Some(mm) = mm else {
                 return "No network connection".to_string();
             };
-            mm.display_debug_info().await.unwrap_or_else(|e| e.to_string())
+            mm.display_debug_info()
+                .await
+                .unwrap_or_else(|e| e.to_string())
         }
     });
     rsx! {

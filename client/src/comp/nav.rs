@@ -1,8 +1,8 @@
-use dioxus::prelude::*;
+use crate::constants::*;
 use crate::localstorage::LocalStorageContext;
 use crate::network::NetworkConnectionStatusIcon;
-use crate::constants::*;
 use crate::route::Route;
+use dioxus::prelude::*;
 
 #[component]
 pub fn Nav() -> Element {

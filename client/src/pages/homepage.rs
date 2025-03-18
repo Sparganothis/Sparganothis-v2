@@ -10,7 +10,6 @@ use game::{
 /// Home page
 #[component]
 pub fn Home() -> Element {
-
     let mut game_state = use_signal(GameState::empty);
     let mut pending_actions = use_signal(VecDeque::<TetAction>::new);
     use_interval(Duration::from_secs_f32(0.1), move || {

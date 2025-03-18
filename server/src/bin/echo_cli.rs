@@ -2,12 +2,11 @@ use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use protocol::{
-    chat::ChatEvent,
-    global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
+    chat::{ChatMessage, NetworkChangeEvent, NetworkEvent}, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_stream::StreamExt;
-use tracing:: info;
+use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -45,53 +44,34 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
     println!("* join OK");
 
     let receive = tokio::task::spawn(async move {
-        let mut names = HashMap::new();
         while let Some(event) = receiver.next().await {
-            let event= event?;
+            let event = event?;
             match event {
-                ChatEvent::Joined { neighbors } => {
-                    println!("* swarm joined");
-                    for node_id in neighbors {
-                        println!("* neighbor up: {node_id}")
+                NetworkEvent::NetworkChange { event } =>  match event {
+                    NetworkChangeEvent::Joined { neighbors } => {
+                        println!("* swarm joined {} neighbors", neighbors.len());
                     }
-                }
-                ChatEvent::Presence {
-                    node_id: from,
-                    nickname,
-                    sent_timestamp: _,
-                } => {
-                    let from_short = from.fmt_short();
-                    if !nickname.is_empty() {
-                        let old_name = names.get(&from);
-                        if old_name != Some(&nickname) {
-                            println!("* {from_short} is now known as {nickname}")
-                        }
+                    NetworkChangeEvent::NeighborUp { node_id } => {
+                        println!("* neighbor up: {}", node_id.fmt_short());
                     }
-                    names.insert(from, nickname.to_string());
-                }
-                ChatEvent::MessageReceived {
-                    node_id: from,
-                    text,
-                    nickname,
-                    sent_timestamp: _,
-                } => {
-                    let from_short = from.fmt_short();
-                    if !nickname.is_empty() {
-                        let old_name = names.get(&from);
-                        if old_name != Some(&nickname) {
-                            println!("* {from_short} is now known as {nickname}")
-                        }
+                    NetworkChangeEvent::NeighborDown { node_id } => {
+                        println!("* neighbor down: {}", node_id.fmt_short());
                     }
-                    println!("<{from_short}> {nickname}: {text}");
-                }
-                ChatEvent::NeighborUp { node_id } => {
-                    println!("* neighbor up: {node_id}")
-                }
-                ChatEvent::NeighborDown { node_id } => {
-                    println!("* neighbor down: {node_id}")
-                }
-                ChatEvent::Lagged => {
-                    println!("* warn: gossip stream lagged")
+                    NetworkChangeEvent::Lagged => {
+                        println!("* lagged");
+                    }
+                },
+                NetworkEvent::Message {
+                    event
+                } => match event.message {
+                    ChatMessage::Message { text } => {
+                        let nickname = event.from.nickname();
+                        let node_id = event.from.node_id().fmt_short();
+                        let user_id = event.from.user_id().fmt_short();
+                        
+                        println!("<{user_id}@{node_id}> {nickname}: {text}");
+                    },
+                    _ => ()
                 }
             }
         }

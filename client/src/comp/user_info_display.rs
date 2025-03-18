@@ -28,8 +28,5 @@ pub fn UserInfoDisplay(info: UserIdentity) -> Element {
 
 #[component]
 pub fn UserProfileLink() -> Element {
-    rsx! {
-        
-    }
+    rsx! {}
 }
-

@@ -1,4 +1,3 @@
-
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -10,10 +9,9 @@ use iroh::{
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 
 use crate::{
-    chat::{
-        join_chat, ChatController, ChatTicket
-    },
-    echo::Echo, user_identity::{NodeIdentity, UserIdentitySecrets},
+    chat::{join_chat, ChatController, ChatTicket},
+    echo::Echo,
+    user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]
@@ -21,13 +19,13 @@ pub struct MainNode {
     node_secret_key: Arc<SecretKey>,
     router: Router,
     gossip: Gossip,
-    node_identity: NodeIdentity,
+    node_identity: Arc<NodeIdentity>,
     user_secrets: Arc<UserIdentitySecrets>,
 }
 
 impl MainNode {
     pub async fn spawn(
-        node_identity: NodeIdentity,
+        node_identity: Arc<NodeIdentity>,
         node_secret_key: Arc<SecretKey>,
         own_endpoint_node_id: Option<NodeId>,
         user_secrets: Arc<UserIdentitySecrets>,
@@ -55,8 +53,8 @@ impl MainNode {
         })
     }
 
-    pub fn nickname(&self) -> String {
-        self.node_identity.nickname()
+    pub fn user(&self) -> &NodeIdentity {
+        &self.node_identity
     }
     pub fn endpoint(&self) -> &Endpoint {
         self.router.endpoint()
@@ -69,6 +67,9 @@ impl MainNode {
             .endpoint()
             .remote_info_iter()
             .collect::<Vec<_>>()
+    }
+    pub fn node_identity(&self) -> &NodeIdentity {
+        &self.node_identity
     }
     pub async fn shutdown(&self) -> Result<()> {
         let _ = self.router.shutdown().await;
@@ -86,6 +87,7 @@ impl MainNode {
             self.node_secret_key.clone(),
             ticket,
             self.user_secrets.clone(),
+            self.node_identity.clone(),
         )
     }
 }

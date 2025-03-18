@@ -1,9 +1,7 @@
-use std::{
-    collections::BTreeSet,
-    sync::{Arc, Mutex},
-};
+use std::{collections::BTreeSet, sync::Arc};
 
 use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 pub use iroh::NodeId;
 use iroh::{PublicKey, SecretKey};
 use iroh_base::{ticket::Ticket, Signature};
@@ -19,9 +17,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{debug, error, info, warn};
 
-use crate::user_identity::UserIdentitySecrets;
-
-pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(5);
+use crate::_const::PRESENCE_INTERVAL;
+use crate::user_identity::{NodeIdentity, UserIdentitySecrets};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ChatTicket {
@@ -76,79 +73,70 @@ impl Ticket for ChatTicket {
 pub struct ChatSender {
     user_secrets: Arc<UserIdentitySecrets>,
     node_secret_key: Arc<SecretKey>,
+    node_identity: Arc<NodeIdentity>,
     sender: GossipSender,
-    trigger_presence: Arc<Notify>,
+    _trigger_presence: Arc<Notify>,
     _presence_task: Arc<AbortOnDropHandle<()>>,
 }
 
 impl ChatSender {
     pub async fn send(&self, text: String) -> Result<()> {
-        let nickname = self.user_secrets.user_identity().nickname().to_string();
-        let message = ChatMessage::Message { text, nickname };
-        let signed_message = SignedMessage::sign_and_encode(&self.node_secret_key.as_ref(), message)?;
+        let message = ChatMessage::Message { text };
+        let signed_message = SignedMessage::sign_and_encode(
+            &self.node_secret_key.as_ref(),
+            message,
+            self.node_identity.clone(),
+        )?;
         self.sender.broadcast(signed_message.into()).await?;
         Ok(())
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[serde(tag = "type", rename_all = "camelCase")]
-pub enum ChatEvent {
-    #[serde(rename_all = "camelCase")]
-    Joined {
-        neighbors: Vec<NodeId>,
+pub enum NetworkEvent {
+    Message {
+        event: ReceivedMessage,
     },
-    #[serde(rename_all = "camelCase")]
-    MessageReceived {
-        node_id: NodeId,
-        text: String,
-        nickname: String,
-        sent_timestamp: u64,
+
+    NetworkChange {
+        event: NetworkChangeEvent,
     },
-    #[serde(rename_all = "camelCase")]
-    Presence {
-        node_id: NodeId,
-        nickname: String,
-        sent_timestamp: u64,
-    },
-    #[serde(rename_all = "camelCase")]
-    NeighborUp {
-        node_id: NodeId,
-    },
-    #[serde(rename_all = "camelCase")]
-    NeighborDown {
-        node_id: NodeId,
-    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum NetworkChangeEvent {
+    Joined { neighbors: Vec<NodeId> },
+
+    NeighborUp { node_id: NodeId },
+    NeighborDown { node_id: NodeId },
     Lagged,
 }
 
-impl TryFrom<iroh_gossip::net::Event> for ChatEvent {
+impl TryFrom<iroh_gossip::net::Event> for NetworkEvent {
     type Error = anyhow::Error;
     fn try_from(event: iroh_gossip::net::Event) -> Result<Self, Self::Error> {
         let converted = match event {
             iroh_gossip::net::Event::Gossip(event) => match event {
-                GossipEvent::Joined(neighbors) => Self::Joined { neighbors },
-                GossipEvent::NeighborUp(node_id) => Self::NeighborUp { node_id },
-                GossipEvent::NeighborDown(node_id) => Self::NeighborDown { node_id },
+                GossipEvent::Joined(neighbors) => Self::NetworkChange {
+                    event: NetworkChangeEvent::Joined { neighbors },
+                },
+                GossipEvent::NeighborUp(node_id) => Self::NetworkChange {
+                    event: NetworkChangeEvent::NeighborUp { node_id },
+                },
+                GossipEvent::NeighborDown(node_id) => Self::NetworkChange {
+                    event: NetworkChangeEvent::NeighborDown { node_id },
+                },
                 GossipEvent::Received(message) => {
                     let message = SignedMessage::verify_and_decode(&message.content)
                         .context("failed to parse and verify signed message")?;
-                    match message.message {
-                        ChatMessage::Presence { nickname } => Self::Presence {
-                            node_id: message.from,
-                            nickname,
-                            sent_timestamp: message.timestamp,
-                        },
-                        ChatMessage::Message { text, nickname } => Self::MessageReceived {
-                            node_id: message.from,
-                            text,
-                            nickname,
-                            sent_timestamp: message.timestamp,
-                        },
+                    Self::Message {
+                        event:message,
                     }
                 }
             },
-            iroh_gossip::net::Event::Lagged => Self::Lagged,
+            iroh_gossip::net::Event::Lagged => Self::NetworkChange {
+                event: NetworkChangeEvent::Lagged,
+            },
         };
         Ok(converted)
     }
@@ -167,20 +155,29 @@ impl SignedMessage {
         let key: PublicKey = signed_message.from;
         key.verify(&signed_message.data, &signed_message.signature)?;
         let message: WireMessage = postcard::from_bytes(&signed_message.data)?;
-        let WireMessage::VO { timestamp, message } = message;
+        let WireMessage::VO {
+            timestamp,
+            message,
+            from,
+        } = message;
         Ok(ReceivedMessage {
-            from: signed_message.from,
+            from,
             timestamp,
             message,
         })
     }
 
-    pub fn sign_and_encode(secret_key: &SecretKey, message: ChatMessage) -> Result<Vec<u8>> {
-        let timestamp = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_micros() as u64;
-        let wire_message = WireMessage::VO { timestamp, message };
+    pub fn sign_and_encode(
+        secret_key: &SecretKey,
+        message: ChatMessage,
+        from: Arc<NodeIdentity>,
+    ) -> Result<Vec<u8>> {
+        let timestamp = timestamp_now();
+        let wire_message = WireMessage::VO {
+            timestamp,
+            message,
+            from: from.as_ref().clone(),
+        };
         let data = postcard::to_stdvec(&wire_message)?;
         let signature = secret_key.sign(&data);
         let from: PublicKey = secret_key.public();
@@ -196,25 +193,37 @@ impl SignedMessage {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum WireMessage {
-    VO { timestamp: u64, message: ChatMessage },
+    VO {
+        timestamp: DateTime<Utc>,
+        message: ChatMessage,
+        from: NodeIdentity,
+    },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+pub fn timestamp_now() -> DateTime<Utc> {
+    let timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_micros() as u64;
+    DateTime::<Utc>::from_timestamp_micros(timestamp as i64).unwrap()
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum ChatMessage {
-    Presence { nickname: String },
-    Message { text: String, nickname: String },
+    Presence {  },
+    Message { text: String },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct ReceivedMessage {
-    timestamp: u64,
-    from: NodeId,
-    message: ChatMessage,
+    pub timestamp: DateTime<Utc>,
+    pub from: NodeIdentity,
+    pub message: ChatMessage,
 }
 
 pub type ChatEventStream = std::pin::Pin<
     Box<
-        (dyn tokio_stream::Stream<Item = Result<crate::chat::ChatEvent, anyhow::Error>>
+        (dyn tokio_stream::Stream<Item = Result<crate::chat::NetworkEvent, anyhow::Error>>
              + std::marker::Send
              + 'static),
     >,
@@ -225,6 +234,7 @@ pub fn join_chat(
     node_secret_key: Arc<SecretKey>,
     ticket: &ChatTicket,
     user_secrets: Arc<UserIdentitySecrets>,
+    node_identity: Arc<NodeIdentity>,
 ) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
     let bootstrap = ticket.bootstrap.iter().cloned().collect();
@@ -242,23 +252,25 @@ pub fn join_chat(
         let trigger_presence = trigger_presence.clone();
 
         let user_secrets = user_secrets.clone();
+        let node_identity = node_identity.clone();
         async move {
             loop {
-                let nickname = user_secrets.user_identity().nickname().to_string();
-                let message = ChatMessage::Presence { nickname };
+                let message = ChatMessage::Presence {  };
                 debug!("send presence {message:?}");
-                let signed_message = SignedMessage::sign_and_encode(&node_secret_key, message)
-                    .expect("failed to encode message");
+                let signed_message = SignedMessage::sign_and_encode(
+                    &node_secret_key,
+                    message,
+                    node_identity.clone(),
+                )
+                .expect("failed to encode message");
                 if let Err(err) = sender.broadcast(signed_message.into()).await {
                     tracing::warn!("presence task failed to broadcast: {err}");
                     break;
                 }
-                let wait = PRESENCE_INTERVAL + Duration::from_secs(rand::thread_rng().gen_range(0..3));
-                n0_future::future::race(
-                    n0_future::time::sleep(wait),
-                    trigger_presence.notified(),
-                )
-                .await;
+                let wait =
+                    PRESENCE_INTERVAL + Duration::from_secs(rand::thread_rng().gen_range(0..3));
+                n0_future::future::race(n0_future::time::sleep(wait), trigger_presence.notified())
+                    .await;
             }
         }
     }));
@@ -283,7 +295,7 @@ pub fn join_chat(
                     // Convert into our event type. this fails if we receive a message
                     // that cannot be decoced into our event type. If that is the case,
                     // we just keep and log the error.
-                    let event: ChatEvent = match event.try_into() {
+                    let event: NetworkEvent = match event.try_into() {
                         Ok(event) => event,
                         Err(err) => {
                             warn!("received invalid message: {err}");
@@ -302,16 +314,18 @@ pub fn join_chat(
     });
 
     let sender = ChatSender {
-        node_secret_key: node_secret_key.clone(),
+        node_secret_key,
         sender,
-        trigger_presence,
+        _trigger_presence: trigger_presence,
         _presence_task: Arc::new(presence_task),
-        user_secrets: user_secrets.clone(),
+        user_secrets,
+        node_identity,
     };
     Ok(ChatControllerRaw {
         sender,
         receiver: Box::pin(receiver),
-    }.into())
+    }
+    .into())
 }
 
 #[derive(Clone)]
@@ -323,8 +337,8 @@ impl ChatController {
     pub fn sender(&self) -> ChatSender {
         self.inner.sender.clone()
     }
-    pub fn receiver(&self) ->  ChatEventReceiver {
-        self.inner.receiver.clone()
+    pub fn receiver(&self) -> ChatEventReceiver {
+        self.inner.receiver.activate_cloned()
     }
     pub async fn shutdown(&self) -> Result<()> {
         self.inner.receiver.close();
@@ -355,12 +369,12 @@ impl std::fmt::Display for ChatEventStreamError {
 
 impl std::error::Error for ChatEventStreamError {}
 
-
-pub type ChatEventReceiver = async_broadcast::Receiver<Result<ChatEvent,   ChatEventStreamError>>;
-
+pub type ChatEventReceiver = async_broadcast::Receiver<Result<NetworkEvent, ChatEventStreamError>>;
+pub type ChatEventReceiverInactive =
+    async_broadcast::InactiveReceiver<Result<NetworkEvent, ChatEventStreamError>>;
 struct ChatControllerInner {
     sender: ChatSender,
-    receiver: ChatEventReceiver,
+    receiver: ChatEventReceiverInactive,
     _recv_broadcast_task: AbortOnDropHandle<()>,
 }
 
@@ -369,11 +383,13 @@ struct ChatControllerRaw {
     pub receiver: ChatEventStream,
 }
 
-
 impl Into<ChatController> for ChatControllerRaw {
     fn into(self) -> ChatController {
-        let ChatControllerRaw { sender, mut receiver } = self;
-        let ( mut b_sender, b_recv) = async_broadcast::broadcast(1);
+        let ChatControllerRaw {
+            sender,
+            mut receiver,
+        } = self;
+        let (mut b_sender, b_recv) = async_broadcast::broadcast(128);
         b_sender.set_overflow(true);
         let task = AbortOnDropHandle::new(task::spawn(async move {
             while let Some(event) = receiver.next().await {
@@ -388,7 +404,7 @@ impl Into<ChatController> for ChatControllerRaw {
         ChatController {
             inner: Arc::new(ChatControllerInner {
                 sender,
-                receiver: b_recv,
+                receiver: b_recv.deactivate(),
                 _recv_broadcast_task: task,
             }),
         }
