@@ -4,7 +4,8 @@ use dioxus::prelude::*;
 use iroh::SecretKey;
 use n0_future::StreamExt;
 use protocol::{
-    chat::NetworkEvent, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
+    chat::NetworkEvent, global_matchmaker::GlobalMatchmaker,
+    user_identity::UserIdentitySecrets,
 };
 use tracing::warn;
 
@@ -25,37 +26,15 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     let mut is_connected = use_signal(move || false);
     let mm_signal_ = mm_signal.clone();
 
-    let _coro = use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
-        mm_signal_loading.set(true);
-        is_connected.set(false);
-        let user_secrets = use_context::<LocalStorageContext>()
-            .user_secrets
-            .peek()
-            .clone();
-        let mut c = match client_connect(user_secrets.clone()).await {
-            Ok(client) => {
-                mm_signal.set(Some(client.clone()));
-                is_connected.set(true);
-                Some(client)
-            }
-            Err(e) => {
-                warn!("Failed to connect to global matchmaker: {e}");
-                None
-            }
-        };
-        mm_signal_loading.set(false);
-
-        while let Some(_x) = m_b.next().await {
-            mm_signal.set(None);
+    let _coro =
+        use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
             mm_signal_loading.set(true);
             is_connected.set(false);
-            if let Some(client) = c.take() {
-                if let Err(e) = client.shutdown().await {
-                    warn!("Failed to shutdown global matchmaker: {e}");
-                }
-                drop(client);
-            }
-            c = match client_connect(user_secrets.clone()).await {
+            let user_secrets = use_context::<LocalStorageContext>()
+                .user_secrets
+                .peek()
+                .clone();
+            let mut c = match client_connect(user_secrets.clone()).await {
                 Ok(client) => {
                     mm_signal.set(Some(client.clone()));
                     is_connected.set(true);
@@ -67,8 +46,31 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 }
             };
             mm_signal_loading.set(false);
-        }
-    });
+
+            while let Some(_x) = m_b.next().await {
+                mm_signal.set(None);
+                mm_signal_loading.set(true);
+                is_connected.set(false);
+                if let Some(client) = c.take() {
+                    if let Err(e) = client.shutdown().await {
+                        warn!("Failed to shutdown global matchmaker: {e}");
+                    }
+                    drop(client);
+                }
+                c = match client_connect(user_secrets.clone()).await {
+                    Ok(client) => {
+                        mm_signal.set(Some(client.clone()));
+                        is_connected.set(true);
+                        Some(client)
+                    }
+                    Err(e) => {
+                        warn!("Failed to connect to global matchmaker: {e}");
+                        None
+                    }
+                };
+                mm_signal_loading.set(false);
+            }
+        });
     let reset_network = Callback::new(move |_: ()| {
         _coro.send(());
     });

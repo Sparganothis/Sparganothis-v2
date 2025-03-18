@@ -2,7 +2,9 @@ use std::{collections::HashMap, sync::Arc};
 
 use anyhow::Result;
 use protocol::{
-    chat::{ChatMessage, NetworkChangeEvent, NetworkEvent}, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
+    chat::{ChatMessage, NetworkChangeEvent, NetworkEvent},
+    global_matchmaker::GlobalMatchmaker,
+    user_identity::UserIdentitySecrets,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio_stream::StreamExt;
@@ -47,9 +49,12 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
         while let Some(event) = receiver.next().await {
             let event = event?;
             match event {
-                NetworkEvent::NetworkChange { event } =>  match event {
+                NetworkEvent::NetworkChange { event } => match event {
                     NetworkChangeEvent::Joined { neighbors } => {
-                        println!("* swarm joined {} neighbors", neighbors.len());
+                        println!(
+                            "* swarm joined {} neighbors",
+                            neighbors.len()
+                        );
                     }
                     NetworkChangeEvent::NeighborUp { node_id } => {
                         println!("* neighbor up: {}", node_id.fmt_short());
@@ -61,18 +66,16 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                         println!("* lagged");
                     }
                 },
-                NetworkEvent::Message {
-                    event
-                } => match event.message {
+                NetworkEvent::Message { event } => match event.message {
                     ChatMessage::Message { text } => {
                         let nickname = event.from.nickname();
                         let node_id = event.from.node_id().fmt_short();
                         let user_id = event.from.user_id().fmt_short();
-                        
+
                         println!("<{user_id}@{node_id}> {nickname}: {text}");
-                    },
-                    _ => ()
-                }
+                    }
+                    _ => (),
+                },
             }
         }
         println!("* closed");

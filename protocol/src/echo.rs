@@ -48,12 +48,20 @@ impl Echo {
         let (mut send, mut recv) = connection.accept_bi().await?;
 
         let mut recv_buf = vec![0; 32];
-        n0_future::time::timeout(CONNECT_TIMEOUT, recv.read_exact(&mut recv_buf)).await??;
+        n0_future::time::timeout(
+            CONNECT_TIMEOUT,
+            recv.read_exact(&mut recv_buf),
+        )
+        .await??;
         if recv_buf != connection.remote_node_id()?.as_bytes().to_vec() {
             return Err(anyhow::anyhow!("Invalid node id"));
         }
 
-        n0_future::time::timeout(CONNECT_TIMEOUT, send.write_all(&response_own_node_id)).await??;
+        n0_future::time::timeout(
+            CONNECT_TIMEOUT,
+            send.write_all(&response_own_node_id),
+        )
+        .await??;
 
         // By calling `finish` on the send stream we signal that we will not send anything
         // further, which makes the receive stream on the other end terminate.

@@ -38,7 +38,8 @@ impl MainNode {
             .bind()
             .await?;
         let gossip = Gossip::builder().spawn(endpoint.clone()).await?;
-        let echo = Echo::new(own_endpoint_node_id.unwrap_or(endpoint.node_id()));
+        let echo =
+            Echo::new(own_endpoint_node_id.unwrap_or(endpoint.node_id()));
         let router = Router::builder(endpoint)
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())

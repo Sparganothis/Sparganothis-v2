@@ -188,7 +188,9 @@ fn GameBoardDisplayHoldGrid(game_state: ReadOnlySignal<GameState>) -> Element {
 }
 
 #[component]
-fn BoardGrid<const R: usize, const C: usize>(board: ReadOnlySignal<BoardMatrix<R, C>>) -> Element {
+fn BoardGrid<const R: usize, const C: usize>(
+    board: ReadOnlySignal<BoardMatrix<R, C>>,
+) -> Element {
     let column_count = C as i8;
     let row_count = (R as i8).min(20);
     rsx! {
@@ -233,7 +235,11 @@ fn BoardGridCell<const R: usize, const C: usize>(
 }
 
 #[component]
-fn GameBoardGridParent(column_count: i8, row_count: i8, children: Element) -> Element {
+fn GameBoardGridParent(
+    column_count: i8,
+    row_count: i8,
+    children: Element,
+) -> Element {
     rsx! {
         div { style: "
                 position: relative;

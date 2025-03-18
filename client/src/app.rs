@@ -1,6 +1,6 @@
 use crate::{
-    constants::APP_TITLE, localstorage::LocalStorageParent, network::NetworkConnectionParent,
-    route::Route,
+    constants::APP_TITLE, localstorage::LocalStorageParent,
+    network::NetworkConnectionParent, route::Route,
 };
 use dioxus::prelude::*;
 

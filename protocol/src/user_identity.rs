@@ -24,7 +24,8 @@ pub struct UserIdentitySecrets {
 impl PartialEq for UserIdentitySecrets {
     fn eq(&self, other: &Self) -> bool {
         self.user_identity == other.user_identity
-            && self._user_private_key.public() == other._user_private_key.public()
+            && self._user_private_key.public()
+                == other._user_private_key.public()
     }
 }
 
@@ -35,7 +36,8 @@ impl UserIdentitySecrets {
     pub fn generate() -> Self {
         let _user_private_key = SecretKey::generate(rand::thread_rng());
         let user_id = _user_private_key.public();
-        let user_nickname = crate::_random_word::get_nickname_from_pubkey(user_id.clone());
+        let user_nickname =
+            crate::_random_word::get_nickname_from_pubkey(user_id.clone());
         let user_identity = UserIdentity {
             user_id,
             user_nickname,

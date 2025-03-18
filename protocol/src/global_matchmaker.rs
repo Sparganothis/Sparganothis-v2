@@ -40,7 +40,8 @@ struct GlobalMatchmakerInner {
 
 impl PartialEq for GlobalMatchmaker {
     fn eq(&self, other: &Self) -> bool {
-        self.user_secrets == other.user_secrets && self.own_public_key == other.own_public_key
+        self.user_secrets == other.user_secrets
+            && self.own_public_key == other.own_public_key
     }
 }
 
@@ -96,7 +97,8 @@ impl GlobalMatchmaker {
         self.inner.lock().await.global_chat_controller.clone()
     }
     pub async fn display_debug_info(&self) -> Result<String> {
-        let user_nickname = self.user_secrets().user_identity().nickname().to_string();
+        let user_nickname =
+            self.user_secrets().user_identity().nickname().to_string();
         let user_id = self.user_secrets().user_identity().user_id().to_string();
 
         let endpoint = self
@@ -110,7 +112,8 @@ impl GlobalMatchmaker {
         info_txt.push_str(&format!("User Nickname: {user_nickname}\n"));
         info_txt.push_str(&format!("User ID: {user_id}\n"));
         info_txt.push_str(&format!("Own Endpoint NodeID: \n{endpoint:#?}\n\n"));
-        info_txt.push_str(&format!("Own Bootstrap NodeID: \n{bs_endpoint:#?}\n\n"));
+        info_txt
+            .push_str(&format!("Own Bootstrap NodeID: \n{bs_endpoint:#?}\n\n"));
         info_txt.push_str(&format!("Known Bootstrap Nodes: \n{bs:#?}\n\n"));
         Ok(info_txt)
     }
@@ -133,8 +136,11 @@ impl GlobalMatchmaker {
             })),
         };
 
-        let node_identity =
-            NodeIdentity::new(user.user_identity().clone(), own_private_key.public(), None);
+        let node_identity = NodeIdentity::new(
+            user.user_identity().clone(),
+            own_private_key.public(),
+            None,
+        );
         let own_endpoint = MainNode::spawn(
             Arc::new(node_identity),
             own_private_key.clone(),
@@ -199,11 +205,19 @@ impl GlobalMatchmaker {
         self.own_private_key.clone()
     }
 
-    pub async fn new(user_identity_secrets: Arc<UserIdentitySecrets>) -> Result<Self> {
-        let own_private_key = Arc::new(SecretKey::generate(&mut rand::thread_rng()));
+    pub async fn new(
+        user_identity_secrets: Arc<UserIdentitySecrets>,
+    ) -> Result<Self> {
+        let own_private_key =
+            Arc::new(SecretKey::generate(&mut rand::thread_rng()));
         let num = 3;
         for i in 0..num {
-            match Self::new_try_once(own_private_key.clone(), user_identity_secrets.clone()).await {
+            match Self::new_try_once(
+                own_private_key.clone(),
+                user_identity_secrets.clone(),
+            )
+            .await
+            {
                 Ok(mm) => {
                     return Ok(mm);
                 }
@@ -235,8 +249,9 @@ impl GlobalMatchmaker {
 
         mm.connect_global_chats().await?;
 
-        let periodic_task =
-            AbortOnDropHandle::new(n0_future::task::spawn(global_periodic_task(mm.clone())));
+        let periodic_task = AbortOnDropHandle::new(n0_future::task::spawn(
+            global_periodic_task(mm.clone()),
+        ));
         {
             mm.inner.lock().await._periodic_task = Some(periodic_task);
         }
@@ -278,24 +293,30 @@ impl GlobalMatchmaker {
         let controller = node2.join_chat(&ticket)?;
         let sender = controller.sender();
         let mut receiver = controller.receiver();
-        let _task = AbortOnDropHandle::new(n0_future::task::spawn(async move {
-            match sender.send("Hello, world!".to_string()).await {
-                Ok(_) => {
-                    info!("BOOTSTRAP: sent hello world OK");
+        let _task =
+            AbortOnDropHandle::new(n0_future::task::spawn(async move {
+                match sender.send("Hello, world!".to_string()).await {
+                    Ok(_) => {
+                        info!("BOOTSTRAP: sent hello world OK");
+                    }
+                    Err(e) => {
+                        warn!("BOOTSTRAP: failed to send hello world: {e}");
+                    }
                 }
-                Err(e) => {
-                    warn!("BOOTSTRAP: failed to send hello world: {e}");
+                let mut i = 0;
+                while let Some(event) = receiver.next().await {
+                    i += 1;
+                    if i % 666 == 0 {
+                        info!("BOOTSTRAP: global chat event: {event:?}");
+                        let _ = sender
+                            .send(format!(
+                                "Bootstrap here after {} messages.",
+                                i
+                            ))
+                            .await;
+                    }
                 }
-            }
-            let mut i = 0;
-            while let Some(event) = receiver.next().await {
-                i += 1;
-                if i % 666 == 0 {
-                    info!("BOOTSTRAP: global chat event: {event:?}");
-                    let _ = sender.send(format!("Bootstrap here after {} messages.", i)).await;
-                }
-            }
-        }));
+            }));
         {
             let mut i = self.inner.lock().await;
             i.bs_global_chat_controller = Some(controller);
@@ -305,7 +326,9 @@ impl GlobalMatchmaker {
         Ok(())
     }
 
-    pub async fn known_bootstrap_nodes(&self) -> BTreeMap<usize, BootstrapNodeInfo> {
+    pub async fn known_bootstrap_nodes(
+        &self,
+    ) -> BTreeMap<usize, BootstrapNodeInfo> {
         self.inner.lock().await.known_bootstrap_nodes.clone()
     }
 
@@ -330,7 +353,8 @@ impl GlobalMatchmaker {
                     .cloned()
                     .collect::<HashSet<_>>()
             };
-            let free_bs_idx = all_bs_idx.difference(&present_bs_idx).collect::<Vec<_>>();
+            let free_bs_idx =
+                all_bs_idx.difference(&present_bs_idx).collect::<Vec<_>>();
             if free_bs_idx.is_empty() {
                 // info!("no free bootstrap idx, exiting.");
                 return Ok(false);
@@ -339,7 +363,8 @@ impl GlobalMatchmaker {
             *free_bs_idx[rand]
         };
         info!("Spawning new bootstrap endpoint #{boostrap_idx}");
-        let bootstrap_key = SecretKey::from_bytes(&BOOTSTRAP_SECRET_KEYS[boostrap_idx]);
+        let bootstrap_key =
+            SecretKey::from_bytes(&BOOTSTRAP_SECRET_KEYS[boostrap_idx]);
 
         let node_identity = NodeIdentity::new(
             self.user_identity(),
@@ -445,7 +470,8 @@ impl GlobalMatchmaker {
             match res {
                 Ok(info) => {
                     let mut inner = self.inner.lock().await;
-                    let _r = inner.known_bootstrap_nodes.insert(info.bs_idx, info);
+                    let _r =
+                        inner.known_bootstrap_nodes.insert(info.bs_idx, info);
                     if _r.is_none() {
                         info!("added connection to bootstrap node #{i}");
                     }
@@ -474,8 +500,8 @@ const GLOBAL_PERIODIC_TASK_INTERVAL: Duration = Duration::from_secs(5);
 
 async fn global_periodic_task(_mm: GlobalMatchmaker) {
     loop {
-        let interval =
-            GLOBAL_PERIODIC_TASK_INTERVAL + Duration::from_secs(rand::thread_rng().gen_range(0..5));
+        let interval = GLOBAL_PERIODIC_TASK_INTERVAL
+            + Duration::from_secs(rand::thread_rng().gen_range(0..5));
         n0_future::time::sleep(interval).await;
         match global_periodic_task_iteration_1(_mm.clone()).await {
             Ok(_) => {}
@@ -483,8 +509,8 @@ async fn global_periodic_task(_mm: GlobalMatchmaker) {
                 warn!("global periodic task iteration 1 failed: {e}");
             }
         }
-        let interval =
-            GLOBAL_PERIODIC_TASK_INTERVAL + Duration::from_secs(rand::thread_rng().gen_range(0..5));
+        let interval = GLOBAL_PERIODIC_TASK_INTERVAL
+            + Duration::from_secs(rand::thread_rng().gen_range(0..5));
         n0_future::time::sleep(interval).await;
         match global_periodic_task_iteration_2(_mm.clone()).await {
             Ok(_) => {}

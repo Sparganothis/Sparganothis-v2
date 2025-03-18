@@ -94,13 +94,9 @@ impl ChatSender {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum NetworkEvent {
-    Message {
-        event: ReceivedMessage,
-    },
+    Message { event: ReceivedMessage },
 
-    NetworkChange {
-        event: NetworkChangeEvent,
-    },
+    NetworkChange { event: NetworkChangeEvent },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -127,11 +123,12 @@ impl TryFrom<iroh_gossip::net::Event> for NetworkEvent {
                     event: NetworkChangeEvent::NeighborDown { node_id },
                 },
                 GossipEvent::Received(message) => {
-                    let message = SignedMessage::verify_and_decode(&message.content)
-                        .context("failed to parse and verify signed message")?;
-                    Self::Message {
-                        event:message,
-                    }
+                    let message =
+                        SignedMessage::verify_and_decode(&message.content)
+                            .context(
+                                "failed to parse and verify signed message",
+                            )?;
+                    Self::Message { event: message }
                 }
             },
             iroh_gossip::net::Event::Lagged => Self::NetworkChange {
@@ -210,7 +207,7 @@ pub fn timestamp_now() -> DateTime<Utc> {
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum ChatMessage {
-    Presence {  },
+    Presence {},
     Message { text: String },
 }
 
@@ -223,8 +220,9 @@ pub struct ReceivedMessage {
 
 pub type ChatEventStream = std::pin::Pin<
     Box<
-        (dyn tokio_stream::Stream<Item = Result<crate::chat::NetworkEvent, anyhow::Error>>
-             + std::marker::Send
+        (dyn tokio_stream::Stream<
+            Item = Result<crate::chat::NetworkEvent, anyhow::Error>,
+        > + std::marker::Send
              + 'static),
     >,
 >;
@@ -255,7 +253,7 @@ pub fn join_chat(
         let node_identity = node_identity.clone();
         async move {
             loop {
-                let message = ChatMessage::Presence {  };
+                let message = ChatMessage::Presence {};
                 debug!("send presence {message:?}");
                 let signed_message = SignedMessage::sign_and_encode(
                     &node_secret_key,
@@ -263,14 +261,18 @@ pub fn join_chat(
                     node_identity.clone(),
                 )
                 .expect("failed to encode message");
-                if let Err(err) = sender.broadcast(signed_message.into()).await {
+                if let Err(err) = sender.broadcast(signed_message.into()).await
+                {
                     tracing::warn!("presence task failed to broadcast: {err}");
                     break;
                 }
-                let wait =
-                    PRESENCE_INTERVAL + Duration::from_secs(rand::thread_rng().gen_range(0..3));
-                n0_future::future::race(n0_future::time::sleep(wait), trigger_presence.notified())
-                    .await;
+                let wait = PRESENCE_INTERVAL
+                    + Duration::from_secs(rand::thread_rng().gen_range(0..3));
+                n0_future::future::race(
+                    n0_future::time::sleep(wait),
+                    trigger_presence.notified(),
+                )
+                .await;
             }
         }
     }));
@@ -369,9 +371,11 @@ impl std::fmt::Display for ChatEventStreamError {
 
 impl std::error::Error for ChatEventStreamError {}
 
-pub type ChatEventReceiver = async_broadcast::Receiver<Result<NetworkEvent, ChatEventStreamError>>;
-pub type ChatEventReceiverInactive =
-    async_broadcast::InactiveReceiver<Result<NetworkEvent, ChatEventStreamError>>;
+pub type ChatEventReceiver =
+    async_broadcast::Receiver<Result<NetworkEvent, ChatEventStreamError>>;
+pub type ChatEventReceiverInactive = async_broadcast::InactiveReceiver<
+    Result<NetworkEvent, ChatEventStreamError>,
+>;
 struct ChatControllerInner {
     sender: ChatSender,
     receiver: ChatEventReceiverInactive,
@@ -393,7 +397,8 @@ impl Into<ChatController> for ChatControllerRaw {
         b_sender.set_overflow(true);
         let task = AbortOnDropHandle::new(task::spawn(async move {
             while let Some(event) = receiver.next().await {
-                let event = event.map_err(|e| ChatEventStreamError(Arc::new(e)));
+                let event =
+                    event.map_err(|e| ChatEventStreamError(Arc::new(e)));
                 let _r = b_sender.broadcast(event).await;
                 if let Err(err) = _r {
                     error!("chat controller raw receiver stream error: {err}");

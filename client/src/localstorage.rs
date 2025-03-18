@@ -11,10 +11,11 @@ pub struct LocalStorageContext {
 
 #[component]
 pub fn LocalStorageParent(children: Element) -> Element {
-    let user_secrets = use_synced_storage::<LocalStorage, Arc<UserIdentitySecrets>>(
-        "user_secrets2".to_string(),
-        || Arc::new(UserIdentitySecrets::generate()),
-    );
+    let user_secrets =
+        use_synced_storage::<LocalStorage, Arc<UserIdentitySecrets>>(
+            "user_secrets2".to_string(),
+            || Arc::new(UserIdentitySecrets::generate()),
+        );
     use_context_provider(move || LocalStorageContext { user_secrets });
 
     children

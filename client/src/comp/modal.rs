@@ -1,6 +1,10 @@
 use dioxus::prelude::*;
 #[component]
-pub fn ModalArticle(on_close: Callback<()>, title: Element, body: Element) -> Element {
+pub fn ModalArticle(
+    on_close: Callback<()>,
+    title: Element,
+    body: Element,
+) -> Element {
     rsx! {
         dialog {
             open: true,

@@ -7,7 +7,9 @@ use dioxus::prelude::*;
 #[component]
 pub fn Nav() -> Element {
     let my_nickname = use_context::<LocalStorageContext>().user_secrets;
-    let my_nickname = use_memo(move || my_nickname.read().user_identity().nickname().to_string());
+    let my_nickname = use_memo(move || {
+        my_nickname.read().user_identity().nickname().to_string()
+    });
     rsx! {
         nav {
             ul {
