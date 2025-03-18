@@ -1,7 +1,7 @@
 #!/bin/bash
 set -ex
 export RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
-# dx build --package client --release
+dx build --package client --release
 
 rm -rf ./dist || true
 mkdir -p dist

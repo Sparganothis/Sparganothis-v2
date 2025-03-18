@@ -214,7 +214,8 @@ fn ChatHistoryDisplay(history: ReadOnlySignal<ChatHistory>) -> Element {
             article {
                 style: "
                     height: 100%;
-                    overflow: scroll;
+                    overflow-y: auto;
+                    overflow-x: hidden;
                 ",
                 for message in history.read().messages.iter() {
                     ChatMessageOrErrorDisplay { message: message.clone() }
