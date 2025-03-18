@@ -4,9 +4,9 @@
 name = "client"
 
 [web.app]
-
+base_path = "Sparganothis-v2"
 # HTML title tag content
-title = "client"
+title = "Sparganothis-v2"
 
 # include `assets` in web platform
 [web.resource]
