@@ -1,10 +1,12 @@
-use std::{collections::BTreeMap, sync::Arc};
 use iroh::NodeId;
 use n0_future::time::Instant;
+use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::RwLock;
 
-use crate::{_const::{PRESENCE_EXPIRATION, PRESENCE_IDLE}, user_identity::NodeIdentity};
-
+use crate::{
+    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
+    user_identity::NodeIdentity,
+};
 
 #[derive(Clone, Debug)]
 pub struct ChatPresence {
@@ -15,7 +17,7 @@ pub struct ChatPresence {
 pub enum PresenceFlag {
     ACTIVE,
     IDLE,
-    EXPIRED
+    EXPIRED,
 }
 
 impl PresenceFlag {
@@ -38,11 +40,14 @@ impl ChatPresence {
             presence: Arc::new(RwLock::new(ChatPresenceData::default())),
         }
     }
-    pub async fn add_presence(& self, identity: NodeIdentity) {
-        self.presence.write().await.map
+    pub async fn add_presence(&self, identity: NodeIdentity) {
+        self.presence
+            .write()
+            .await
+            .map
             .insert(identity.node_id().clone(), (Instant::now(), identity));
     }
-    pub async fn remove_expired(& self) {
+    pub async fn remove_expired(&self) {
         let now = Instant::now();
         self.presence.write().await.map.retain(|_, (last_seen, _)| {
             now.duration_since(*last_seen) < PRESENCE_EXPIRATION
@@ -57,9 +62,11 @@ impl ChatPresence {
                 _userid.nickname().to_string(),
             )
         });
-        p.into_iter().map(|(_node_id, (last_seen, identity))| {
-            (PresenceFlag::from_instant(last_seen), last_seen, identity)
-        }).collect()
+        p.into_iter()
+            .map(|(_node_id, (last_seen, identity))| {
+                (PresenceFlag::from_instant(last_seen), last_seen, identity)
+            })
+            .collect()
     }
 }
 

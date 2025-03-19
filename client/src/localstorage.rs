@@ -17,7 +17,8 @@ pub fn LocalStorageParent(children: Element) -> Element {
             "user_secrets_3".to_string(),
             || Arc::new(UserIdentitySecrets::generate()),
         );
-    let user_secrets: ReadOnlySignal<Arc<UserIdentitySecrets>> = use_memo(move || user_secrets.read().clone()).into();
+    let user_secrets: ReadOnlySignal<Arc<UserIdentitySecrets>> =
+        use_memo(move || user_secrets.read().clone()).into();
     use_effect(move || {
         info!("REFRESH user_secrets: {:#?}", user_secrets.read());
     });

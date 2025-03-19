@@ -10,7 +10,10 @@ use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 use tracing::info;
 
 use crate::{
-    chat::{join_chat, ChatController, ChatTicket}, echo::Echo, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentitySecrets}
+    chat::{join_chat, ChatController, ChatTicket},
+    echo::Echo,
+    sleep::SleepManager,
+    user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]
@@ -39,8 +42,10 @@ impl MainNode {
             .bind()
             .await?;
         let gossip = Gossip::builder().spawn(endpoint.clone()).await?;
-        let echo =
-            Echo::new(own_endpoint_node_id.unwrap_or(endpoint.node_id()), sleep_manager.clone());
+        let echo = Echo::new(
+            own_endpoint_node_id.unwrap_or(endpoint.node_id()),
+            sleep_manager.clone(),
+        );
         let router = Router::builder(endpoint)
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())

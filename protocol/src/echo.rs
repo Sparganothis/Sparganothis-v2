@@ -13,7 +13,10 @@ pub struct Echo {
 
 impl Echo {
     pub const ALPN: &[u8] = b"sparganothis/global-matchmaker-echo/0";
-    pub fn new(own_endpoint_node_id: NodeId, sleep_manager: SleepManager) -> Self {
+    pub fn new(
+        own_endpoint_node_id: NodeId,
+        sleep_manager: SleepManager,
+    ) -> Self {
         Self {
             own_endpoint_node_id,
             sleep_manager,

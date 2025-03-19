@@ -12,7 +12,19 @@ use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
 use crate::{
-    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _const::{CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL, PRESENCE_INTERVAL}, chat::{ChatController, ChatMessage, ChatTicket, NetworkEvent, ReceivedMessage}, chat_presence::{ChatPresence, PresenceList}, echo::Echo, main_node::MainNode, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets}
+    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
+    _const::{
+        CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
+        PRESENCE_INTERVAL,
+    },
+    chat::{
+        ChatController, ChatMessage, ChatTicket, NetworkEvent, ReceivedMessage,
+    },
+    chat_presence::{ChatPresence, PresenceList},
+    echo::Echo,
+    main_node::MainNode,
+    sleep::SleepManager,
+    user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]
@@ -293,23 +305,33 @@ impl GlobalMatchmaker {
         let presence_ = self.chat_presence.clone();
         let c1_ = c1.clone();
         let sleep_ = self.sleep_manager.clone();
-        let _task1 = AbortOnDropHandle::new(n0_future::task::spawn(async move {
-            while let Some(Ok(event)) = c1_.receiver().next().await {
-                sleep_.wake_up();
-                if let NetworkEvent::Message { event: ReceivedMessage { message: ChatMessage::Presence {}, from, .. } } = event {
-                    presence_.add_presence(from).await;
+        let _task1 =
+            AbortOnDropHandle::new(n0_future::task::spawn(async move {
+                while let Some(Ok(event)) = c1_.receiver().next().await {
+                    sleep_.wake_up();
+                    if let NetworkEvent::Message {
+                        event:
+                            ReceivedMessage {
+                                message: ChatMessage::Presence {},
+                                from,
+                                ..
+                            },
+                    } = event
+                    {
+                        presence_.add_presence(from).await;
+                    }
+                    sleep_.sleep(Duration::from_millis(7)).await;
                 }
-                sleep_.sleep(Duration::from_millis(7)).await;
-            }
-        }));
+            }));
         let presence_ = self.chat_presence.clone();
         let sleep_ = self.sleep_manager.clone();
-        let _task2 = AbortOnDropHandle::new(n0_future::task::spawn(async move {
-            loop {
-                sleep_.sleep(PRESENCE_INTERVAL).await;
-                presence_.remove_expired().await;
-            }
-        }));
+        let _task2 =
+            AbortOnDropHandle::new(n0_future::task::spawn(async move {
+                loop {
+                    sleep_.sleep(PRESENCE_INTERVAL).await;
+                    presence_.remove_expired().await;
+                }
+            }));
         {
             let mut i = self.inner.lock().await;
             i.global_chat_controller = Some(c1);
@@ -532,7 +554,6 @@ impl GlobalMatchmaker {
         Ok(())
     }
 }
-
 
 async fn global_periodic_task(_mm: GlobalMatchmaker) {
     let mut fail = 0;

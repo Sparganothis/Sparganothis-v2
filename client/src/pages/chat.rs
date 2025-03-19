@@ -5,10 +5,14 @@ use dioxus::prelude::*;
 use iroh::{NodeId, PublicKey};
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL, chat::{
-        timestamp_now, ChatController, ChatMessage,
-        NetworkEvent, ReceivedMessage,
-    }, chat_presence::PresenceFlag, global_matchmaker::GlobalMatchmaker, user_identity::NodeIdentity
+    _const::PRESENCE_INTERVAL,
+    chat::{
+        timestamp_now, ChatController, ChatMessage, NetworkEvent,
+        ReceivedMessage,
+    },
+    chat_presence::PresenceFlag,
+    global_matchmaker::GlobalMatchmaker,
+    user_identity::NodeIdentity,
 };
 use tracing::warn;
 
@@ -46,9 +50,7 @@ fn ChatRoom(chat: ReadOnlySignal<Option<Option<ChatController>>>) -> Element {
                 let t: Result<ReceivedMessage, String> = match event {
                     Ok(NetworkEvent::Message { event }) => {
                         match event.message {
-                            ChatMessage::Message { ..} => {
-                                Ok(event)
-                            }
+                            ChatMessage::Message { .. } => Ok(event),
                             _ => continue,
                         }
                     }
@@ -105,7 +107,6 @@ struct ChatHistory {
     pub messages: Vec<Result<ReceivedMessage, String>>,
 }
 
-
 #[component]
 fn ChatPresenceDisplay() -> Element {
     let presence = use_context::<NetworkState>().global_presence_list;
@@ -151,7 +152,8 @@ fn ChatPresenceDisplayItem(
                 let wait = 1 + elapsed / 10;
                 mm.sleep(Duration::from_secs(wait)).await;
             }
-    }});
+        }
+    });
     let identity = identity.read().clone();
     let color = match presence_flag.read().clone() {
         PresenceFlag::ACTIVE => "darkgreen",
@@ -249,14 +251,14 @@ fn ChatMessageDisplay(message: ReceivedMessage, user_id: PublicKey) -> Element {
             };
             loop {
                 let elapsed = (1 + timestamp_now().timestamp()
-                - timestamp.timestamp())
-            .abs() as u64;
-            let elapsed_txt = pretty_duration::pretty_duration(
-                &Duration::from_secs(elapsed),
-                None,
-            );
-            last_seen_txt.set(format!("{} ago", elapsed_txt));
-            let wait = 1 + elapsed / 10;
+                    - timestamp.timestamp())
+                .abs() as u64;
+                let elapsed_txt = pretty_duration::pretty_duration(
+                    &Duration::from_secs(elapsed),
+                    None,
+                );
+                last_seen_txt.set(format!("{} ago", elapsed_txt));
+                let wait = 1 + elapsed / 10;
                 mm.sleep(Duration::from_secs(wait)).await;
             }
         }

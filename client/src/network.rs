@@ -3,7 +3,8 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL, chat_presence::PresenceList, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets
+    _const::PRESENCE_INTERVAL, chat_presence::PresenceList,
+    global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
 };
 use tracing::warn;
 
@@ -24,7 +25,8 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     let mm_signal = use_memo(move || mm_signal_w.read().clone());
 
     let mut mm_signal_loading_w = use_signal(move || false);
-    let mm_signal_loading = use_memo(move || mm_signal_loading_w.read().clone());
+    let mm_signal_loading =
+        use_memo(move || mm_signal_loading_w.read().clone());
 
     let mut is_connected_w = use_signal(move || false);
     let is_connected = use_memo(move || is_connected_w.read().clone());
@@ -87,7 +89,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 return;
             };
             loop {
-                mm.sleep(PRESENCE_INTERVAL/2).await;
+                mm.sleep(PRESENCE_INTERVAL / 2).await;
                 let presence_list = mm.get_presence().await;
                 presence_list_w.set(presence_list);
             }

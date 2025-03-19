@@ -97,7 +97,8 @@ pub fn init(level: Level) -> Result<(), SetGlobalDefaultError> {
 
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let sub = tracing_subscriber::FmtSubscriber::builder().with_max_level(level);
+        let sub =
+            tracing_subscriber::FmtSubscriber::builder().with_max_level(level);
 
         if !dioxus::cli_config::is_cli_enabled() {
             return set_global_default(sub.finish());
@@ -109,7 +110,10 @@ pub fn init(level: Level) -> Result<(), SetGlobalDefaultError> {
     }
 }
 
-pub fn init_with_env_filter(level: Level, env_filter: String) -> Result<(), SetGlobalDefaultError> {
+pub fn init_with_env_filter(
+    level: Level,
+    env_filter: String,
+) -> Result<(), SetGlobalDefaultError> {
     /*
     The default logger is currently set to log in fmt mode (meaning print directly to stdout)
 
@@ -126,7 +130,7 @@ pub fn init_with_env_filter(level: Level, env_filter: String) -> Result<(), SetG
             .set_max_level(level)
             .build();
         let layer = tracing_wasm::WASMLayer::new(layer_config);
-        let filter : tracing_subscriber::EnvFilter = env_filter.parse().unwrap();
+        let filter: tracing_subscriber::EnvFilter = env_filter.parse().unwrap();
         let reg = Registry::default().with(layer).with(filter);
 
         console_error_panic_hook::set_once();
@@ -135,9 +139,10 @@ pub fn init_with_env_filter(level: Level, env_filter: String) -> Result<(), SetG
 
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let filter : tracing_subscriber::EnvFilter = env_filter.parse().unwrap();
+        let filter: tracing_subscriber::EnvFilter = env_filter.parse().unwrap();
         let sub = tracing_subscriber::FmtSubscriber::builder()
-            .with_max_level(level).with_env_filter(filter);
+            .with_max_level(level)
+            .with_env_filter(filter);
 
         if !dioxus::cli_config::is_cli_enabled() {
             return set_global_default(sub.finish());

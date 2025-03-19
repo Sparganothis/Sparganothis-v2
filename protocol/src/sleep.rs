@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
-use tokio::{sync::Notify};
 use n0_future::time::Instant;
+use tokio::sync::Notify;
 
 #[derive(Clone, Debug)]
 pub struct SleepManager {
@@ -37,9 +37,13 @@ impl SleepManagerInner {
         let mut millis_left = duration.as_micros() as i128;
         while millis_left > 0 {
             let now = Instant::now();
-            n0_future::future::race( n0_future::time::sleep(Duration::from_micros(millis_left as u64)), 
+            n0_future::future::race(
+                n0_future::time::sleep(Duration::from_micros(
+                    millis_left as u64,
+                )),
                 self.trigger.notified(),
-            ).await;
+            )
+            .await;
             millis_left -= now.elapsed().as_micros() as i128;
         }
     }
@@ -47,5 +51,4 @@ impl SleepManagerInner {
         self.trigger.notify_waiters();
         self.trigger.notify_one();
     }
-           
 }

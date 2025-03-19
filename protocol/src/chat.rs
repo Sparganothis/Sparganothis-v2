@@ -17,8 +17,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{debug, error, info, warn};
 
-use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 use crate::user_identity::{NodeIdentity, UserIdentitySecrets};
+use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ChatTicket {
@@ -165,8 +165,12 @@ impl SignedMessage {
             return Err(anyhow::anyhow!("node id mismatch"));
         }
 
-        signed_message.node_pubkey.verify(&signed_message.data, &signed_message.node_signature)?;
-        signed_message.user_pubkey.verify(&signed_message.data, &signed_message.user_signature)?;
+        signed_message
+            .node_pubkey
+            .verify(&signed_message.data, &signed_message.node_signature)?;
+        signed_message
+            .user_pubkey
+            .verify(&signed_message.data, &signed_message.user_signature)?;
 
         Ok(ReceivedMessage {
             from,
@@ -361,7 +365,7 @@ impl ChatController {
     pub async fn shutdown(self) -> Result<()> {
         info!("ChatController shutdown");
         self.inner.receiver.close();
-        
+
         Ok(())
     }
 }
