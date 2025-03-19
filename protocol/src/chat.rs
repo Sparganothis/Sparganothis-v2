@@ -37,37 +37,8 @@ impl ChatTicket {
             bootstrap: bs,
         }
     }
-    pub fn new_random() -> Self {
-        let topic_id = TopicId::from_bytes(rand::random());
-        Self::new(topic_id)
-    }
-
-    pub fn new(topic_id: TopicId) -> Self {
-        Self {
-            topic_id,
-            bootstrap: Default::default(),
-        }
-    }
-    pub fn deserialize(input: &str) -> Result<Self> {
-        <Self as Ticket>::deserialize(input).map_err(Into::into)
-    }
-    pub fn serialize(&self) -> String {
-        <Self as Ticket>::serialize(self)
-    }
 }
 
-impl Ticket for ChatTicket {
-    const KIND: &'static str = "chat";
-
-    fn to_bytes(&self) -> Vec<u8> {
-        postcard::to_stdvec(&self).unwrap()
-    }
-
-    fn from_bytes(bytes: &[u8]) -> Result<Self, iroh_base::ticket::Error> {
-        let ticket = postcard::from_bytes(bytes)?;
-        Ok(ticket)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct ChatSender {
@@ -89,6 +60,15 @@ impl ChatSender {
             self.node_identity.clone(),
         )?;
         self.sender.broadcast(signed_message.into()).await?;
+        Ok(())
+    }
+    pub async fn join_peers(&self, peers: Vec<NodeId>) -> Result<()> {
+        let me = self.node_identity.node_id().clone();
+        let peers: Vec<PublicKey> = peers.into_iter().filter(|id| id != &me).collect();
+        if peers.is_empty() {
+            return Ok(());
+        }
+        self.sender.join_peers(peers).await?;
         Ok(())
     }
 }
@@ -132,9 +112,11 @@ impl TryFrom<iroh_gossip::net::Event> for NetworkEvent {
                     Self::Message { event: message }
                 }
             },
-            iroh_gossip::net::Event::Lagged => Self::NetworkChange {
+            iroh_gossip::net::Event::Lagged => {
+                error!("Lagged! Channel will be closed!");
+                Self::NetworkChange {
                 event: NetworkChangeEvent::Lagged,
-            },
+            }},
         };
         Ok(converted)
     }
@@ -245,6 +227,7 @@ pub type ChatEventStream = std::pin::Pin<
     >,
 >;
 
+
 pub fn join_chat(
     gossip: Gossip,
     node_secret_key: Arc<SecretKey>,
@@ -254,8 +237,8 @@ pub fn join_chat(
     sleep_: SleepManager,
 ) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
-    let bootstrap = ticket.bootstrap.iter().cloned().collect();
-    info!(?bootstrap, "joining {topic_id}");
+    let bootstrap = ticket.bootstrap.iter().filter(|id| id != &node_identity.node_id()).cloned().collect();
+    info!("joining {topic_id} : {bootstrap:#?}");
     let gossip_topic = gossip.subscribe(topic_id, bootstrap)?;
     let (sender, receiver) = gossip_topic.split();
 
@@ -264,6 +247,7 @@ pub fn join_chat(
     // We spawn a task that occasionally sens a Presence message with our nickname.
     // This allows to track which peers are online currently.
     let presence_task = AbortOnDropHandle::new(task::spawn({
+        
         let node_secret_key = node_secret_key.clone();
         let sender = sender.clone();
         let trigger_presence = trigger_presence.clone();
@@ -271,9 +255,9 @@ pub fn join_chat(
         let user_secrets = user_secrets.clone();
         let node_identity = node_identity.clone();
         async move {
+            trigger_presence.notified().await;
             loop {
                 let message = ChatMessage::Presence {};
-                debug!("send presence {message:?}");
                 let signed_message = SignedMessage::sign_and_encode(
                     &node_secret_key,
                     &user_secrets.as_ref().secret_key(),

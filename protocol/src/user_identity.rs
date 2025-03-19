@@ -80,6 +80,9 @@ impl NodeIdentity {
     pub fn user_identity(&self) -> &UserIdentity {
         &self.user_identity
     }
+    pub fn bootstrap_idx(&self) -> Option<u32> {
+        self.bootstrap_idx
+    }
     pub fn new(
         user_identity: UserIdentity,
         node_id: PublicKey,
