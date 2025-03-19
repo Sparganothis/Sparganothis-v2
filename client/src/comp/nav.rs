@@ -2,6 +2,7 @@ use crate::constants::*;
 use crate::localstorage::LocalStorageContext;
 use crate::network::NetworkConnectionStatusIcon;
 use crate::route::Route;
+use dioxus::html::g::dangerous_inner_html;
 use dioxus::prelude::*;
 
 #[component]
@@ -30,6 +31,27 @@ pub fn Nav() -> Element {
                     Link { to: Route::GlobalChatPage {  }, "Chat" }
                 }
             }
+            ul {
+                li {
+                    a { 
+                        href: "https://github.com/Sparganothis/Sparganothis-v2", 
+                        style: "display: flex; flex-direction:row;",
+                        GithubIcon {},
+                        "GitHub"
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn GithubIcon() -> Element {
+    let sstr = include_str!("../../assets/github.svg.html");
+    rsx! {
+        div {
+            style: "width: 1.3rem; height: 1.3rem; padding-right: 0.2rem; margin-right: 0.2rem",
+            dangerous_inner_html: sstr,
         }
     }
 }
