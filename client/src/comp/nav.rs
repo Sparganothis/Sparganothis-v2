@@ -35,9 +35,13 @@ pub fn Nav() -> Element {
                 li {
                     a { 
                         href: "https://github.com/Sparganothis/Sparganothis-v2", 
-                        style: "display: flex; flex-direction:row;",
+                        style: "display: flex; flex-direction:row; align-items: center;",
                         GithubIcon {},
-                        "GitHub"
+                        "GitHub",
+                        img {
+                            src: "https://github.com/Sparganothis/Sparganothis-v2/actions/workflows/rust.yml/badge.svg",
+                            style: "height: 1rem; padding-left: 0.2rem; margin-left: 0.2rem;",
+                        }
                     }
                 }
             }
@@ -50,7 +54,7 @@ fn GithubIcon() -> Element {
     let sstr = include_str!("../../assets/github.svg.html");
     rsx! {
         div {
-            style: "width: 1.3rem; height: 1.3rem; padding-right: 0.2rem; margin-right: 0.2rem",
+            style: "width: 1rem; height: 1rem; padding-right: 0.2rem; margin-right: 0.2rem; margin-top: -0.7rem;",
             dangerous_inner_html: sstr,
         }
     }
