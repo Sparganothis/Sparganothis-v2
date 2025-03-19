@@ -21,7 +21,7 @@ use crate::{
         timestamp_now, ChatController, ChatMessage, ChatTicket, NetworkEvent,
         ReceivedMessage,
     },
-    chat_presence::{ChatPresence, PresenceFlag, PresenceList},
+    chat_presence::{ChatPresence, PresenceFlag},
     echo::Echo,
     main_node::MainNode,
     sleep::SleepManager,

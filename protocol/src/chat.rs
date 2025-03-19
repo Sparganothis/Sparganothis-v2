@@ -15,7 +15,7 @@ use n0_future::{
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use crate::user_identity::{NodeIdentity, UserIdentitySecrets};
 use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
