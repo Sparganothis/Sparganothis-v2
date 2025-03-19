@@ -33,8 +33,8 @@ pub fn Nav() -> Element {
             }
             ul {
                 li {
-                    a { 
-                        href: "https://github.com/Sparganothis/Sparganothis-v2", 
+                    a {
+                        href: "https://github.com/Sparganothis/Sparganothis-v2",
                         style: "display: flex; flex-direction:row; align-items: center;",
                         GithubIcon {},
                         "GitHub",
