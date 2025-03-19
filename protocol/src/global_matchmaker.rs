@@ -18,7 +18,7 @@ use crate::{
         PRESENCE_INTERVAL,
     },
     chat::{
-        ChatController, ChatMessage, ChatTicket, NetworkEvent, ReceivedMessage,
+        timestamp_now, ChatController, ChatMessage, ChatTicket, NetworkEvent, ReceivedMessage
     },
     chat_presence::{ChatPresence, PresenceList},
     echo::Echo,
@@ -135,9 +135,12 @@ impl GlobalMatchmaker {
             .node_id();
         let bs_endpoint = self.bs_endpoint().await.map(|bs| bs.node_id());
         let bs = self.known_bootstrap_nodes().await;
+        let date = timestamp_now();
         let mut info_txt = String::new();
+        info_txt.push_str(&format!("Global Matchmaker Debug Info\nDate: {}\n\n", date.to_rfc2822()));
+        info_txt.push_str(&format!("Peer Count: {}\n\n", self.get_presence().await.len()));
         info_txt.push_str(&format!("User Nickname: {user_nickname}\n"));
-        info_txt.push_str(&format!("User ID: {user_id}\n"));
+        info_txt.push_str(&format!("User ID: {user_id}\n\n"));
         info_txt.push_str(&format!("Own Endpoint NodeID: \n{endpoint:#?}\n\n"));
         info_txt
             .push_str(&format!("Own Bootstrap NodeID: \n{bs_endpoint:#?}\n\n"));

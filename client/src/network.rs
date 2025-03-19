@@ -17,6 +17,7 @@ pub struct NetworkState {
     pub is_connected: ReadOnlySignal<bool>,
     pub reset_network: Callback<()>,
     pub global_presence_list: ReadOnlySignal<PresenceList>,
+    pub debug_info_txt: ReadOnlySignal<String>,
 }
 
 #[component]
@@ -33,6 +34,9 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
 
     let mut presence_list_w = use_signal(move || PresenceList::default());
     let presence_list = use_memo(move || presence_list_w.read().clone());
+
+    let mut debug_info_txt_w = use_signal(move || "".to_string());
+    let debug_info_txt = use_memo(move || debug_info_txt_w.read().clone());
 
     let _coro =
         use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
@@ -86,12 +90,14 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         let mm = mm_signal.read().clone();
         async move {
             let Some(mm) = mm else {
+                debug_info_txt_w.set("No network connection".to_string());
                 return;
             };
             loop {
-                mm.sleep(PRESENCE_INTERVAL / 2).await;
                 let presence_list = mm.get_presence().await;
                 presence_list_w.set(presence_list);
+                debug_info_txt_w.set(mm.display_debug_info().await.unwrap_or_else(|e| e.to_string()));
+                mm.sleep(PRESENCE_INTERVAL / 2).await;
             }
         }
     });
@@ -101,6 +107,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         reset_network: reset_network.clone(),
         is_connected: is_connected.into(),
         global_presence_list: presence_list.into(),
+        debug_info_txt: debug_info_txt.into(),
     });
 
     rsx! {
@@ -178,24 +185,11 @@ pub fn NetworkConnectionStatusIcon() -> Element {
 
 #[component]
 fn NetworkConnectionDebugInfo() -> Element {
-    let net = use_context::<NetworkState>();
-    let mm_info = use_resource(move || {
-        let mm = net.global_mm.read().clone();
-        async move {
-            let Some(mm) = mm else {
-                return "No network connection".to_string();
-            };
-            mm.display_debug_info()
-                .await
-                .unwrap_or_else(|e| e.to_string())
-        }
-    });
+    let info = use_context::<NetworkState>().debug_info_txt;
     rsx! {
-        if let Some(info) = mm_info.read().clone() {
-            small {
-                pre {
-                    "{info}"
-                }
+        small {
+            pre {
+                "{info}"
             }
         }
     }
