@@ -2,7 +2,6 @@ use crate::constants::*;
 use crate::localstorage::LocalStorageContext;
 use crate::network::NetworkConnectionStatusIcon;
 use crate::route::Route;
-use dioxus::html::g::dangerous_inner_html;
 use dioxus::prelude::*;
 
 #[component]

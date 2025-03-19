@@ -1,11 +1,10 @@
 use n0_future::time::Instant;
-use std::{collections::BTreeMap, time::Duration};
+use std::time::Duration;
 
 use dioxus::prelude::*;
-use iroh::{NodeId, PublicKey};
+use iroh::PublicKey;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL,
     chat::{
         timestamp_now, ChatController, ChatMessage, NetworkEvent,
         ReceivedMessage,
