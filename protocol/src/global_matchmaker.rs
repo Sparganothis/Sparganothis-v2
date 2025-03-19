@@ -195,10 +195,12 @@ impl GlobalMatchmaker {
             .await
             .known_bootstrap_nodes
             .values()
-            .map(|bs| vec![
-                // bs.bootstrap_id, 
-                bs.own_id
-            ])
+            .map(|bs| {
+                vec![
+                    // bs.bootstrap_id,
+                    bs.own_id,
+                ]
+            })
             .collect::<Vec<_>>()
             .iter()
             .flatten()
@@ -529,14 +531,28 @@ impl GlobalMatchmaker {
         };
         let known_bs = self.known_bootstrap_nodes().await;
         // let known_bs1 = known_bs.values().map(|bs: &BootstrapNodeInfo| bs.bootstrap_id).collect::<HashSet<_>>();
-        let mut known_bs2 = known_bs.values().map(|bs: &BootstrapNodeInfo| bs.own_id).collect::<HashSet<_>>();
+        let mut known_bs2 = known_bs
+            .values()
+            .map(|bs: &BootstrapNodeInfo| bs.own_id)
+            .collect::<HashSet<_>>();
         known_bs2.remove(self.own_node_identity().node_id());
         // let known_bs = known_bs1.union(&known_bs2).cloned().collect::<HashSet<_>>();
 
         let presence_info = self.chat_presence().get_presence_list().await;
-        let presence_info = presence_info.into_iter().map(|(_b, _, identity)| (_b, identity)).filter(|(_b, _i)| *_b==PresenceFlag::ACTIVE && _i.bootstrap_idx().is_none()).map(|(_b, identity)| identity).map(|i| i.node_id().clone()).collect::<HashSet<_>>();
+        let presence_info = presence_info
+            .into_iter()
+            .map(|(_b, _, identity)| (_b, identity))
+            .filter(|(_b, _i)| {
+                *_b == PresenceFlag::ACTIVE && _i.bootstrap_idx().is_none()
+            })
+            .map(|(_b, identity)| identity)
+            .map(|i| i.node_id().clone())
+            .collect::<HashSet<_>>();
         // all the pks in known_bs but not in presence_info
-        let new_bs = known_bs2.difference(&presence_info).cloned().collect::<Vec<_>>();
+        let new_bs = known_bs2
+            .difference(&presence_info)
+            .cloned()
+            .collect::<Vec<_>>();
         if new_bs.is_empty() {
             return Ok(());
         }
@@ -544,7 +560,11 @@ impl GlobalMatchmaker {
         // if let Some(cc) = self.bs_global_chat_controller().await {
         //     cc.sender().join_peers(new_bs.clone()).await.context("failed to join new peers on bs node!")?;
         // }
-        global_chat.sender().join_peers(new_bs).await.context("failed to join new peers on normal node!")?;
+        global_chat
+            .sender()
+            .join_peers(new_bs)
+            .await
+            .context("failed to join new peers on normal node!")?;
 
         Ok(())
     }

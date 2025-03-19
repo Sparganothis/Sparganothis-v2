@@ -42,7 +42,7 @@ impl ChatPresence {
             notify: Arc::new(Notify::new()),
         }
     }
-    pub fn notified(&self) -> tokio::sync::futures::Notified<'_>  {
+    pub fn notified(&self) -> tokio::sync::futures::Notified<'_> {
         self.notify.notified()
     }
     pub async fn add_presence(&self, identity: NodeIdentity) {

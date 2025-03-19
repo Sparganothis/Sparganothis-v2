@@ -94,7 +94,8 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 return;
             };
             loop {
-                let presence_list = mm.chat_presence().get_presence_list().await;
+                let presence_list =
+                    mm.chat_presence().get_presence_list().await;
                 presence_list_w.set(presence_list);
                 debug_info_txt_w.set(
                     mm.display_debug_info()
@@ -104,7 +105,8 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 n0_future::future::race(
                     mm.sleep(PRESENCE_INTERVAL),
                     mm.chat_presence().notified(),
-                ).await;
+                )
+                .await;
             }
         }
     });

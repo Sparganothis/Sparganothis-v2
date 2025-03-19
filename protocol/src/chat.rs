@@ -39,7 +39,6 @@ impl ChatTicket {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct ChatSender {
     user_secrets: Arc<UserIdentitySecrets>,
@@ -64,7 +63,8 @@ impl ChatSender {
     }
     pub async fn join_peers(&self, peers: Vec<NodeId>) -> Result<()> {
         let me = self.node_identity.node_id().clone();
-        let peers: Vec<PublicKey> = peers.into_iter().filter(|id| id != &me).collect();
+        let peers: Vec<PublicKey> =
+            peers.into_iter().filter(|id| id != &me).collect();
         if peers.is_empty() {
             return Ok(());
         }
@@ -115,8 +115,9 @@ impl TryFrom<iroh_gossip::net::Event> for NetworkEvent {
             iroh_gossip::net::Event::Lagged => {
                 error!("Lagged! Channel will be closed!");
                 Self::NetworkChange {
-                event: NetworkChangeEvent::Lagged,
-            }},
+                    event: NetworkChangeEvent::Lagged,
+                }
+            }
         };
         Ok(converted)
     }
@@ -227,7 +228,6 @@ pub type ChatEventStream = std::pin::Pin<
     >,
 >;
 
-
 pub fn join_chat(
     gossip: Gossip,
     node_secret_key: Arc<SecretKey>,
@@ -237,7 +237,12 @@ pub fn join_chat(
     sleep_: SleepManager,
 ) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
-    let bootstrap = ticket.bootstrap.iter().filter(|id| id != &node_identity.node_id()).cloned().collect();
+    let bootstrap = ticket
+        .bootstrap
+        .iter()
+        .filter(|id| id != &node_identity.node_id())
+        .cloned()
+        .collect();
     info!("joining {topic_id} : {bootstrap:#?}");
     let gossip_topic = gossip.subscribe(topic_id, bootstrap)?;
     let (sender, receiver) = gossip_topic.split();
@@ -247,7 +252,6 @@ pub fn join_chat(
     // We spawn a task that occasionally sens a Presence message with our nickname.
     // This allows to track which peers are online currently.
     let presence_task = AbortOnDropHandle::new(task::spawn({
-        
         let node_secret_key = node_secret_key.clone();
         let sender = sender.clone();
         let trigger_presence = trigger_presence.clone();
