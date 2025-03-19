@@ -5,13 +5,10 @@ use dioxus::prelude::*;
 use iroh::{NodeId, PublicKey};
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL,
-    chat::{
+    _const::PRESENCE_INTERVAL, chat::{
         timestamp_now, ChatController, ChatMessage,
         NetworkEvent, ReceivedMessage,
-    },
-    global_matchmaker::GlobalMatchmaker,
-    user_identity::NodeIdentity,
+    }, chat_presence::PresenceFlag, global_matchmaker::GlobalMatchmaker, user_identity::NodeIdentity
 };
 use tracing::warn;
 
@@ -33,17 +30,7 @@ pub fn GlobalChatPage() -> Element {
 fn ChatRoom(chat: ReadOnlySignal<Option<Option<ChatController>>>) -> Element {
     let mut history = use_signal(ChatHistory::default);
     let mm = use_context::<NetworkState>().global_mm;
-    let mut presence = use_signal(ChatPresenceData::default);
 
-    let _ = use_coroutine(move |_: UnboundedReceiver<()>| async move {
-        loop {
-            n0_future::time::sleep(Duration::from_secs(1)).await;
-            presence.write().remove_expired();
-            if let Some(m) = mm.peek().as_ref() {
-                presence.write().add_presence(m.own_node_identity());
-            }
-        }
-    });
     let _ = use_resource(move || {
         let mm = mm.read().clone();
         let chat = chat.read().clone();
@@ -59,11 +46,10 @@ fn ChatRoom(chat: ReadOnlySignal<Option<Option<ChatController>>>) -> Element {
                 let t: Result<ReceivedMessage, String> = match event {
                     Ok(NetworkEvent::Message { event }) => {
                         match event.message {
-                            ChatMessage::Presence {} => {
-                                presence.write().add_presence(event.from);
-                                continue;
+                            ChatMessage::Message { ..} => {
+                                Ok(event)
                             }
-                            _ => Ok(event),
+                            _ => continue,
                         }
                     }
                     Err(e) => Err(e.to_string()),
@@ -79,7 +65,6 @@ fn ChatRoom(chat: ReadOnlySignal<Option<Option<ChatController>>>) -> Element {
     use_effect(move || {
         let _i2 = use_context::<NetworkState>().is_connected.read().clone();
         *history.write() = ChatHistory::default();
-        *presence.write() = ChatPresenceData::default();
     });
     let on_user_message = Callback::new(move |message: String| {
         let m = chat_send_message(mm.clone(), message);
@@ -98,7 +83,7 @@ fn ChatRoom(chat: ReadOnlySignal<Option<Option<ChatController>>>) -> Element {
             class: "chat-window-container",
             div {
                 class: "chat-left-pane",
-                ChatPresenceDisplay { presence }
+                ChatPresenceDisplay {  }
             }
             div {
                 class: "chat-main-pane",
@@ -120,47 +105,17 @@ struct ChatHistory {
     pub messages: Vec<Result<ReceivedMessage, String>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Default)]
-struct ChatPresenceData {
-    pub presence: BTreeMap<NodeId, (Instant, NodeIdentity)>,
-}
-
-impl ChatPresenceData {
-    pub fn add_presence(&mut self, identity: NodeIdentity) {
-        self.presence
-            .insert(identity.node_id().clone(), (Instant::now(), identity));
-    }
-    pub fn remove_expired(&mut self) {
-        let now = Instant::now();
-        self.presence.retain(|_, (last_seen, _)| {
-            now.duration_since(*last_seen) < PRESENCE_INTERVAL * 3
-        });
-    }
-}
 
 #[component]
-fn ChatPresenceDisplay(presence: ReadOnlySignal<ChatPresenceData>) -> Element {
-    let presence = use_memo(move || {
-        let mut p = presence
-            .read()
-            .presence
-            .clone()
-            .into_iter()
-            .collect::<Vec<_>>();
-        p.sort_by_key(|(_, (_k, _userid))| {
-            (
-                _userid.user_id().to_string(),
-                _userid.nickname().to_string(),
-            )
-        });
-        p
-    });
+fn ChatPresenceDisplay() -> Element {
+    let presence = use_context::<NetworkState>().global_presence_list;
     rsx! {
         ul {
-            for (node_id, (last_seen, identity)) in presence.read().iter() {
-                li {
-                    key: "{node_id}",
-                    ChatPresenceDisplayItem { last_seen: last_seen.clone(), identity: identity.clone() }
+            for (presence_flag,last_seen, identity) in presence.read().iter() {
+                ChatPresenceDisplayItem {
+                    presence_flag: presence_flag.clone(),
+                    last_seen: last_seen.clone(),
+                    identity: identity.clone()
                 }
             }
             if presence.read().is_empty() {
@@ -174,26 +129,39 @@ fn ChatPresenceDisplay(presence: ReadOnlySignal<ChatPresenceData>) -> Element {
 
 #[component]
 fn ChatPresenceDisplayItem(
+    presence_flag: ReadOnlySignal<PresenceFlag>,
     last_seen: ReadOnlySignal<Instant>,
     identity: ReadOnlySignal<NodeIdentity>,
 ) -> Element {
     let mut last_seen_txt = use_signal(|| "".to_string());
-    let _ = use_resource(move || async move {
-        loop {
-            let elapsed = 1 + last_seen.peek().elapsed().as_secs();
-            let elapsed_txt = pretty_duration::pretty_duration(
-                &Duration::from_secs(elapsed),
-                None,
-            );
-            last_seen_txt.set(format!("{} ago", elapsed_txt));
-            let wait = 1 + elapsed / 10;
-            n0_future::time::sleep(Duration::from_secs(wait)).await;
-        }
-    });
+    let mm = use_context::<NetworkState>().global_mm;
+    let _ = use_resource(move || {
+        let mm = mm.read().clone();
+        async move {
+            let Some(mm) = mm else {
+                return;
+            };
+            loop {
+                let elapsed = 1 + last_seen.peek().elapsed().as_secs();
+                let elapsed_txt = pretty_duration::pretty_duration(
+                    &Duration::from_secs(elapsed),
+                    None,
+                );
+                last_seen_txt.set(format!("{} ago", elapsed_txt));
+                let wait = 1 + elapsed / 10;
+                mm.sleep(Duration::from_secs(wait)).await;
+            }
+    }});
     let identity = identity.read().clone();
+    let color = match presence_flag.read().clone() {
+        PresenceFlag::ACTIVE => "darkgreen",
+        PresenceFlag::IDLE => "orange",
+        PresenceFlag::EXPIRED => "darkred",
+    };
     rsx! {
-        div {
-            style: "width: calc(90%-30px);",
+        li {
+            key: "{identity.node_id()}",
+            style: "width: calc(90%-30px); color: {color};",
             "data-tooltip": "
                 {identity.user_id().fmt_short()}@{identity.node_id().fmt_short()}
                 (last seen: {last_seen_txt})
@@ -272,9 +240,15 @@ fn ChatMessageDisplay(message: ReceivedMessage, user_id: PublicKey) -> Element {
     };
 
     let mut last_seen_txt = use_signal(|| "".to_string());
-    let _ = use_resource(move || async move {
-        loop {
-            let elapsed = (1 + timestamp_now().timestamp()
+    let mm = use_context::<NetworkState>().global_mm;
+    let _ = use_resource(move || {
+        let mm = mm.read().clone();
+        async move {
+            let Some(mm) = mm else {
+                return;
+            };
+            loop {
+                let elapsed = (1 + timestamp_now().timestamp()
                 - timestamp.timestamp())
             .abs() as u64;
             let elapsed_txt = pretty_duration::pretty_duration(
@@ -283,7 +257,8 @@ fn ChatMessageDisplay(message: ReceivedMessage, user_id: PublicKey) -> Element {
             );
             last_seen_txt.set(format!("{} ago", elapsed_txt));
             let wait = 1 + elapsed / 10;
-            n0_future::time::sleep(Duration::from_secs(wait)).await;
+                mm.sleep(Duration::from_secs(wait)).await;
+            }
         }
     });
 

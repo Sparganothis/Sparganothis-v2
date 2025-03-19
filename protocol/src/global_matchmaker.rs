@@ -9,15 +9,10 @@ use iroh::{endpoint::VarInt, Endpoint, NodeId, PublicKey, SecretKey};
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 use crate::{
-    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
-    _const::{CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID},
-    chat::{ChatController, ChatTicket},
-    echo::Echo,
-    main_node::MainNode,
-    user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
+    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _const::{CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL, PRESENCE_INTERVAL}, chat::{ChatController, ChatMessage, ChatTicket, NetworkEvent, ReceivedMessage}, chat_presence::{ChatPresence, PresenceList}, echo::Echo, main_node::MainNode, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets}
 };
 
 #[derive(Clone)]
@@ -26,6 +21,8 @@ pub struct GlobalMatchmaker {
     own_public_key: Arc<PublicKey>,
     own_private_key: Arc<SecretKey>,
     inner: Arc<Mutex<GlobalMatchmakerInner>>,
+    chat_presence: ChatPresence,
+    sleep_manager: SleepManager,
 }
 
 struct GlobalMatchmakerInner {
@@ -36,6 +33,8 @@ struct GlobalMatchmakerInner {
     global_chat_controller: Option<ChatController>,
     bs_global_chat_controller: Option<ChatController>,
     _bs_global_chat_task: Option<AbortOnDropHandle<()>>,
+    _presence_task_1: Option<AbortOnDropHandle<()>>,
+    _presence_task_2: Option<AbortOnDropHandle<()>>,
 }
 
 impl PartialEq for GlobalMatchmaker {
@@ -55,10 +54,22 @@ pub struct BootstrapNodeInfo {
 }
 
 impl GlobalMatchmaker {
+    pub async fn sleep(&self, duration: Duration) {
+        self.sleep_manager.sleep(duration).await;
+    }
     pub async fn shutdown(&self) -> Result<()> {
-        info!("shutting down");
+        info!("GlobalMatchmaker shutdown");
         {
             let mut inner = self.inner.lock().await;
+
+            let _task1 = inner._periodic_task.take();
+            drop(_task1);
+            let _task2 = inner._bs_global_chat_task.take();
+            drop(_task2);
+            let _task3 = inner._presence_task_1.take();
+            drop(_task3);
+            let _task4 = inner._presence_task_2.take();
+            drop(_task4);
 
             if let Some(cc) = inner.global_chat_controller.take() {
                 let _ = cc.shutdown().await;
@@ -73,8 +84,12 @@ impl GlobalMatchmaker {
                 own_endpoint.shutdown().await?;
             }
         }
-        info!("shutdown complete");
+        info!("GlobalMatchmaker shutdown complete");
         Ok(())
+    }
+
+    pub async fn get_presence(&self) -> PresenceList {
+        self.chat_presence.get_presence().await
     }
 
     pub fn user_secrets(&self) -> std::sync::Arc<UserIdentitySecrets> {
@@ -121,6 +136,7 @@ impl GlobalMatchmaker {
         own_private_key: Arc<SecretKey>,
         user: Arc<UserIdentitySecrets>,
     ) -> Result<Self> {
+        let sleep = SleepManager::new();
         let mm = Self {
             user_secrets: user.clone(),
             own_public_key: Arc::new(own_private_key.public()),
@@ -133,7 +149,11 @@ impl GlobalMatchmaker {
                 global_chat_controller: None,
                 bs_global_chat_controller: None,
                 _bs_global_chat_task: None,
+                _presence_task_1: None,
+                _presence_task_2: None,
             })),
+            chat_presence: ChatPresence::new(),
+            sleep_manager: sleep.clone(),
         };
 
         let node_identity = NodeIdentity::new(
@@ -146,6 +166,7 @@ impl GlobalMatchmaker {
             own_private_key.clone(),
             None,
             user.clone(),
+            sleep,
         )
         .await?;
         {
@@ -268,9 +289,32 @@ impl GlobalMatchmaker {
             .await
             .context("connect_global_chats: no node")?
             .join_chat(&ticket)?;
+
+        let presence_ = self.chat_presence.clone();
+        let c1_ = c1.clone();
+        let sleep_ = self.sleep_manager.clone();
+        let _task1 = AbortOnDropHandle::new(n0_future::task::spawn(async move {
+            while let Some(Ok(event)) = c1_.receiver().next().await {
+                sleep_.wake_up();
+                if let NetworkEvent::Message { event: ReceivedMessage { message: ChatMessage::Presence {}, from, .. } } = event {
+                    presence_.add_presence(from).await;
+                }
+                sleep_.sleep(Duration::from_millis(7)).await;
+            }
+        }));
+        let presence_ = self.chat_presence.clone();
+        let sleep_ = self.sleep_manager.clone();
+        let _task2 = AbortOnDropHandle::new(n0_future::task::spawn(async move {
+            loop {
+                sleep_.sleep(PRESENCE_INTERVAL).await;
+                presence_.remove_expired().await;
+            }
+        }));
         {
             let mut i = self.inner.lock().await;
             i.global_chat_controller = Some(c1);
+            i._presence_task_1 = Some(_task1);
+            i._presence_task_2 = Some(_task2);
         }
 
         info!("connect_global_chats(): done.");
@@ -295,14 +339,6 @@ impl GlobalMatchmaker {
         let mut receiver = controller.receiver();
         let _task =
             AbortOnDropHandle::new(n0_future::task::spawn(async move {
-                match sender.send("Hello, world!".to_string()).await {
-                    Ok(_) => {
-                        info!("BOOTSTRAP: sent hello world OK");
-                    }
-                    Err(e) => {
-                        warn!("BOOTSTRAP: failed to send hello world: {e}");
-                    }
-                }
                 let mut i = 0;
                 while let Some(event) = receiver.next().await {
                     i += 1;
@@ -376,6 +412,7 @@ impl GlobalMatchmaker {
             Arc::new(bootstrap_key.clone()),
             Some(own_id),
             self.user_secrets.clone(),
+            self.sleep_manager.clone(),
         )
         .await?;
         {
@@ -496,27 +533,33 @@ impl GlobalMatchmaker {
     }
 }
 
-const GLOBAL_PERIODIC_TASK_INTERVAL: Duration = Duration::from_secs(5);
 
 async fn global_periodic_task(_mm: GlobalMatchmaker) {
+    let mut fail = 0;
     loop {
         let interval = GLOBAL_PERIODIC_TASK_INTERVAL
             + Duration::from_secs(rand::thread_rng().gen_range(0..5));
-        n0_future::time::sleep(interval).await;
+        _mm.sleep(interval).await;
         match global_periodic_task_iteration_1(_mm.clone()).await {
             Ok(_) => {}
             Err(e) => {
                 warn!("global periodic task iteration 1 failed: {e}");
+                fail += 1;
             }
         }
         let interval = GLOBAL_PERIODIC_TASK_INTERVAL
             + Duration::from_secs(rand::thread_rng().gen_range(0..5));
-        n0_future::time::sleep(interval).await;
+        _mm.sleep(interval).await;
         match global_periodic_task_iteration_2(_mm.clone()).await {
             Ok(_) => {}
             Err(e) => {
                 warn!("global periodic task iteration 2 failed: {e}");
+                fail += 1;
             }
+        }
+        if fail > 10 {
+            error!("global periodic task EXIT: failed too many times");
+            break;
         }
     }
 }

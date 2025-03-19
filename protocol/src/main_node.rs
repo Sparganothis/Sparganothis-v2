@@ -7,11 +7,10 @@ use iroh::{
     Endpoint, NodeId, SecretKey,
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
+use tracing::info;
 
 use crate::{
-    chat::{join_chat, ChatController, ChatTicket},
-    echo::Echo,
-    user_identity::{NodeIdentity, UserIdentitySecrets},
+    chat::{join_chat, ChatController, ChatTicket}, echo::Echo, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentitySecrets}
 };
 
 #[derive(Clone)]
@@ -21,6 +20,7 @@ pub struct MainNode {
     gossip: Gossip,
     node_identity: Arc<NodeIdentity>,
     user_secrets: Arc<UserIdentitySecrets>,
+    sleep_manager: SleepManager,
 }
 
 impl MainNode {
@@ -29,6 +29,7 @@ impl MainNode {
         node_secret_key: Arc<SecretKey>,
         own_endpoint_node_id: Option<NodeId>,
         user_secrets: Arc<UserIdentitySecrets>,
+        sleep_manager: SleepManager,
     ) -> Result<Self> {
         assert!(node_secret_key.public() == *node_identity.node_id());
         let endpoint = Endpoint::builder()
@@ -39,7 +40,7 @@ impl MainNode {
             .await?;
         let gossip = Gossip::builder().spawn(endpoint.clone()).await?;
         let echo =
-            Echo::new(own_endpoint_node_id.unwrap_or(endpoint.node_id()));
+            Echo::new(own_endpoint_node_id.unwrap_or(endpoint.node_id()), sleep_manager.clone());
         let router = Router::builder(endpoint)
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())
@@ -51,6 +52,7 @@ impl MainNode {
             gossip,
             node_identity,
             user_secrets,
+            sleep_manager,
         })
     }
 
@@ -73,6 +75,7 @@ impl MainNode {
         &self.node_identity
     }
     pub async fn shutdown(&self) -> Result<()> {
+        info!("MainNode shutdown");
         let _ = self.router.shutdown().await;
         self.gossip.shutdown().await;
         self.endpoint().close().await;
@@ -89,6 +92,7 @@ impl MainNode {
             ticket,
             self.user_secrets.clone(),
             self.node_identity.clone(),
+            self.sleep_manager.clone(),
         )
     }
 }

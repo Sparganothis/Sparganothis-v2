@@ -3,8 +3,7 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    global_matchmaker::GlobalMatchmaker,
-    user_identity::UserIdentitySecrets,
+    _const::PRESENCE_INTERVAL, chat_presence::PresenceList, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets
 };
 use tracing::warn;
 
@@ -16,6 +15,7 @@ pub struct NetworkState {
     pub global_mm_loading: ReadOnlySignal<bool>,
     pub is_connected: ReadOnlySignal<bool>,
     pub reset_network: Callback<()>,
+    pub global_presence_list: ReadOnlySignal<PresenceList>,
 }
 
 #[component]
@@ -28,6 +28,9 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
 
     let mut is_connected_w = use_signal(move || false);
     let is_connected = use_memo(move || is_connected_w.read().clone());
+
+    let mut presence_list_w = use_signal(move || PresenceList::default());
+    let presence_list = use_memo(move || presence_list_w.read().clone());
 
     let _coro =
         use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
@@ -77,11 +80,25 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     let reset_network = Callback::new(move |_: ()| {
         _coro.send(());
     });
+    let _poll_presence = use_resource(move || {
+        let mm = mm_signal.read().clone();
+        async move {
+            let Some(mm) = mm else {
+                return;
+            };
+            loop {
+                mm.sleep(PRESENCE_INTERVAL/2).await;
+                let presence_list = mm.get_presence().await;
+                presence_list_w.set(presence_list);
+            }
+        }
+    });
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
         global_mm_loading: mm_signal_loading.into(),
         reset_network: reset_network.clone(),
         is_connected: is_connected.into(),
+        global_presence_list: presence_list.into(),
     });
 
     rsx! {

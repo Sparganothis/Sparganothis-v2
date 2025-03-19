@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{debug, error, info, warn};
 
-use crate::_const::PRESENCE_INTERVAL;
+use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 use crate::user_identity::{NodeIdentity, UserIdentitySecrets};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -247,6 +247,7 @@ pub fn join_chat(
     ticket: &ChatTicket,
     user_secrets: Arc<UserIdentitySecrets>,
     node_identity: Arc<NodeIdentity>,
+    sleep_: SleepManager,
 ) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
     let bootstrap = ticket.bootstrap.iter().cloned().collect();
@@ -284,7 +285,7 @@ pub fn join_chat(
                 let wait = PRESENCE_INTERVAL
                     + Duration::from_secs(rand::thread_rng().gen_range(0..3));
                 n0_future::future::race(
-                    n0_future::time::sleep(wait),
+                    sleep_.sleep(wait),
                     trigger_presence.notified(),
                 )
                 .await;
@@ -315,7 +316,7 @@ pub fn join_chat(
                     let event: NetworkEvent = match event.try_into() {
                         Ok(event) => event,
                         Err(err) => {
-                            warn!("received invalid message: {err}");
+                            warn!("BOOTSTRAP: received invalid message: {err}");
                             continue;
                         }
                     };
@@ -357,8 +358,10 @@ impl ChatController {
     pub fn receiver(&self) -> ChatEventReceiver {
         self.inner.receiver.activate_cloned()
     }
-    pub async fn shutdown(&self) -> Result<()> {
+    pub async fn shutdown(self) -> Result<()> {
+        info!("ChatController shutdown");
         self.inner.receiver.close();
+        
         Ok(())
     }
 }

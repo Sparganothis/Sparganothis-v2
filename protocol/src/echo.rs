@@ -3,18 +3,20 @@ use iroh::{endpoint::Connection, protocol::ProtocolHandler, NodeId};
 use n0_future::boxed::BoxFuture;
 use tracing::warn;
 
-use crate::_const::CONNECT_TIMEOUT;
+use crate::{_const::CONNECT_TIMEOUT, sleep::SleepManager};
 
 #[derive(Debug, Clone)]
 pub struct Echo {
     own_endpoint_node_id: NodeId,
+    sleep_manager: SleepManager,
 }
 
 impl Echo {
     pub const ALPN: &[u8] = b"sparganothis/global-matchmaker-echo/0";
-    pub fn new(own_endpoint_node_id: NodeId) -> Self {
+    pub fn new(own_endpoint_node_id: NodeId, sleep_manager: SleepManager) -> Self {
         Self {
             own_endpoint_node_id,
+            sleep_manager,
         }
     }
 }
@@ -32,6 +34,7 @@ impl ProtocolHandler for Echo {
 impl Echo {
     async fn handle_connection(self, connection: Connection) -> Result<()> {
         // We can get the remote's node id from the connection.
+        self.sleep_manager.wake_up();
         let res = self.handle_connection2(&connection).await;
         if let Err(e) = res.as_ref() {
             warn!("Failed to handle connection: {e}");
