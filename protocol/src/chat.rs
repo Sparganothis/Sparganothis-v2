@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
-use crate::user_identity::{NodeIdentity, UserIdentitySecrets};
+use crate::{_const::CONNECT_TIMEOUT, user_identity::{NodeIdentity, UserIdentitySecrets}};
 use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -228,7 +228,7 @@ pub type ChatEventStream = std::pin::Pin<
     >,
 >;
 
-pub fn join_chat(
+pub async fn join_chat(
     gossip: Gossip,
     node_secret_key: Arc<SecretKey>,
     ticket: &ChatTicket,
@@ -237,14 +237,22 @@ pub fn join_chat(
     sleep_: SleepManager,
 ) -> Result<ChatController> {
     let topic_id = ticket.topic_id;
-    let bootstrap = ticket
+    let bootstrap: Vec<PublicKey> = ticket
         .bootstrap
         .iter()
         .filter(|id| id != &node_identity.node_id())
         .cloned()
         .collect();
+    let bootstrap_count = bootstrap.len();
     info!("joining {topic_id} : {bootstrap:#?}");
-    let gossip_topic = gossip.subscribe(topic_id, bootstrap)?;
+    let gossip_topic = if bootstrap_count == 0 {
+        info!("try subscribe with zero nodes");
+        gossip.subscribe(topic_id, bootstrap)?
+    } else {
+        info!("try subscribe with {bootstrap_count} nodes");
+        n0_future::time::timeout(CONNECT_TIMEOUT, gossip.subscribe_and_join(topic_id, bootstrap)).await??
+    }
+    ;
     let (sender, receiver) = gossip_topic.split();
 
     let trigger_presence = Arc::new(Notify::new());
@@ -281,6 +289,7 @@ pub fn join_chat(
                     trigger_presence.notified(),
                 )
                 .await;
+                sleep_.sleep(Duration::from_secs_f32(0.5)).await;
             }
         }
     }));
@@ -294,6 +303,8 @@ pub fn join_chat(
         move |mut receiver| {
             let trigger_presence = trigger_presence.clone();
             async move {
+                trigger_presence.notify_waiters();
+                trigger_presence.notify_one();
                 loop {
                     // Store if we were joined before the next event comes in.
                     let was_joined = receiver.is_joined();

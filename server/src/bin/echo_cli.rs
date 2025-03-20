@@ -18,18 +18,21 @@ async fn main() -> Result<()> {
     let global_mm = GlobalMatchmaker::new(Arc::new(id)).await?;
 
     let _mm = global_mm.clone();
-    let _a = tokio::spawn(async move {
-        cli_chat_window(_mm).await.unwrap();
-    });
 
-    tokio::signal::ctrl_c().await?;
-    _a.abort();
+    let _r = n0_future::future::race(async move {
+        let _r = cli_chat_window(_mm).await;
+        println!("* cli_chat_window closed: {:?}", _r);
+    }, async move {
+        let _r = tokio::signal::ctrl_c().await;
+        println!("* ctrl-c received");
+    }).await;
+
 
     global_mm.shutdown().await?;
 
-    std::process::exit(0);
+    // std::process::exit(0);
 
-    // Ok(())
+    Ok(())
 }
 
 async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
@@ -96,10 +99,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
         anyhow::Ok(())
     });
 
-    // TODO: Clean shutown.
-    receive.await??;
-    // println!("* receive closed.");
-    send.await??;
+    let _r = n0_future::future::race(receive, send).await?;
 
     info!("* CLI chat closed.");
 

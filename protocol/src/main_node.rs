@@ -90,7 +90,7 @@ impl MainNode {
     ///
     /// Returns a [`ChatSender`] to send messages or change our nickname
     /// and a stream of [`Event`] items for incoming messages and other event.s
-    pub fn join_chat(&self, ticket: &ChatTicket) -> Result<ChatController> {
+    pub async fn join_chat(&self, ticket: &ChatTicket) -> Result<ChatController> {
         join_chat(
             self.gossip.clone(),
             self.node_secret_key.clone(),
@@ -98,6 +98,6 @@ impl MainNode {
             self.user_secrets.clone(),
             self.node_identity.clone(),
             self.sleep_manager.clone(),
-        )
+        ).await
     }
 }

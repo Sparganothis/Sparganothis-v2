@@ -119,7 +119,7 @@ fn ChatPresenceDisplay() -> Element {
                 }
             }
             if presence.read().is_empty() {
-                p {
+                i {
                     "No presence data."
                 }
             }
@@ -190,7 +190,7 @@ fn ChatHistoryDisplay(history: ReadOnlySignal<ChatHistory>) -> Element {
                     ChatMessageOrErrorDisplay { message: message.clone() }
                 }
                 if history.read().messages.is_empty() {
-                    p {
+                    i {
                         "No messages."
                     }
                 }
