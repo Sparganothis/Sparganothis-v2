@@ -305,7 +305,8 @@ impl GlobalMatchmaker {
             .own_node()
             .await
             .context("connect_global_chats: no node")?
-            .join_chat(&ticket).await?;
+            .join_chat(&ticket)
+            .await?;
 
         let presence_ = self.chat_presence.clone();
         let c1_ = c1.clone();

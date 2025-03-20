@@ -17,7 +17,10 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
-use crate::{_const::CONNECT_TIMEOUT, user_identity::{NodeIdentity, UserIdentitySecrets}};
+use crate::{
+    _const::CONNECT_TIMEOUT,
+    user_identity::{NodeIdentity, UserIdentitySecrets},
+};
 use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -250,9 +253,12 @@ pub async fn join_chat(
         gossip.subscribe(topic_id, bootstrap)?
     } else {
         info!("try subscribe with {bootstrap_count} nodes");
-        n0_future::time::timeout(CONNECT_TIMEOUT, gossip.subscribe_and_join(topic_id, bootstrap)).await??
-    }
-    ;
+        n0_future::time::timeout(
+            CONNECT_TIMEOUT,
+            gossip.subscribe_and_join(topic_id, bootstrap),
+        )
+        .await??
+    };
     let (sender, receiver) = gossip_topic.split();
 
     let trigger_presence = Arc::new(Notify::new());

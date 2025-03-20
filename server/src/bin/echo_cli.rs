@@ -19,14 +19,17 @@ async fn main() -> Result<()> {
 
     let _mm = global_mm.clone();
 
-    let _r = n0_future::future::race(async move {
-        let _r = cli_chat_window(_mm).await;
-        println!("* cli_chat_window closed: {:?}", _r);
-    }, async move {
-        let _r = tokio::signal::ctrl_c().await;
-        println!("* ctrl-c received");
-    }).await;
-
+    let _r = n0_future::future::race(
+        async move {
+            let _r = cli_chat_window(_mm).await;
+            println!("* cli_chat_window closed: {:?}", _r);
+        },
+        async move {
+            let _r = tokio::signal::ctrl_c().await;
+            println!("* ctrl-c received");
+        },
+    )
+    .await;
 
     global_mm.shutdown().await?;
 
