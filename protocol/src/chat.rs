@@ -273,7 +273,7 @@ pub async fn join_chat(
         let user_secrets = user_secrets.clone();
         let node_identity = node_identity.clone();
         async move {
-            trigger_presence.notified().await;
+            // trigger_presence.notified().await;
             loop {
                 let message = ChatMessage::Presence {};
                 let signed_message = SignedMessage::sign_and_encode(
@@ -283,6 +283,7 @@ pub async fn join_chat(
                     node_identity.clone(),
                 )
                 .expect("failed to encode message");
+                info!("presence task broadcast");
                 if let Err(err) = sender.broadcast(signed_message.into()).await
                 {
                     tracing::warn!("presence task failed to broadcast: {err}");
@@ -295,7 +296,6 @@ pub async fn join_chat(
                     trigger_presence.notified(),
                 )
                 .await;
-                sleep_.sleep(Duration::from_secs_f32(0.5)).await;
             }
         }
     }));
@@ -309,8 +309,8 @@ pub async fn join_chat(
         move |mut receiver| {
             let trigger_presence = trigger_presence.clone();
             async move {
-                trigger_presence.notify_waiters();
-                trigger_presence.notify_one();
+                // trigger_presence.notify_waiters();
+                // trigger_presence.notify_one();
                 loop {
                     // Store if we were joined before the next event comes in.
                     let was_joined = receiver.is_joined();
