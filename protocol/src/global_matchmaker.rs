@@ -320,8 +320,7 @@ impl GlobalMatchmaker {
         let ticket = self.get_global_chat_ticket().await?;
         let mm = self.clone();
         n0_future::task::spawn(async move {
-            match  bs.join_chat(&ticket).await
-            {
+            match bs.join_chat(&ticket).await {
                 Ok(c1) => {
                     let mut i = mm.inner.lock().await;
                     i.bs_global_chat_controller = Some(c1);
@@ -330,9 +329,8 @@ impl GlobalMatchmaker {
                     warn!("failed to connect to bootstrap chat: {e}");
                 }
             }
-            
         });
-        
+
         Ok(())
     }
 
@@ -408,15 +406,14 @@ impl GlobalMatchmaker {
 
     async fn check_spawned_bootstrap_is_unique(&self) -> Result<bool> {
         let known_bs = self.known_bootstrap_nodes().await;
-        let Some(bs_node)= self.bs_node().await else {
+        let Some(bs_node) = self.bs_node().await else {
             return Ok(false);
         };
         let bs_ident = bs_node.node_identity();
         let bs_idx = bs_ident.bootstrap_idx().unwrap() as usize;
 
-        let our_bs = known_bs
-            .get(&bs_idx)
-            .context("faild to find ourselves")?;
+        let our_bs =
+            known_bs.get(&bs_idx).context("faild to find ourselves")?;
         if our_bs.own_id
             != self
                 .own_endpoint()
@@ -433,9 +430,8 @@ impl GlobalMatchmaker {
                     .context("spawn_bootstrap_endpoint: no endpoint")?
                     .node_id()
             );
-            let old_endpoint = {
-                self.inner.lock().await.bootstrap_main_node.take()
-            };
+            let old_endpoint =
+                { self.inner.lock().await.bootstrap_main_node.take() };
             if let Some(old_endpoint) = old_endpoint {
                 old_endpoint.shutdown().await?;
             }
@@ -611,7 +607,7 @@ async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
         let added = mm.spawn_bootstrap_endpoint().await?;
         if added {
             info!("global periodic task: spawned new bootstrap endpoint");
-            mm.connect_bootstrap_chat().await?;   
+            mm.connect_bootstrap_chat().await?;
         }
         mm.check_spawned_bootstrap_is_unique().await?;
     }

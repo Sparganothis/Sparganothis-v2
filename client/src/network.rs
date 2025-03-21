@@ -119,7 +119,12 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                     presence.notified(),
                 )
                 .await;
-                bootstrap_idx_w.set(mm.bs_node().await.map(|n| n.node_identity().bootstrap_idx()).flatten());
+                bootstrap_idx_w.set(
+                    mm.bs_node()
+                        .await
+                        .map(|n| n.node_identity().bootstrap_idx())
+                        .flatten(),
+                );
             }
         }
     });

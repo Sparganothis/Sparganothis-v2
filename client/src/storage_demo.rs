@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
 use dioxus_sdk::storage::*;
 
-
 #[component]
 pub fn StorageDemo() -> Element {
     let mut count_session = use_singleton_persistent(|| 0);
-    let mut count_local = use_synced_storage::<LocalStorage, i32>("synced".to_string(), || 0);
+    let mut count_local =
+        use_synced_storage::<LocalStorage, i32>("synced".to_string(), || 0);
 
     rsx!(
         div {
