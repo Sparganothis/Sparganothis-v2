@@ -11,7 +11,6 @@ if [ -z "$(git status --porcelain)" ]; then
     git add .
     git status
     git commit -m "cargo fmt $(date)" || true
-    git push
 
     (  cargo fix   --allow-dirty || true   )
     

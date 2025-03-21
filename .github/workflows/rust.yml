@@ -67,15 +67,14 @@ jobs:
 
     - name: Send Chat Message 1
       run: |
-        chmod +x ./start_cli.sh
-        echo "Github Pages Build: Started" | ./start_cli.sh
+        echo "Github Pages Build: Started" | bash start_cli.sh
 
     - name: Build Web Release
       run: chmod +x ./build_web_release.sh && ./build_web_release.sh
 
     - name: Send Chat Message 2
       run: |
-        echo "Github Pages Build: Finished" | ./start_cli.sh
+        echo "Github Pages Build: Finished" |  bash start_cli.sh
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
