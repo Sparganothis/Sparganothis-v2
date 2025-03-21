@@ -66,13 +66,16 @@ jobs:
       run: cargo binstall dioxus-cli@0.6.3 --no-confirm --force || cargo install dioxus-cli@0.6.3
 
     - name: Send Chat Message 1
-      run: chmod +x ./start_cli.sh && ( echo "Github Pages Build: Started"  | ./start_cli.sh )
+      run: |
+        chmod +x ./start_cli.sh
+        echo "Github Pages Build: Started" | ./start_cli.sh
 
     - name: Build Web Release
       run: chmod +x ./build_web_release.sh && ./build_web_release.sh
 
     - name: Send Chat Message 2
-      run: chmod +x ./start_cli.sh && ( echo "Github Pages Build: Finished"  | ./start_cli.sh )
+      run: |
+        echo "Github Pages Build: Finished" | ./start_cli.sh
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
