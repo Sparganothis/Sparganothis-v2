@@ -16,9 +16,7 @@ use crate::{
     _const::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
     },
-    chat::{
-        timestamp_now, ChatController, ChatTicket,
-    },
+    chat::{timestamp_now, ChatController, ChatTicket},
     chat_presence::PresenceFlag,
     echo::Echo,
     main_node::MainNode,
