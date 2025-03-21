@@ -17,6 +17,7 @@ pub struct NetworkState {
     pub is_connected: ReadOnlySignal<bool>,
     pub reset_network: Callback<()>,
     pub global_presence_list: ReadOnlySignal<PresenceList>,
+    pub bootstrap_idx: ReadOnlySignal<Option<u32>>,
     pub debug_info_txt: ReadOnlySignal<String>,
 }
 
@@ -37,6 +38,9 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
 
     let mut debug_info_txt_w = use_signal(move || "".to_string());
     let debug_info_txt = use_memo(move || debug_info_txt_w.read().clone());
+
+    let mut bootstrap_idx_w: Signal<Option<u32>> = use_signal(move || None);
+    let bootstrap_idx = use_memo(move || bootstrap_idx_w.read().clone());
 
     let _coro =
         use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
@@ -115,9 +119,11 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                     presence.notified(),
                 )
                 .await;
+                bootstrap_idx_w.set(mm.bs_node().await.map(|n| n.node_identity().bootstrap_idx()).flatten());
             }
         }
     });
+
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
         global_mm_loading: mm_signal_loading.into(),
@@ -125,6 +131,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         is_connected: is_connected.into(),
         global_presence_list: presence_list.into(),
         debug_info_txt: debug_info_txt.into(),
+        bootstrap_idx: bootstrap_idx.into(),
     });
 
     rsx! {
@@ -145,14 +152,20 @@ pub fn NetworkConnectionStatusIcon() -> Element {
         global_mm,
         reset_network,
         global_mm_loading,
+        bootstrap_idx,
         ..
     } = use_context::<NetworkState>();
 
     let net_txt = use_memo(move || {
+        let bs_idx = *bootstrap_idx.read();
         if global_mm.read().is_some() {
-            "ONLINE"
+            if let Some(bs_idx) = bs_idx {
+                format!("ONLINE #{}", bs_idx)
+            } else {
+                "ONLINE".to_string()
+            }
         } else {
-            "OFFLINE"
+            "OFFLINE".to_string()
         }
     });
     let net_txt_color = use_memo(move || {
