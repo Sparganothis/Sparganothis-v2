@@ -15,13 +15,11 @@ use crate::{
     _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
     _const::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
-        PRESENCE_INTERVAL,
     },
     chat::{
-        timestamp_now, ChatController, ChatMessage, ChatTicket, NetworkEvent,
-        ReceivedMessage,
+        timestamp_now, ChatController, ChatTicket,
     },
-    chat_presence::{ChatPresence, PresenceFlag},
+    chat_presence::PresenceFlag,
     echo::Echo,
     main_node::MainNode,
     sleep::SleepManager,
