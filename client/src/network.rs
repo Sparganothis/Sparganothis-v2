@@ -92,12 +92,14 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         async move {
             let Some(mm) = mm else {
                 debug_info_txt_w.set("No network connection".to_string());
+                presence_list_w.set(PresenceList::default());
                 return;
             };
             let Some(presence) =
                 mm.global_chat_controller().await.map(|c| c.chat_presence())
             else {
                 debug_info_txt_w.set("No chat controller".to_string());
+                presence_list_w.set(PresenceList::default());
                 return;
             };
             loop {

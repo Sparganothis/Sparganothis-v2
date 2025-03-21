@@ -6,3 +6,4 @@ pub mod logger;
 pub(crate) mod network;
 pub(crate) mod pages;
 pub(crate) mod route;
+pub mod storage_demo;

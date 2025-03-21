@@ -39,6 +39,7 @@ struct GlobalMatchmakerInner {
     known_bootstrap_nodes: BTreeMap<usize, BootstrapNodeInfo>,
     _periodic_task: Option<AbortOnDropHandle<()>>,
     global_chat_controller: Option<ChatController>,
+    bs_global_chat_controller: Option<ChatController>,
 }
 
 impl PartialEq for GlobalMatchmaker {
@@ -70,6 +71,9 @@ impl GlobalMatchmaker {
             drop(_task1);
 
             if let Some(cc) = inner.global_chat_controller.take() {
+                let _ = cc.shutdown().await;
+            }
+            if let Some(cc) = inner.bs_global_chat_controller.take() {
                 let _ = cc.shutdown().await;
             }
 
@@ -155,6 +159,7 @@ impl GlobalMatchmaker {
                 known_bootstrap_nodes: BTreeMap::new(),
                 _periodic_task: None,
                 global_chat_controller: None,
+                bs_global_chat_controller: None,
             })),
             sleep_manager: sleep.clone(),
         };
@@ -289,7 +294,7 @@ impl GlobalMatchmaker {
     }
 
     async fn connect_global_chats(&self) -> Result<()> {
-        // self.connect_bootstrap_chat().await?;
+        self.connect_bootstrap_chat().await?;
         info!("connect_global_chats(): joining normal chat");
         let ticket = self.get_global_chat_ticket().await?;
         let c1 = self
@@ -305,6 +310,29 @@ impl GlobalMatchmaker {
         }
 
         info!("connect_global_chats(): done.");
+        Ok(())
+    }
+
+    async fn connect_bootstrap_chat(&self) -> Result<()> {
+        let Some(bs) = self.bs_node().await else {
+            return Ok(());
+        };
+        let ticket = self.get_global_chat_ticket().await?;
+        let mm = self.clone();
+        n0_future::task::spawn(async move {
+            match  bs.join_chat(&ticket).await
+            {
+                Ok(c1) => {
+                    let mut i = mm.inner.lock().await;
+                    i.bs_global_chat_controller = Some(c1);
+                }
+                Err(e) => {
+                    warn!("failed to connect to bootstrap chat: {e}");
+                }
+            }
+            
+        });
+        
         Ok(())
     }
 
@@ -375,9 +403,19 @@ impl GlobalMatchmaker {
         info!("Connecting to own bootstrap endpoint");
         self.connect_to_bootstrap().await?;
         info!("Successfully connected to own bootstrap endpoint");
+        self.check_spawned_bootstrap_is_unique().await
+    }
+
+    async fn check_spawned_bootstrap_is_unique(&self) -> Result<bool> {
         let known_bs = self.known_bootstrap_nodes().await;
+        let Some(bs_node)= self.bs_node().await else {
+            return Ok(false);
+        };
+        let bs_ident = bs_node.node_identity();
+        let bs_idx = bs_ident.bootstrap_idx().unwrap() as usize;
+
         let our_bs = known_bs
-            .get(&boostrap_idx)
+            .get(&bs_idx)
             .context("faild to find ourselves")?;
         if our_bs.own_id
             != self
@@ -396,10 +434,7 @@ impl GlobalMatchmaker {
                     .node_id()
             );
             let old_endpoint = {
-                let mut inner = self.inner.lock().await;
-                let old_endpoint = inner.bootstrap_main_node.take();
-                inner.bootstrap_main_node = None;
-                old_endpoint
+                self.inner.lock().await.bootstrap_main_node.take()
             };
             if let Some(old_endpoint) = old_endpoint {
                 old_endpoint.shutdown().await?;
@@ -576,8 +611,9 @@ async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
         let added = mm.spawn_bootstrap_endpoint().await?;
         if added {
             info!("global periodic task: spawned new bootstrap endpoint");
-            // mm.connect_bootstrap_chat().await?;
+            mm.connect_bootstrap_chat().await?;   
         }
+        mm.check_spawned_bootstrap_is_unique().await?;
     }
     mm.join_global_chats_into_new_bootstrap().await?;
 

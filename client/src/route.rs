@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 
 use crate::comp::nav::Nav;
 use crate::pages::*;
+use crate::storage_demo::StorageDemo;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
@@ -18,6 +19,9 @@ pub enum Route {
 
     #[route("/:..x")]
     NotFound { x: Vec<String> },
+
+    #[route("/storage-demo")]
+    StorageDemo {},
 }
 
 #[component]
