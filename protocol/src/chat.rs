@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 pub use iroh::NodeId;
 use iroh::{PublicKey, SecretKey};
-use iroh_base::{ticket::Ticket, Signature};
+use iroh_base::Signature;
 use iroh_gossip::net::{Gossip, GossipEvent, GossipSender};
 pub use iroh_gossip::proto::TopicId;
 use n0_future::{
