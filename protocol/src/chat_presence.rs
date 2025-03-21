@@ -45,21 +45,21 @@ impl ChatPresence {
     pub fn notified(&self) -> tokio::sync::futures::Notified<'_> {
         self.notify.notified()
     }
-    pub async fn add_presence(&self, identity: NodeIdentity) {
-        self.presence
-            .write()
-            .await
-            .map
-            .insert(identity.node_id().clone(), (Instant::now(), identity));
-        self.notify.notify_one();
-    }
-    pub async fn remove_expired(&self) {
+    pub async fn add_presence(&self, identity: &NodeIdentity) {
+        let identity = identity.clone();
         let now = Instant::now();
-        self.presence.write().await.map.retain(|_, (last_seen, _)| {
+        let mut w = self.presence.write().await;
+        let old_value = w.clone();
+        w.map.insert(identity.node_id().clone(), (now, identity));
+        w.map.retain(|_, (last_seen, _)| {
             now.duration_since(*last_seen) < PRESENCE_EXPIRATION
         });
-        self.notify.notify_one();
+        let new_value = w.clone();
+        if old_value != new_value {
+            self.notify.notify_waiters();
+        }
     }
+
     pub async fn get_presence_list(&self) -> PresenceList {
         let p = self.presence.read().await.map.clone();
         let mut p = p.into_iter().collect::<Vec<_>>();

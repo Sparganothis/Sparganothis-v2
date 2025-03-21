@@ -18,8 +18,7 @@ use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
 use crate::{
-    _const::CONNECT_TIMEOUT,
-    user_identity::{NodeIdentity, UserIdentitySecrets},
+    _const::CONNECT_TIMEOUT, chat_presence::ChatPresence, user_identity::{NodeIdentity, UserIdentitySecrets}
 };
 use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 
@@ -257,11 +256,12 @@ pub async fn join_chat(
             CONNECT_TIMEOUT,
             gossip.subscribe_and_join(topic_id, bootstrap),
         )
-        .await??
+        .await.context("join chat")?.context("join chat")?
     };
     let (sender, receiver) = gossip_topic.split();
 
     let trigger_presence = Arc::new(Notify::new());
+    let presence = ChatPresence::new();
 
     // We spawn a task that occasionally sens a Presence message with our nickname.
     // This allows to track which peers are online currently.
@@ -269,9 +269,10 @@ pub async fn join_chat(
         let node_secret_key = node_secret_key.clone();
         let sender = sender.clone();
         let trigger_presence = trigger_presence.clone();
-
+        let sleep_ = sleep_.clone();
         let user_secrets = user_secrets.clone();
         let node_identity = node_identity.clone();
+        let presence = presence.clone();
         async move {
             // trigger_presence.notified().await;
             loop {
@@ -283,12 +284,12 @@ pub async fn join_chat(
                     node_identity.clone(),
                 )
                 .expect("failed to encode message");
-                info!("presence task broadcast");
                 if let Err(err) = sender.broadcast(signed_message.into()).await
                 {
                     tracing::warn!("presence task failed to broadcast: {err}");
                     break;
                 }
+                presence.add_presence(&node_identity).await;
                 let wait = PRESENCE_INTERVAL
                     + Duration::from_secs(rand::thread_rng().gen_range(0..3));
                 n0_future::future::race(
@@ -351,6 +352,8 @@ pub async fn join_chat(
     Ok(ChatControllerRaw {
         sender,
         receiver: Box::pin(receiver),
+        sleep_manager: sleep_,
+        presence,
     }
     .into())
 }
@@ -358,6 +361,7 @@ pub async fn join_chat(
 #[derive(Clone)]
 pub struct ChatController {
     inner: Arc<ChatControllerInner>,
+    chat_presence: ChatPresence,
 }
 
 impl ChatController {
@@ -372,6 +376,9 @@ impl ChatController {
         self.inner.receiver.close();
 
         Ok(())
+    }
+    pub fn chat_presence(&self) -> ChatPresence {
+        self.chat_presence.clone()
     }
 }
 
@@ -412,6 +419,8 @@ struct ChatControllerInner {
 struct ChatControllerRaw {
     pub sender: ChatSender,
     pub receiver: ChatEventStream,
+    pub sleep_manager: SleepManager,
+    pub presence: ChatPresence,
 }
 
 impl Into<ChatController> for ChatControllerRaw {
@@ -419,19 +428,28 @@ impl Into<ChatController> for ChatControllerRaw {
         let ChatControllerRaw {
             sender,
             mut receiver,
+            sleep_manager,
+            presence,
         } = self;
         let (mut b_sender, b_recv) = async_broadcast::broadcast(128);
         b_sender.set_overflow(true);
+        let presence_ = presence.clone();
+        let sleep_ = sleep_manager.clone();
         let task = AbortOnDropHandle::new(task::spawn(async move {
             while let Some(event) = receiver.next().await {
+                sleep_.wake_up();
                 let event =
                     event.map_err(|e| ChatEventStreamError(Arc::new(e)));
-                let _r = b_sender.broadcast(event).await;
-                if let Err(err) = _r {
-                    error!("chat controller raw receiver stream error: {err}");
+                let _r = b_sender.broadcast(event.clone()).await;
+                if let Err(broadcast_err) = _r {
+                    error!("chat controller raw receiver stream error: {broadcast_err}");
                     break;
                 }
+                if let Ok(NetworkEvent::Message { event: ReceivedMessage { message: ChatMessage::Presence {}, from, .. } }) = & event {
+                    presence_.add_presence(&from).await;
+                }
             }
+            warn!("XXX: chat controller raw receiver stream closed.");
         }));
         ChatController {
             inner: Arc::new(ChatControllerInner {
@@ -439,6 +457,7 @@ impl Into<ChatController> for ChatControllerRaw {
                 receiver: b_recv.deactivate(),
                 _recv_broadcast_task: task,
             }),
+            chat_presence: presence,
         }
     }
 }

@@ -3822,7 +3822,7 @@ dependencies = [
 
 [[package]]
 name = "iroh-gossip"
-version = "0.33.0"
+version = "0.34.0"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -5863,9 +5863,9 @@ dependencies = [
 
 [[package]]
 name = "quic-rpc"
-version = "0.18.3"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee5ffa5a7459678fb545b3666e1f9a08b01b6e6af56bf29cd54d07f29b97aaf2"
+checksum = "89561e5343bcad1c9f84321d9d9bd1619128ad44293faad55a0001b0e52d312b"
 dependencies = [
  "anyhow",
  "document-features",
@@ -5885,9 +5885,9 @@ dependencies = [
 
 [[package]]
 name = "quic-rpc-derive"
-version = "0.18.1"
+version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d94974ee26d4e97acfab1fd55df2a1ca676af24021a08354ed1c42b70a39e914"
+checksum = "0a99f334af6f23b3de91f6df9ac17237e8b533b676f596c69dcb3b58c3cf8dea"
 dependencies = [
  "proc-macro2",
  "quic-rpc",

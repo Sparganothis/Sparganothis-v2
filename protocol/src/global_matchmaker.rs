@@ -34,7 +34,6 @@ pub struct GlobalMatchmaker {
     own_public_key: Arc<PublicKey>,
     own_private_key: Arc<SecretKey>,
     inner: Arc<Mutex<GlobalMatchmakerInner>>,
-    chat_presence: ChatPresence,
     sleep_manager: SleepManager,
 }
 
@@ -44,8 +43,6 @@ struct GlobalMatchmakerInner {
     known_bootstrap_nodes: BTreeMap<usize, BootstrapNodeInfo>,
     _periodic_task: Option<AbortOnDropHandle<()>>,
     global_chat_controller: Option<ChatController>,
-    _presence_task_1: Option<AbortOnDropHandle<()>>,
-    _presence_task_2: Option<AbortOnDropHandle<()>>,
 }
 
 impl PartialEq for GlobalMatchmaker {
@@ -65,6 +62,7 @@ pub struct BootstrapNodeInfo {
 }
 
 impl GlobalMatchmaker {
+
     pub async fn sleep(&self, duration: Duration) {
         self.sleep_manager.sleep(duration).await;
     }
@@ -75,10 +73,6 @@ impl GlobalMatchmaker {
 
             let _task1 = inner._periodic_task.take();
             drop(_task1);
-            let _task3 = inner._presence_task_1.take();
-            drop(_task3);
-            let _task4 = inner._presence_task_2.take();
-            drop(_task4);
 
             if let Some(cc) = inner.global_chat_controller.take() {
                 let _ = cc.shutdown().await;
@@ -93,10 +87,6 @@ impl GlobalMatchmaker {
         }
         info!("GlobalMatchmaker shutdown complete");
         Ok(())
-    }
-
-    pub fn chat_presence(&self) -> ChatPresence {
-        self.chat_presence.clone()
     }
 
     pub fn user_secrets(&self) -> std::sync::Arc<UserIdentitySecrets> {
@@ -128,16 +118,25 @@ impl GlobalMatchmaker {
             .node_id();
         let bs_endpoint = self.bs_endpoint().await.map(|bs| bs.node_id());
         let bs = self.known_bootstrap_nodes().await;
+        
         let date = timestamp_now();
         let mut info_txt = String::new();
         info_txt.push_str(&format!(
             "Global Matchmaker Debug Info\nDate: {}\n\n",
             date.to_rfc2822()
         ));
+
+        let chat_presence = self.global_chat_controller().await.map(|c| c.chat_presence());
+        let chat_presence_count = if let Some(chat_presence) = chat_presence {
+            chat_presence.get_presence_list().await.len()
+        } else {
+            0
+        };
         info_txt.push_str(&format!(
             "Peer Count: {}\n\n",
-            self.chat_presence().get_presence_list().await.len()
+            chat_presence_count
         ));
+        
         info_txt.push_str(&format!("User Nickname: {user_nickname}\n"));
         info_txt.push_str(&format!("User ID: {user_id}\n\n"));
         info_txt.push_str(&format!("Own Endpoint NodeID: \n{endpoint:#?}\n\n"));
@@ -161,10 +160,7 @@ impl GlobalMatchmaker {
                 known_bootstrap_nodes: BTreeMap::new(),
                 _periodic_task: None,
                 global_chat_controller: None,
-                _presence_task_1: None,
-                _presence_task_2: None,
             })),
-            chat_presence: ChatPresence::new(),
             sleep_manager: sleep.clone(),
         };
 
@@ -246,10 +242,10 @@ impl GlobalMatchmaker {
     pub async fn new(
         user_identity_secrets: Arc<UserIdentitySecrets>,
     ) -> Result<Self> {
-        let own_private_key =
-            Arc::new(SecretKey::generate(&mut rand::thread_rng()));
         let num = 3;
-        for i in 0..num {
+        for i in 0..num {        
+            let own_private_key =
+            Arc::new(SecretKey::generate(&mut rand::thread_rng()));
             match Self::new_try_once(
                 own_private_key.clone(),
                 user_identity_secrets.clone(),
@@ -308,42 +304,9 @@ impl GlobalMatchmaker {
             .join_chat(&ticket)
             .await?;
 
-        let presence_ = self.chat_presence.clone();
-        let c1_ = c1.clone();
-        let sleep_ = self.sleep_manager.clone();
-        let _task1 =
-            AbortOnDropHandle::new(n0_future::task::spawn(async move {
-                let mut r = c1_.receiver();
-                while let Some(Ok(event)) = r.next().await {
-                    sleep_.wake_up();
-                    if let NetworkEvent::Message {
-                        event:
-                            ReceivedMessage {
-                                message: ChatMessage::Presence {},
-                                from,
-                                ..
-                            },
-                    } = event
-                    {
-                        presence_.add_presence(from).await;
-                    }
-                    sleep_.sleep(Duration::from_millis(7)).await;
-                }
-            }));
-        let presence_ = self.chat_presence.clone();
-        let sleep_ = self.sleep_manager.clone();
-        let _task2 =
-            AbortOnDropHandle::new(n0_future::task::spawn(async move {
-                loop {
-                    sleep_.sleep(PRESENCE_INTERVAL).await;
-                    presence_.remove_expired().await;
-                }
-            }));
         {
             let mut i = self.inner.lock().await;
             i.global_chat_controller = Some(c1);
-            i._presence_task_1 = Some(_task1);
-            i._presence_task_2 = Some(_task2);
         }
 
         info!("connect_global_chats(): done.");
@@ -470,7 +433,7 @@ impl GlobalMatchmaker {
                             CONNECT_TIMEOUT,
                             endpoint.connect(bs_node_id, Echo::ALPN),
                         )
-                        .await??;
+                        .await.context("connect to bootstrap")?.context("connect to bootstrap")?;
                         let t1 = n0_future::time::Instant::now();
                         let connect_secs = (t1 - t0).as_secs_f32();
                         let (mut send, mut recv) = connection.open_bi().await?;
@@ -539,12 +502,12 @@ impl GlobalMatchmaker {
         known_bs2.remove(self.own_node_identity().node_id());
         // let known_bs = known_bs1.union(&known_bs2).cloned().collect::<HashSet<_>>();
 
-        let presence_info = self.chat_presence().get_presence_list().await;
+        let presence_info = global_chat.chat_presence().get_presence_list().await;
         let presence_info = presence_info
             .into_iter()
             .map(|(_b, _, identity)| (_b, identity))
             .filter(|(_b, _i)| {
-                *_b == PresenceFlag::ACTIVE && _i.bootstrap_idx().is_none()
+                (*_b == PresenceFlag::ACTIVE || *_b == PresenceFlag::IDLE) && _i.bootstrap_idx().is_none()
             })
             .map(|(_b, identity)| identity)
             .map(|i| i.node_id().clone())
@@ -557,7 +520,7 @@ impl GlobalMatchmaker {
         if new_bs.is_empty() {
             return Ok(());
         }
-        info!("joining global chats with new bootstrap nodes: {new_bs:#?} \n known nodes: {known_bs2:#?} \n presence info: {presence_info:#?}");
+        info!("joining global chats with new bootstrap nodes: \n new nodes: {new_bs:#?} \n known nodes: {known_bs2:#?} \n presence info: {presence_info:#?}");
         // if let Some(cc) = self.bs_global_chat_controller().await {
         //     cc.sender().join_peers(new_bs.clone()).await.context("failed to join new peers on bs node!")?;
         // }
@@ -603,6 +566,8 @@ async fn global_periodic_task(_mm: GlobalMatchmaker) {
 
 async fn global_periodic_task_iteration_1(mm: GlobalMatchmaker) -> Result<()> {
     mm.connect_to_bootstrap().await?;
+    
+    mm.join_global_chats_into_new_bootstrap().await?;
     Ok(())
 }
 
@@ -611,6 +576,7 @@ async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
         mm.connect_to_bootstrap().await?;
         let added = mm.spawn_bootstrap_endpoint().await?;
         if added {
+            info!("global periodic task: spawned new bootstrap endpoint");
             // mm.connect_bootstrap_chat().await?;
         }
     }

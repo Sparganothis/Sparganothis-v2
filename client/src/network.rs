@@ -82,6 +82,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 };
                 mm_signal_loading_w.set(false);
             }
+            warn!("XXX: Network connection parent coroutine exited");
         });
     let reset_network = Callback::new(move |_: ()| {
         _coro.send(());
@@ -93,9 +94,13 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 debug_info_txt_w.set("No network connection".to_string());
                 return;
             };
+            let Some(presence) = mm.global_chat_controller().await.map(|c| c.chat_presence()) else {
+                debug_info_txt_w.set("No chat controller".to_string());
+                return;
+            };
             loop {
                 let presence_list =
-                    mm.chat_presence().get_presence_list().await;
+                    presence.get_presence_list().await;
                 presence_list_w.set(presence_list);
                 debug_info_txt_w.set(
                     mm.display_debug_info()
@@ -104,7 +109,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 );
                 n0_future::future::race(
                     mm.sleep(PRESENCE_INTERVAL),
-                    mm.chat_presence().notified(),
+                    presence.notified(),
                 )
                 .await;
             }

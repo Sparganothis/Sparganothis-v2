@@ -60,6 +60,7 @@ fn ChatRoom(chat: ReadOnlySignal<Option<Option<ChatController>>>) -> Element {
                 };
                 history.write().messages.push(t);
             }
+            warn!("XXX: ChatRoom receiver stream closed");
         }
     });
 

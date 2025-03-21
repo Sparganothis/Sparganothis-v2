@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use iroh::{endpoint::Connection, protocol::ProtocolHandler, NodeId};
 use n0_future::boxed::BoxFuture;
 use tracing::warn;
@@ -67,7 +67,7 @@ impl Echo {
             CONNECT_TIMEOUT,
             send.write_all(&response_own_node_id),
         )
-        .await??;
+        .await.context("echo")?.context("echo")?;
 
         // By calling `finish` on the send stream we signal that we will not send anything
         // further, which makes the receive stream on the other end terminate.

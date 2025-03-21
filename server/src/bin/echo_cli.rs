@@ -33,6 +33,7 @@ async fn main() -> Result<()> {
 
     global_mm.shutdown().await?;
 
+    println!("* shutdown OK");
     // std::process::exit(0);
 
     Ok(())
@@ -84,7 +85,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                 },
             }
         }
-        println!("* closed");
+        println!("* recv closed");
         anyhow::Ok(())
     });
 
