@@ -94,13 +94,14 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                 debug_info_txt_w.set("No network connection".to_string());
                 return;
             };
-            let Some(presence) = mm.global_chat_controller().await.map(|c| c.chat_presence()) else {
+            let Some(presence) =
+                mm.global_chat_controller().await.map(|c| c.chat_presence())
+            else {
                 debug_info_txt_w.set("No chat controller".to_string());
                 return;
             };
             loop {
-                let presence_list =
-                    presence.get_presence_list().await;
+                let presence_list = presence.get_presence_list().await;
                 presence_list_w.set(presence_list);
                 debug_info_txt_w.set(
                     mm.display_debug_info()

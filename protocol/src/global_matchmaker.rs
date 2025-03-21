@@ -62,7 +62,6 @@ pub struct BootstrapNodeInfo {
 }
 
 impl GlobalMatchmaker {
-
     pub async fn sleep(&self, duration: Duration) {
         self.sleep_manager.sleep(duration).await;
     }
@@ -118,7 +117,7 @@ impl GlobalMatchmaker {
             .node_id();
         let bs_endpoint = self.bs_endpoint().await.map(|bs| bs.node_id());
         let bs = self.known_bootstrap_nodes().await;
-        
+
         let date = timestamp_now();
         let mut info_txt = String::new();
         info_txt.push_str(&format!(
@@ -126,17 +125,17 @@ impl GlobalMatchmaker {
             date.to_rfc2822()
         ));
 
-        let chat_presence = self.global_chat_controller().await.map(|c| c.chat_presence());
+        let chat_presence = self
+            .global_chat_controller()
+            .await
+            .map(|c| c.chat_presence());
         let chat_presence_count = if let Some(chat_presence) = chat_presence {
             chat_presence.get_presence_list().await.len()
         } else {
             0
         };
-        info_txt.push_str(&format!(
-            "Peer Count: {}\n\n",
-            chat_presence_count
-        ));
-        
+        info_txt.push_str(&format!("Peer Count: {}\n\n", chat_presence_count));
+
         info_txt.push_str(&format!("User Nickname: {user_nickname}\n"));
         info_txt.push_str(&format!("User ID: {user_id}\n\n"));
         info_txt.push_str(&format!("Own Endpoint NodeID: \n{endpoint:#?}\n\n"));
@@ -243,9 +242,9 @@ impl GlobalMatchmaker {
         user_identity_secrets: Arc<UserIdentitySecrets>,
     ) -> Result<Self> {
         let num = 3;
-        for i in 0..num {        
+        for i in 0..num {
             let own_private_key =
-            Arc::new(SecretKey::generate(&mut rand::thread_rng()));
+                Arc::new(SecretKey::generate(&mut rand::thread_rng()));
             match Self::new_try_once(
                 own_private_key.clone(),
                 user_identity_secrets.clone(),
@@ -433,7 +432,9 @@ impl GlobalMatchmaker {
                             CONNECT_TIMEOUT,
                             endpoint.connect(bs_node_id, Echo::ALPN),
                         )
-                        .await.context("connect to bootstrap")?.context("connect to bootstrap")?;
+                        .await
+                        .context("connect to bootstrap")?
+                        .context("connect to bootstrap")?;
                         let t1 = n0_future::time::Instant::now();
                         let connect_secs = (t1 - t0).as_secs_f32();
                         let (mut send, mut recv) = connection.open_bi().await?;
@@ -502,12 +503,14 @@ impl GlobalMatchmaker {
         known_bs2.remove(self.own_node_identity().node_id());
         // let known_bs = known_bs1.union(&known_bs2).cloned().collect::<HashSet<_>>();
 
-        let presence_info = global_chat.chat_presence().get_presence_list().await;
+        let presence_info =
+            global_chat.chat_presence().get_presence_list().await;
         let presence_info = presence_info
             .into_iter()
             .map(|(_b, _, identity)| (_b, identity))
             .filter(|(_b, _i)| {
-                (*_b == PresenceFlag::ACTIVE || *_b == PresenceFlag::IDLE) && _i.bootstrap_idx().is_none()
+                (*_b == PresenceFlag::ACTIVE || *_b == PresenceFlag::IDLE)
+                    && _i.bootstrap_idx().is_none()
             })
             .map(|(_b, identity)| identity)
             .map(|i| i.node_id().clone())
@@ -566,7 +569,7 @@ async fn global_periodic_task(_mm: GlobalMatchmaker) {
 
 async fn global_periodic_task_iteration_1(mm: GlobalMatchmaker) -> Result<()> {
     mm.connect_to_bootstrap().await?;
-    
+
     mm.join_global_chats_into_new_bootstrap().await?;
     Ok(())
 }

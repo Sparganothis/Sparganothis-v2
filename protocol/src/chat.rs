@@ -18,7 +18,9 @@ use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
 use crate::{
-    _const::CONNECT_TIMEOUT, chat_presence::ChatPresence, user_identity::{NodeIdentity, UserIdentitySecrets}
+    _const::CONNECT_TIMEOUT,
+    chat_presence::ChatPresence,
+    user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 
@@ -256,7 +258,9 @@ pub async fn join_chat(
             CONNECT_TIMEOUT,
             gossip.subscribe_and_join(topic_id, bootstrap),
         )
-        .await.context("join chat")?.context("join chat")?
+        .await
+        .context("join chat")?
+        .context("join chat")?
     };
     let (sender, receiver) = gossip_topic.split();
 
@@ -445,7 +449,15 @@ impl Into<ChatController> for ChatControllerRaw {
                     error!("chat controller raw receiver stream error: {broadcast_err}");
                     break;
                 }
-                if let Ok(NetworkEvent::Message { event: ReceivedMessage { message: ChatMessage::Presence {}, from, .. } }) = & event {
+                if let Ok(NetworkEvent::Message {
+                    event:
+                        ReceivedMessage {
+                            message: ChatMessage::Presence {},
+                            from,
+                            ..
+                        },
+                }) = &event
+                {
                     presence_.add_presence(&from).await;
                 }
             }
