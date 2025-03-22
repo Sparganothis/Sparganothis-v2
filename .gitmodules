@@ -4,3 +4,6 @@
 [submodule "lib/iroh-gossip"]
 	path = lib/iroh-gossip
 	url = https://github.com/n0-computer/iroh-gossip
+[submodule "lib/matchbox"]
+	path = lib/matchbox
+	url = https://github.com/Sparganothis/matchbox

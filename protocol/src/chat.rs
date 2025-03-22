@@ -247,21 +247,21 @@ pub async fn join_chat(
         .filter(|id| id != &node_identity.node_id())
         .cloned()
         .collect();
-    let bootstrap_count = bootstrap.len();
+    // let bootstrap_count = bootstrap.len();
     info!("joining {topic_id} : {bootstrap:#?}");
-    let gossip_topic = if bootstrap_count == 0 {
-        info!("try subscribe with zero nodes");
-        gossip.subscribe(topic_id, bootstrap)?
-    } else {
-        info!("try subscribe with {bootstrap_count} nodes");
-        n0_future::time::timeout(
-            CONNECT_TIMEOUT,
-            gossip.subscribe_and_join(topic_id, bootstrap),
-        )
-        .await
-        .context("join chat")?
-        .context("join chat")?
-    };
+    // let gossip_topic = if bootstrap_count == 0 {
+        // info!("try subscribe with zero nodes");
+        let gossip_topic =gossip.subscribe(topic_id, bootstrap)?;
+    // } else {
+        // info!("try subscribe with {bootstrap_count} nodes");
+        // n0_future::time::timeout(
+            // CONNECT_TIMEOUT,
+            // gossip.subscribe_and_join(topic_id, bootstrap),
+        // )
+        // .await
+        // .context("join chat")?
+        // .context("join chat")?
+    // };
     let (sender, receiver) = gossip_topic.split();
 
     let trigger_presence = Arc::new(Notify::new());

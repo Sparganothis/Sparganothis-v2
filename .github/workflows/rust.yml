@@ -68,7 +68,7 @@ jobs:
     - name: Send Chat Message Started
       run: |
         text=$(git log -1 --no-merges --pretty=%B)
-        sha=$(git rev-parse --shortHEAD)
+        sha=$(git rev-parse --short HEAD)
         echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh
 
     - name: Build Web Release

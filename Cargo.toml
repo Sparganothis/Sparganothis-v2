@@ -1,5 +1,12 @@
 [workspace]
-members = ['client', "game", "protocol", "server"]
+members = [
+    'client', "game", "protocol", "server",
+    "lib/matchbox/matchbox_socket",
+    "lib/matchbox/matchbox_server",
+    "lib/matchbox/matchbox_protocol",
+    "lib/matchbox/matchbox_signaling",
+    "lib/matchbox/examples/*",
+]
 resolver = "2"
 
 [workspace.package]

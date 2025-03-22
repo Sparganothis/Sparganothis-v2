@@ -105,6 +105,9 @@ impl GlobalMatchmaker {
     pub async fn global_chat_controller(&self) -> Option<ChatController> {
         self.inner.lock().await.global_chat_controller.clone()
     }
+    pub async fn bs_global_chat_controller(&self) -> Option<ChatController> {
+        self.inner.lock().await.bs_global_chat_controller.clone()
+    }
     pub async fn display_debug_info(&self) -> Result<String> {
         let user_nickname =
             self.user_secrets().user_identity().nickname().to_string();
@@ -193,7 +196,7 @@ impl GlobalMatchmaker {
             .values()
             .map(|bs| {
                 vec![
-                    // bs.bootstrap_id,
+                    bs._bootstrap_id,
                     bs.own_id,
                 ]
             })
@@ -319,19 +322,17 @@ impl GlobalMatchmaker {
         };
         let ticket = self.get_global_chat_ticket().await?;
         let mm = self.clone();
-        n0_future::task::spawn(async move {
-            match bs.join_chat(&ticket).await {
-                Ok(c1) => {
-                    let mut i = mm.inner.lock().await;
-                    i.bs_global_chat_controller = Some(c1);
-                }
-                Err(e) => {
-                    warn!("failed to connect to bootstrap chat: {e}");
-                }
+        match bs.join_chat(&ticket).await {
+            Ok(c1) => {
+                let mut i = mm.inner.lock().await;
+                i.bs_global_chat_controller = Some(c1);
+                Ok(())
             }
-        });
-
-        Ok(())
+            Err(e) => {
+                warn!("failed to connect to bootstrap chat: {e}");
+                Err(e)
+            }
+        }
     }
 
     pub async fn get_global_chat_ticket(&self) -> Result<ChatTicket> {
@@ -551,14 +552,15 @@ impl GlobalMatchmaker {
             return Ok(());
         }
         info!("joining global chats with new bootstrap nodes: \n new nodes: {new_bs:#?} \n known nodes: {known_bs2:#?} \n presence info: {presence_info:#?}");
-        // if let Some(cc) = self.bs_global_chat_controller().await {
-        //     cc.sender().join_peers(new_bs.clone()).await.context("failed to join new peers on bs node!")?;
-        // }
+
         global_chat
             .sender()
-            .join_peers(new_bs)
+            .join_peers(new_bs.clone())
             .await
             .context("failed to join new peers on normal node!")?;
+        if let Some(cc) = self.bs_global_chat_controller().await {
+            cc.sender().join_peers(new_bs.clone()).await.context("failed to join new peers on bs node!")?;
+        }
 
         Ok(())
     }
