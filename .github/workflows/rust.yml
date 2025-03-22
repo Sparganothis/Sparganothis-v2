@@ -65,20 +65,20 @@ jobs:
     - name: Install dioxus-cli
       run: cargo binstall dioxus-cli@0.6.3 --no-confirm --force || cargo install dioxus-cli@0.6.3
 
-    - name: Send Chat Message Started
-      run: |
-        text=$(git log -1 --no-merges --pretty=%B)
-        sha=$(git rev-parse --short HEAD)
-        echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh
+    # - name: Send Chat Message Started
+    #   run: |
+    #     text=$(git log -1 --no-merges --pretty=%B)
+    #     sha=$(git rev-parse --short HEAD)
+    #     echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh
 
     - name: Build Web Release
       run: chmod +x ./build_web_release.sh && ./build_web_release.sh
 
-    - name: Send Chat Message Finished
-      run: |
-        text=$(git log -1 --no-merges --pretty=%B)
-        sha=$(git rev-parse --short HEAD)
-        echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh
+    # - name: Send Chat Message Finished
+    #   run: |
+    #     text=$(git log -1 --no-merges --pretty=%B)
+    #     sha=$(git rev-parse --short HEAD)
+    #     echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
