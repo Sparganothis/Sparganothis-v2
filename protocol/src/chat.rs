@@ -17,12 +17,12 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
+use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 use crate::{
     // _const::CONNECT_TIMEOUT,
     chat_presence::ChatPresence,
     user_identity::{NodeIdentity, UserIdentitySecrets},
 };
-use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ChatTicket {
@@ -43,9 +43,30 @@ impl ChatTicket {
     }
 }
 
-pub trait ChatMessageType : std::fmt::Display + serde::Serialize + for<'a> serde::Deserialize<'a> + Clone + std::fmt::Debug + PartialEq + Send + Sync + 'static {}
-impl<T> ChatMessageType for T where T: std::fmt::Display + serde::Serialize + for<'a> serde::Deserialize<'a> + Clone + std::fmt::Debug + PartialEq + Send + Sync + 'static {}
-
+pub trait ChatMessageType:
+    std::fmt::Display
+    + serde::Serialize
+    + for<'a> serde::Deserialize<'a>
+    + Clone
+    + std::fmt::Debug
+    + PartialEq
+    + Send
+    + Sync
+    + 'static
+{
+}
+impl<T> ChatMessageType for T where
+    T: std::fmt::Display
+        + serde::Serialize
+        + for<'a> serde::Deserialize<'a>
+        + Clone
+        + std::fmt::Debug
+        + PartialEq
+        + Send
+        + Sync
+        + 'static
+{
+}
 
 #[derive(Debug, Clone)]
 pub struct ChatSender<T: ChatMessageType> {
@@ -59,7 +80,10 @@ pub struct ChatSender<T: ChatMessageType> {
     _nonce: u64,
 }
 
-impl<T> PartialEq for ChatSender<T> where T: ChatMessageType {
+impl<T> PartialEq for ChatSender<T>
+where
+    T: ChatMessageType,
+{
     fn eq(&self, other: &Self) -> bool {
         self._nonce == other._nonce
     }
@@ -105,7 +129,10 @@ pub enum NetworkChangeEvent {
     Lagged,
 }
 
-impl<T> TryFrom<iroh_gossip::net::Event> for NetworkEvent<T> where T: ChatMessageType {
+impl<T> TryFrom<iroh_gossip::net::Event> for NetworkEvent<T>
+where
+    T: ChatMessageType,
+{
     type Error = anyhow::Error;
     fn try_from(event: iroh_gossip::net::Event) -> Result<Self, Self::Error> {
         let converted = match event {
@@ -149,9 +176,12 @@ pub struct SignedMessage {
 }
 
 impl SignedMessage {
-    pub fn verify_and_decode<T: ChatMessageType>(bytes: &[u8]) -> Result<ReceivedMessage<T>> {
+    pub fn verify_and_decode<T: ChatMessageType>(
+        bytes: &[u8],
+    ) -> Result<ReceivedMessage<T>> {
         let signed_message: Self = postcard::from_bytes(bytes)?;
-        let message: WireMessage<T> = postcard::from_bytes(&signed_message.data)?;
+        let message: WireMessage<T> =
+            postcard::from_bytes(&signed_message.data)?;
         let WireMessage::VO {
             timestamp,
             message,
@@ -237,22 +267,23 @@ pub struct ReceivedMessage<T> {
 
 pub type ChatEventStream<T> = std::pin::Pin<
     Box<
-        (dyn tokio_stream::Stream<
-            Item = Result<NetworkEvent<T>, anyhow::Error>,
-        > + std::marker::Send
+        (dyn tokio_stream::Stream<Item = Result<NetworkEvent<T>, anyhow::Error>>
+             + std::marker::Send
              + 'static),
     >,
 >;
 
-pub async fn join_chat<T> (
+pub async fn join_chat<T>(
     gossip: Gossip,
     node_secret_key: Arc<SecretKey>,
     ticket: &ChatTicket,
     user_secrets: Arc<UserIdentitySecrets>,
     node_identity: Arc<NodeIdentity>,
     sleep_: SleepManager,
-) -> Result<ChatController<T>> 
-where T: ChatMessageType {
+) -> Result<ChatController<T>>
+where
+    T: ChatMessageType,
+{
     let topic_id = ticket.topic_id;
     let bootstrap: Vec<PublicKey> = ticket
         .bootstrap
@@ -263,17 +294,17 @@ where T: ChatMessageType {
     // let bootstrap_count = bootstrap.len();
     info!("joining {topic_id} : {bootstrap:#?}");
     // let gossip_topic = if bootstrap_count == 0 {
-        // info!("try subscribe with zero nodes");
-        let gossip_topic =gossip.subscribe(topic_id, bootstrap)?;
+    // info!("try subscribe with zero nodes");
+    let gossip_topic = gossip.subscribe(topic_id, bootstrap)?;
     // } else {
-        // info!("try subscribe with {bootstrap_count} nodes");
-        // n0_future::time::timeout(
-            // CONNECT_TIMEOUT,
-            // gossip.subscribe_and_join(topic_id, bootstrap),
-        // )
-        // .await
-        // .context("join chat")?
-        // .context("join chat")?
+    // info!("try subscribe with {bootstrap_count} nodes");
+    // n0_future::time::timeout(
+    // CONNECT_TIMEOUT,
+    // gossip.subscribe_and_join(topic_id, bootstrap),
+    // )
+    // .await
+    // .context("join chat")?
+    // .context("join chat")?
     // };
     let (sender, receiver) = gossip_topic.split();
 
@@ -377,19 +408,28 @@ where T: ChatMessageType {
     .into())
 }
 
-impl<T> PartialEq for ChatController<T> where T: ChatMessageType {
+impl<T> PartialEq for ChatController<T>
+where
+    T: ChatMessageType,
+{
     fn eq(&self, other: &Self) -> bool {
         self.inner.sender._nonce == other.inner.sender._nonce
     }
 }
 
 #[derive(Clone)]
-pub struct ChatController<T> where T: ChatMessageType {
+pub struct ChatController<T>
+where
+    T: ChatMessageType,
+{
     inner: Arc<ChatControllerInner<T>>,
     chat_presence: ChatPresence,
 }
 
-impl<T> ChatController<T> where T: ChatMessageType {
+impl<T> ChatController<T>
+where
+    T: ChatMessageType,
+{
     pub fn sender(&self) -> ChatSender<T> {
         self.inner.sender.clone()
     }
@@ -430,25 +470,34 @@ impl std::fmt::Display for ChatEventStreamError {
 
 impl std::error::Error for ChatEventStreamError {}
 
-pub type ChatEventReceiver<T>  =
+pub type ChatEventReceiver<T> =
     async_broadcast::Receiver<Result<NetworkEvent<T>, ChatEventStreamError>>;
 pub type ChatEventReceiverInactive<T> = async_broadcast::InactiveReceiver<
     Result<NetworkEvent<T>, ChatEventStreamError>,
 >;
-struct ChatControllerInner<T> where T: ChatMessageType {
+struct ChatControllerInner<T>
+where
+    T: ChatMessageType,
+{
     sender: ChatSender<T>,
     receiver: ChatEventReceiverInactive<T>,
     _recv_broadcast_task: AbortOnDropHandle<()>,
 }
 
-struct ChatControllerRaw<T> where T: ChatMessageType {
+struct ChatControllerRaw<T>
+where
+    T: ChatMessageType,
+{
     pub sender: ChatSender<T>,
     pub receiver: ChatEventStream<T>,
     pub sleep_manager: SleepManager,
     pub presence: ChatPresence,
 }
 
-impl<T> Into<ChatController<T>> for ChatControllerRaw<T> where T: ChatMessageType {
+impl<T> Into<ChatController<T>> for ChatControllerRaw<T>
+where
+    T: ChatMessageType,
+{
     fn into(self) -> ChatController<T> {
         let ChatControllerRaw {
             sender,

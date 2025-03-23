@@ -94,7 +94,9 @@ impl MainNode {
         &self,
         ticket: &ChatTicket,
     ) -> Result<ChatController<T>>
-    where T: ChatMessageType {
+    where
+        T: ChatMessageType,
+    {
         join_chat(
             self.gossip.clone(),
             self.node_secret_key.clone(),

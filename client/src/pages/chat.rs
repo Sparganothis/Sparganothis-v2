@@ -6,7 +6,8 @@ use iroh::PublicKey;
 use n0_future::StreamExt;
 use protocol::{
     chat::{
-        timestamp_now, ChatController, ChatMessage, ChatMessageType as ChatMessageType2, NetworkEvent, ReceivedMessage
+        timestamp_now, ChatController, ChatMessage,
+        ChatMessageType as ChatMessageType2, NetworkEvent, ReceivedMessage,
     },
     chat_presence::PresenceFlag,
     global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker},
@@ -14,8 +15,14 @@ use protocol::{
 };
 use tracing::warn;
 
-pub trait ChatMessageType: ChatMessageType2 + RenderElement + FromUserInput {}
-impl<T> ChatMessageType for T where T: ChatMessageType2 + RenderElement + FromUserInput {}
+pub trait ChatMessageType:
+    ChatMessageType2 + RenderElement + FromUserInput
+{
+}
+impl<T> ChatMessageType for T where
+    T: ChatMessageType2 + RenderElement + FromUserInput
+{
+}
 pub trait RenderElement: ChatMessageType2 {
     fn render_element(&self) -> Element;
 }
@@ -32,7 +39,7 @@ impl RenderElement for GlobalChatMessageType {
     fn render_element(&self) -> Element {
         rsx! {
             div {
-                
+
             }
         }
     }
@@ -46,17 +53,17 @@ pub fn GlobalChatPage() -> Element {
         let mm = mm.read().clone();
         async move { Some(mm?.global_chat_controller().await?) }
     });
-    let chat = use_memo(move || {
-        chat.read().as_ref().map(|c| c.clone()).flatten()
-    });
+    let chat =
+        use_memo(move || chat.read().as_ref().map(|c| c.clone()).flatten());
     rsx! {
         ChatRoom<GlobalChatMessageType> { chat }
     }
 }
 
-
 #[component]
-fn ChatRoom<T: ChatMessageType>(chat: ReadOnlySignal<Option<ChatController<T>>>) -> Element {
+fn ChatRoom<T: ChatMessageType>(
+    chat: ReadOnlySignal<Option<ChatController<T>>>,
+) -> Element {
     let mut history = use_signal(ChatHistory::<T>::default);
     let mm = use_context::<NetworkState>().global_mm;
 
@@ -205,7 +212,9 @@ fn ChatPresenceDisplayItem(
     }
 }
 #[component]
-fn ChatHistoryDisplay<T: ChatMessageType>(history: ReadOnlySignal<ChatHistory<T>>) -> Element {
+fn ChatHistoryDisplay<T: ChatMessageType>(
+    history: ReadOnlySignal<ChatHistory<T>>,
+) -> Element {
     rsx! {
         div {
             style: "
@@ -253,7 +262,10 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
 }
 
 #[component]
-fn ChatMessageDisplay<T: ChatMessageType>(message: ReceivedMessage<T>, user_id: PublicKey) -> Element {
+fn ChatMessageDisplay<T: ChatMessageType>(
+    message: ReceivedMessage<T>,
+    user_id: PublicKey,
+) -> Element {
     let ReceivedMessage {
         timestamp,
         from,
@@ -261,7 +273,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(message: ReceivedMessage<T>, user_id: 
     } = message;
     let text: Element = match message {
         ChatMessage::Message { text } => text.render_element(),
-        _ => rsx!{"{message:#?}"},
+        _ => rsx! {"{message:#?}"},
     };
     let from_nickname = from.nickname();
     let from_user_id = from.user_id().fmt_short();

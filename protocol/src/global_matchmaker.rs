@@ -104,10 +104,14 @@ impl GlobalMatchmaker {
         self.own_node_identity().user_identity().clone()
     }
 
-    pub async fn global_chat_controller(&self) -> Option<ChatController<GlobalChatMessageType>> {
+    pub async fn global_chat_controller(
+        &self,
+    ) -> Option<ChatController<GlobalChatMessageType>> {
         self.inner.lock().await.global_chat_controller.clone()
     }
-    pub async fn bs_global_chat_controller(&self) -> Option<ChatController<GlobalChatMessageType>> {
+    pub async fn bs_global_chat_controller(
+        &self,
+    ) -> Option<ChatController<GlobalChatMessageType>> {
         self.inner.lock().await.bs_global_chat_controller.clone()
     }
     pub async fn display_debug_info(&self) -> Result<String> {
@@ -196,12 +200,7 @@ impl GlobalMatchmaker {
             .await
             .known_bootstrap_nodes
             .values()
-            .map(|bs| {
-                vec![
-                    bs._bootstrap_id,
-                    bs.own_id,
-                ]
-            })
+            .map(|bs| vec![bs._bootstrap_id, bs.own_id])
             .collect::<Vec<_>>()
             .iter()
             .flatten()
@@ -561,7 +560,10 @@ impl GlobalMatchmaker {
             .await
             .context("failed to join new peers on normal node!")?;
         if let Some(cc) = self.bs_global_chat_controller().await {
-            cc.sender().join_peers(new_bs.clone()).await.context("failed to join new peers on bs node!")?;
+            cc.sender()
+                .join_peers(new_bs.clone())
+                .await
+                .context("failed to join new peers on bs node!")?;
         }
 
         Ok(())
