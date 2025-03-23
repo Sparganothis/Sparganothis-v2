@@ -33,13 +33,15 @@ pub struct GlobalMatchmaker {
     sleep_manager: SleepManager,
 }
 
+pub type GlobalChatMessageType = String;
+
 struct GlobalMatchmakerInner {
     own_main_node: Option<MainNode>,
     bootstrap_main_node: Option<MainNode>,
     known_bootstrap_nodes: BTreeMap<usize, BootstrapNodeInfo>,
     _periodic_task: Option<AbortOnDropHandle<()>>,
-    global_chat_controller: Option<ChatController>,
-    bs_global_chat_controller: Option<ChatController>,
+    global_chat_controller: Option<ChatController<GlobalChatMessageType>>,
+    bs_global_chat_controller: Option<ChatController<GlobalChatMessageType>>,
 }
 
 impl PartialEq for GlobalMatchmaker {
@@ -102,10 +104,10 @@ impl GlobalMatchmaker {
         self.own_node_identity().user_identity().clone()
     }
 
-    pub async fn global_chat_controller(&self) -> Option<ChatController> {
+    pub async fn global_chat_controller(&self) -> Option<ChatController<GlobalChatMessageType>> {
         self.inner.lock().await.global_chat_controller.clone()
     }
-    pub async fn bs_global_chat_controller(&self) -> Option<ChatController> {
+    pub async fn bs_global_chat_controller(&self) -> Option<ChatController<GlobalChatMessageType>> {
         self.inner.lock().await.bs_global_chat_controller.clone()
     }
     pub async fn display_debug_info(&self) -> Result<String> {

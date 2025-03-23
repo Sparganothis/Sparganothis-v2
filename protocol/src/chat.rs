@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, sync::Arc};
+use std::{collections::BTreeSet, marker::PhantomData, sync::Arc};
 
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
@@ -18,7 +18,7 @@ use tokio::sync::Notify;
 use tracing::{error, info, warn};
 
 use crate::{
-    _const::CONNECT_TIMEOUT,
+    // _const::CONNECT_TIMEOUT,
     chat_presence::ChatPresence,
     user_identity::{NodeIdentity, UserIdentitySecrets},
 };
@@ -43,19 +43,31 @@ impl ChatTicket {
     }
 }
 
+pub trait ChatMessageType : std::fmt::Display + serde::Serialize + for<'a> serde::Deserialize<'a> + Clone + std::fmt::Debug + PartialEq + Send + Sync + 'static {}
+impl<T> ChatMessageType for T where T: std::fmt::Display + serde::Serialize + for<'a> serde::Deserialize<'a> + Clone + std::fmt::Debug + PartialEq + Send + Sync + 'static {}
+
+
 #[derive(Debug, Clone)]
-pub struct ChatSender {
+pub struct ChatSender<T: ChatMessageType> {
     user_secrets: Arc<UserIdentitySecrets>,
     node_secret_key: Arc<SecretKey>,
     node_identity: Arc<NodeIdentity>,
     sender: GossipSender,
     _trigger_presence: Arc<Notify>,
     _presence_task: Arc<AbortOnDropHandle<()>>,
+    _message_type: PhantomData<T>,
+    _nonce: u64,
 }
 
-impl ChatSender {
-    pub async fn send(&self, text: String) -> Result<()> {
-        let message = ChatMessage::Message { text };
+impl<T> PartialEq for ChatSender<T> where T: ChatMessageType {
+    fn eq(&self, other: &Self) -> bool {
+        self._nonce == other._nonce
+    }
+}
+
+impl<T: ChatMessageType> ChatSender<T> {
+    pub async fn send(&self, text: T) -> Result<()> {
+        let message = ChatMessage::<T>::Message { text };
         let signed_message = SignedMessage::sign_and_encode(
             &self.node_secret_key.as_ref(),
             &self.user_secrets.as_ref().secret_key(),
@@ -78,8 +90,8 @@ impl ChatSender {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum NetworkEvent {
-    Message { event: ReceivedMessage },
+pub enum NetworkEvent<T> {
+    Message { event: ReceivedMessage<T> },
 
     NetworkChange { event: NetworkChangeEvent },
 }
@@ -93,7 +105,7 @@ pub enum NetworkChangeEvent {
     Lagged,
 }
 
-impl TryFrom<iroh_gossip::net::Event> for NetworkEvent {
+impl<T> TryFrom<iroh_gossip::net::Event> for NetworkEvent<T> where T: ChatMessageType {
     type Error = anyhow::Error;
     fn try_from(event: iroh_gossip::net::Event) -> Result<Self, Self::Error> {
         let converted = match event {
@@ -137,9 +149,9 @@ pub struct SignedMessage {
 }
 
 impl SignedMessage {
-    pub fn verify_and_decode(bytes: &[u8]) -> Result<ReceivedMessage> {
+    pub fn verify_and_decode<T: ChatMessageType>(bytes: &[u8]) -> Result<ReceivedMessage<T>> {
         let signed_message: Self = postcard::from_bytes(bytes)?;
-        let message: WireMessage = postcard::from_bytes(&signed_message.data)?;
+        let message: WireMessage<T> = postcard::from_bytes(&signed_message.data)?;
         let WireMessage::VO {
             timestamp,
             message,
@@ -166,10 +178,10 @@ impl SignedMessage {
         })
     }
 
-    pub fn sign_and_encode(
+    pub fn sign_and_encode<T: ChatMessageType>(
         node_secret_key: &SecretKey,
         user_secret_key: &SecretKey,
-        message: ChatMessage,
+        message: ChatMessage<T>,
         from: Arc<NodeIdentity>,
     ) -> Result<Vec<u8>> {
         let timestamp = timestamp_now();
@@ -194,10 +206,10 @@ impl SignedMessage {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum WireMessage {
+pub enum WireMessage<T> {
     VO {
         timestamp: DateTime<Utc>,
-        message: ChatMessage,
+        message: ChatMessage<T>,
         from: NodeIdentity,
     },
 }
@@ -211,35 +223,36 @@ pub fn timestamp_now() -> DateTime<Utc> {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub enum ChatMessage {
+pub enum ChatMessage<T> {
     Presence {},
-    Message { text: String },
+    Message { text: T },
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-pub struct ReceivedMessage {
+pub struct ReceivedMessage<T> {
     pub timestamp: DateTime<Utc>,
     pub from: NodeIdentity,
-    pub message: ChatMessage,
+    pub message: ChatMessage<T>,
 }
 
-pub type ChatEventStream = std::pin::Pin<
+pub type ChatEventStream<T> = std::pin::Pin<
     Box<
         (dyn tokio_stream::Stream<
-            Item = Result<crate::chat::NetworkEvent, anyhow::Error>,
+            Item = Result<NetworkEvent<T>, anyhow::Error>,
         > + std::marker::Send
              + 'static),
     >,
 >;
 
-pub async fn join_chat(
+pub async fn join_chat<T> (
     gossip: Gossip,
     node_secret_key: Arc<SecretKey>,
     ticket: &ChatTicket,
     user_secrets: Arc<UserIdentitySecrets>,
     node_identity: Arc<NodeIdentity>,
     sleep_: SleepManager,
-) -> Result<ChatController> {
+) -> Result<ChatController<T>> 
+where T: ChatMessageType {
     let topic_id = ticket.topic_id;
     let bootstrap: Vec<PublicKey> = ticket
         .bootstrap
@@ -280,7 +293,7 @@ pub async fn join_chat(
         async move {
             // trigger_presence.notified().await;
             loop {
-                let message = ChatMessage::Presence {};
+                let message = ChatMessage::<T>::Presence {};
                 let signed_message = SignedMessage::sign_and_encode(
                     &node_secret_key,
                     &user_secrets.as_ref().secret_key(),
@@ -327,7 +340,7 @@ pub async fn join_chat(
                     // Convert into our event type. this fails if we receive a message
                     // that cannot be decoced into our event type. If that is the case,
                     // we just keep and log the error.
-                    let event: NetworkEvent = match event.try_into() {
+                    let event: NetworkEvent<T> = match event.try_into() {
                         Ok(event) => event,
                         Err(err) => {
                             warn!("BOOTSTRAP: received invalid message: {err}");
@@ -345,13 +358,15 @@ pub async fn join_chat(
         }
     });
 
-    let sender = ChatSender {
+    let sender = ChatSender::<T> {
         node_secret_key,
         sender,
         _trigger_presence: trigger_presence,
         _presence_task: Arc::new(presence_task),
         user_secrets,
         node_identity,
+        _message_type: PhantomData,
+        _nonce: rand::thread_rng().gen(),
     };
     Ok(ChatControllerRaw {
         sender,
@@ -362,17 +377,23 @@ pub async fn join_chat(
     .into())
 }
 
+impl<T> PartialEq for ChatController<T> where T: ChatMessageType {
+    fn eq(&self, other: &Self) -> bool {
+        self.inner.sender._nonce == other.inner.sender._nonce
+    }
+}
+
 #[derive(Clone)]
-pub struct ChatController {
-    inner: Arc<ChatControllerInner>,
+pub struct ChatController<T> where T: ChatMessageType {
+    inner: Arc<ChatControllerInner<T>>,
     chat_presence: ChatPresence,
 }
 
-impl ChatController {
-    pub fn sender(&self) -> ChatSender {
+impl<T> ChatController<T> where T: ChatMessageType {
+    pub fn sender(&self) -> ChatSender<T> {
         self.inner.sender.clone()
     }
-    pub fn receiver(&self) -> ChatEventReceiver {
+    pub fn receiver(&self) -> ChatEventReceiver<T> {
         self.inner.receiver.activate_cloned()
     }
     pub async fn shutdown(self) -> Result<()> {
@@ -409,26 +430,26 @@ impl std::fmt::Display for ChatEventStreamError {
 
 impl std::error::Error for ChatEventStreamError {}
 
-pub type ChatEventReceiver =
-    async_broadcast::Receiver<Result<NetworkEvent, ChatEventStreamError>>;
-pub type ChatEventReceiverInactive = async_broadcast::InactiveReceiver<
-    Result<NetworkEvent, ChatEventStreamError>,
+pub type ChatEventReceiver<T>  =
+    async_broadcast::Receiver<Result<NetworkEvent<T>, ChatEventStreamError>>;
+pub type ChatEventReceiverInactive<T> = async_broadcast::InactiveReceiver<
+    Result<NetworkEvent<T>, ChatEventStreamError>,
 >;
-struct ChatControllerInner {
-    sender: ChatSender,
-    receiver: ChatEventReceiverInactive,
+struct ChatControllerInner<T> where T: ChatMessageType {
+    sender: ChatSender<T>,
+    receiver: ChatEventReceiverInactive<T>,
     _recv_broadcast_task: AbortOnDropHandle<()>,
 }
 
-struct ChatControllerRaw {
-    pub sender: ChatSender,
-    pub receiver: ChatEventStream,
+struct ChatControllerRaw<T> where T: ChatMessageType {
+    pub sender: ChatSender<T>,
+    pub receiver: ChatEventStream<T>,
     pub sleep_manager: SleepManager,
     pub presence: ChatPresence,
 }
 
-impl Into<ChatController> for ChatControllerRaw {
-    fn into(self) -> ChatController {
+impl<T> Into<ChatController<T>> for ChatControllerRaw<T> where T: ChatMessageType {
+    fn into(self) -> ChatController<T> {
         let ChatControllerRaw {
             sender,
             mut receiver,

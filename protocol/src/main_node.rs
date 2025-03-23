@@ -10,7 +10,7 @@ use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 use tracing::info;
 
 use crate::{
-    chat::{join_chat, ChatController, ChatTicket},
+    chat::{join_chat, ChatController, ChatMessageType, ChatTicket},
     echo::Echo,
     sleep::SleepManager,
     user_identity::{NodeIdentity, UserIdentitySecrets},
@@ -90,10 +90,11 @@ impl MainNode {
     ///
     /// Returns a [`ChatSender`] to send messages or change our nickname
     /// and a stream of [`Event`] items for incoming messages and other event.s
-    pub async fn join_chat(
+    pub async fn join_chat<T>(
         &self,
         ticket: &ChatTicket,
-    ) -> Result<ChatController> {
+    ) -> Result<ChatController<T>>
+    where T: ChatMessageType {
         join_chat(
             self.gossip.clone(),
             self.node_secret_key.clone(),
