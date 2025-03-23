@@ -8,6 +8,7 @@ use anyhow::{Context, Result};
 use iroh::{endpoint::VarInt, Endpoint, NodeId, PublicKey, SecretKey};
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing::{error, info, warn};
 
@@ -16,7 +17,7 @@ use crate::{
     _const::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
     },
-    chat::{timestamp_now, ChatController, ChatTicket},
+    chat::{timestamp_now, ChatController, ChatMessageType, ChatTicket},
     chat_presence::PresenceFlag,
     echo::Echo,
     main_node::MainNode,
@@ -33,7 +34,18 @@ pub struct GlobalMatchmaker {
     sleep_manager: SleepManager,
 }
 
-pub type GlobalChatMessageType = String;
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct GlobalChatMessageType;
+
+
+impl ChatMessageType for GlobalChatMessageType {
+    type M = String;
+    type P = ();
+
+    fn new_presence() -> Self::P {
+        ()
+    }
+}
 
 struct GlobalMatchmakerInner {
     own_main_node: Option<MainNode>,

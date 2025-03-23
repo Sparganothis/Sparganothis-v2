@@ -16,31 +16,29 @@ use protocol::{
 use tracing::warn;
 
 pub trait ChatMessageType:
-    ChatMessageType2 + RenderElement + FromUserInput
+    ChatMessageType2 + RenderElement + FromUserInput + Clone
 {
 }
 impl<T> ChatMessageType for T where
-    T: ChatMessageType2 + RenderElement + FromUserInput
+    T: ChatMessageType2 + RenderElement + FromUserInput + Clone
 {
 }
 pub trait RenderElement: ChatMessageType2 {
-    fn render_element(&self) -> Element;
+    fn render_element(message: <Self as ChatMessageType2>::M) -> Element;
 }
 pub trait FromUserInput: ChatMessageType2 {
-    fn from_user_input(input: String) -> Self;
+    fn from_user_input(input: String) -> <Self as ChatMessageType2>::M;
 }
 
 impl FromUserInput for GlobalChatMessageType {
-    fn from_user_input(input: String) -> Self {
+    fn from_user_input(input: String) -> <Self as ChatMessageType2>::M {
         input
     }
 }
 impl RenderElement for GlobalChatMessageType {
-    fn render_element(&self) -> Element {
+    fn render_element(message: <Self as ChatMessageType2>::M) -> Element {
         rsx! {
-            div {
-
-            }
+                "{message}"
         }
     }
 }
@@ -79,7 +77,7 @@ fn ChatRoom<T: ChatMessageType>(
             };
             let mut recv = controller.receiver();
             while let Some(event) = recv.next().await {
-                let t: Result<ReceivedMessage<T>, String> = match event {
+                let t: Result<ReceivedMessage<T::M, T::P>, String> = match event {
                     Ok(NetworkEvent::Message { event }) => {
                         match event.message {
                             ChatMessage::Message { .. } => Ok(event),
@@ -101,7 +99,7 @@ fn ChatRoom<T: ChatMessageType>(
         let _i2 = use_context::<NetworkState>().is_connected.read().clone();
         *history.write() = ChatHistory::<T>::default();
     });
-    let on_user_message = Callback::new(move |message: T| {
+    let on_user_message = Callback::new(move |message: T::M| {
         let m = chat_send_message(mm.clone(), chat.clone(), message);
         if let Some(m) = &m {
             history.write().messages.push(Ok(m.clone()));
@@ -124,11 +122,11 @@ fn ChatRoom<T: ChatMessageType>(
                 class: "chat-main-pane",
                 div {
                     class: "chat-main",
-                    ChatHistoryDisplay { history }
+                    ChatHistoryDisplay::<T> { history }
                 }
                 div {
                     class: "chat-bottom",
-                    ChatInput { on_user_message }
+                    ChatInput::<T> { on_user_message }
                 }
             }
         }
@@ -136,10 +134,10 @@ fn ChatRoom<T: ChatMessageType>(
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct ChatHistory<T> {
-    pub messages: Vec<Result<ReceivedMessage<T>, String>>,
+struct ChatHistory<T: ChatMessageType> {
+    pub messages: Vec<Result<ReceivedMessage<T::M, T::P>, String>>,
 }
-impl<T> Default for ChatHistory<T> {
+impl<T: ChatMessageType> Default for ChatHistory<T> {
     fn default() -> Self {
         Self { messages: vec![] }
     }
@@ -228,7 +226,7 @@ fn ChatHistoryDisplay<T: ChatMessageType>(
                     overflow-x: hidden;
                 ",
                 for message in history.read().messages.iter() {
-                    ChatMessageOrErrorDisplay { message: message.clone() }
+                    ChatMessageOrErrorDisplay::<T> { message: message.clone() }
                 }
                 if history.read().messages.is_empty() {
                     i {
@@ -242,7 +240,7 @@ fn ChatHistoryDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
-    message: Result<ReceivedMessage<T>, String>,
+    message: Result<ReceivedMessage<T::M, T::P>, String>,
 ) -> Element {
     let mm = use_context::<NetworkState>().global_mm;
     let Some(mm) = mm.read().clone() else {
@@ -251,7 +249,7 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
     let user_id = mm.user().user_id().clone();
     match message {
         Ok(message) => rsx! {
-            ChatMessageDisplay { message, user_id}
+            ChatMessageDisplay::<T> { message, user_id}
         },
         Err(err) => rsx! {
             pre {
@@ -263,7 +261,7 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatMessageDisplay<T: ChatMessageType>(
-    message: ReceivedMessage<T>,
+    message: ReceivedMessage<T::M, T::P>,
     user_id: PublicKey,
 ) -> Element {
     let ReceivedMessage {
@@ -272,7 +270,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
         message,
     } = message;
     let text: Element = match message {
-        ChatMessage::Message { text } => text.render_element(),
+        ChatMessage::Message { text } => T::render_element(text),
         _ => rsx! {"{message:#?}"},
     };
     let from_nickname = from.nickname();
@@ -352,7 +350,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatInput<T: ChatMessageType>(
-    on_user_message: Callback<T, Option<ReceivedMessage<T>>>,
+    on_user_message: Callback<T::M, Option<ReceivedMessage<T::M, T::P>>>,
 ) -> Element {
     let mut message_input = use_signal(String::new);
     let is_connected = use_context::<NetworkState>().is_connected;
@@ -405,8 +403,8 @@ fn ChatInput<T: ChatMessageType>(
 fn chat_send_message<T: ChatMessageType>(
     mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
     chat: ReadOnlySignal<Option<ChatController<T>>>,
-    message: T,
-) -> Option<ReceivedMessage<T>> {
+    message: T::M,
+) -> Option<ReceivedMessage<T::M, T::P>> {
     let Some(mm) = mm.peek().clone() else {
         return None;
     };
