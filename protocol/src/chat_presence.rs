@@ -4,13 +4,12 @@ use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::{Notify, RwLock};
 
 use crate::{
-    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
-    user_identity::NodeIdentity,
+    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE}, chat::ChatMessageType, user_identity::NodeIdentity
 };
 
 #[derive(Clone, Debug)]
-pub struct ChatPresence {
-    presence: Arc<RwLock<ChatPresenceData>>,
+pub struct ChatPresence<T: ChatMessageType> {
+    presence: Arc<RwLock<ChatPresenceData<T>>>,
     notify: Arc<Notify>,
 }
 
@@ -33,9 +32,9 @@ impl PresenceFlag {
         }
     }
 }
-pub type PresenceList = Vec<(PresenceFlag, Instant, NodeIdentity)>;
+pub type PresenceList<T> = Vec<(PresenceFlag, Instant, NodeIdentity, <T as ChatMessageType>::P)>;
 
-impl ChatPresence {
+impl<T: ChatMessageType> ChatPresence<T> {
     pub fn new() -> Self {
         Self {
             presence: Arc::new(RwLock::new(ChatPresenceData::default())),
@@ -45,13 +44,13 @@ impl ChatPresence {
     pub fn notified(&self) -> tokio::sync::futures::Notified<'_> {
         self.notify.notified()
     }
-    pub async fn add_presence(&self, identity: &NodeIdentity) {
+    pub async fn add_presence(&self, identity: &NodeIdentity, payload: &T::P) {
         let identity = identity.clone();
         let now = Instant::now();
         let mut w = self.presence.write().await;
         let old_value = w.clone();
-        w.map.insert(identity.node_id().clone(), (now, identity));
-        w.map.retain(|_, (last_seen, _)| {
+        w.map.insert(identity.node_id().clone(), (now, identity, payload.clone()));
+        w.map.retain(|_, (last_seen, _, _)| {
             now.duration_since(*last_seen) < PRESENCE_EXPIRATION
         });
         let new_value = w.clone();
@@ -60,24 +59,29 @@ impl ChatPresence {
         }
     }
 
-    pub async fn get_presence_list(&self) -> PresenceList {
+    pub async fn get_presence_list(&self) -> PresenceList<T> {
         let p = self.presence.read().await.map.clone();
         let mut p = p.into_iter().collect::<Vec<_>>();
-        p.sort_by_key(|(_, (_k, _userid))| {
+        p.sort_by_key(|(_, (_k, _userid, _payload))| {
             (
                 _userid.user_id().to_string(),
                 _userid.nickname().to_string(),
             )
         });
         p.into_iter()
-            .map(|(_node_id, (last_seen, identity))| {
-                (PresenceFlag::from_instant(last_seen), last_seen, identity)
+            .map(|(_node_id, (last_seen, identity, payload))| {
+                (PresenceFlag::from_instant(last_seen), last_seen, identity, payload)
             })
             .collect()
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Default)]
-struct ChatPresenceData {
-    map: BTreeMap<NodeId, (Instant, NodeIdentity)>,
+#[derive(Clone, Debug, PartialEq)]
+struct ChatPresenceData<T: ChatMessageType> {
+    map: BTreeMap<NodeId, (Instant, NodeIdentity, T::P)>,
+}
+impl<T: ChatMessageType> Default for ChatPresenceData<T> {
+    fn default() -> Self {
+        Self { map: BTreeMap::new() }
+    }
 }

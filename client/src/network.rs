@@ -4,11 +4,11 @@ use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
     _const::PRESENCE_INTERVAL, chat_presence::PresenceList,
-    global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
+    global_matchmaker::{GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker}, user_identity::UserIdentitySecrets,
 };
 use tracing::warn;
 
-use crate::{comp::modal::ModalArticle, localstorage::LocalStorageContext};
+use crate::{app::GlobalUrlContext, comp::modal::ModalArticle, localstorage::LocalStorageContext, route::Route};
 
 #[derive(Clone)]
 pub struct NetworkState {
@@ -16,13 +16,14 @@ pub struct NetworkState {
     pub global_mm_loading: ReadOnlySignal<bool>,
     pub is_connected: ReadOnlySignal<bool>,
     pub reset_network: Callback<()>,
-    pub global_presence_list: ReadOnlySignal<PresenceList>,
+    pub global_presence_list: ReadOnlySignal<PresenceList<GlobalChatMessageType>>,
     pub bootstrap_idx: ReadOnlySignal<Option<u32>>,
     pub debug_info_txt: ReadOnlySignal<String>,
 }
 
 #[component]
 pub fn NetworkConnectionParent(children: Element) -> Element {
+    let url = use_context::<GlobalUrlContext>().url;
     let mut mm_signal_w = use_signal(move || None);
     let mm_signal = use_memo(move || mm_signal_w.read().clone());
 
@@ -33,7 +34,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
     let mut is_connected_w = use_signal(move || false);
     let is_connected = use_memo(move || is_connected_w.read().clone());
 
-    let mut presence_list_w = use_signal(move || PresenceList::default());
+    let mut presence_list_w = use_signal(move || PresenceList::<GlobalChatMessageType>::default());
     let presence_list = use_memo(move || presence_list_w.read().clone());
 
     let mut debug_info_txt_w = use_signal(move || "".to_string());
@@ -96,14 +97,14 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         async move {
             let Some(mm) = mm else {
                 debug_info_txt_w.set("No network connection".to_string());
-                presence_list_w.set(PresenceList::default());
+                presence_list_w.set(PresenceList::<GlobalChatMessageType>::default());
                 return;
             };
             let Some(presence) =
                 mm.global_chat_controller().await.map(|c| c.chat_presence())
             else {
                 debug_info_txt_w.set("No chat controller".to_string());
-                presence_list_w.set(PresenceList::default());
+                presence_list_w.set(PresenceList::<GlobalChatMessageType>::default());
                 return;
             };
             loop {
@@ -126,6 +127,22 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
                         .flatten(),
                 );
             }
+        }
+    });
+    // restarting resource that updates our global presence
+    let _ = use_resource(move || {
+        let url = url.read().clone();
+        let platform = "browser".to_string();
+        let presence = GlobalChatPresence { url, platform };
+        let mm = mm_signal.read().clone();
+        async move {
+            let Some(mm) = mm else {
+                return;
+            };
+            let Some(cc) = mm.global_chat_controller().await else {
+                return;
+            };
+            cc.set_presence(&presence).await;
         }
     });
 

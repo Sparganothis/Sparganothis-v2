@@ -14,7 +14,7 @@ use n0_future::{
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Notify;
+use tokio::sync::{Mutex, Notify};
 use tracing::{error, info, warn};
 
 use crate::{_const::PRESENCE_INTERVAL, sleep::SleepManager};
@@ -69,7 +69,7 @@ impl<T> AcceptableType for T where
 pub trait ChatMessageType: AcceptableType {
     type M: AcceptableType;
     type P: AcceptableType;
-    fn new_presence() -> Self::P;
+    fn default_presence() -> Self::P;
 }
 
 
@@ -79,6 +79,7 @@ pub struct ChatSender<M, P> {
     node_secret_key: Arc<SecretKey>,
     node_identity: Arc<NodeIdentity>,
     sender: GossipSender,
+    current_presence: Arc<Mutex<P>>,
     _trigger_presence: Arc<Notify>,
     _presence_task: Arc<AbortOnDropHandle<()>>,
     _message_type: PhantomData<M>,
@@ -332,7 +333,8 @@ where
 
     let trigger_presence = Arc::new(Notify::new());
     let presence = ChatPresence::new();
-
+    let current_presence_mutex = Arc::new(Mutex::new(T::default_presence()));
+    let current_presence_mutex2 = current_presence_mutex.clone();
     // We spawn a task that occasionally sens a Presence message with our nickname.
     // This allows to track which peers are online currently.
     let presence_task = AbortOnDropHandle::new(task::spawn({
@@ -346,7 +348,8 @@ where
         async move {
             // trigger_presence.notified().await;
             loop {
-                let message = ChatMessage::<T::M, T::P>::Presence {presence: T::new_presence()};
+                let presence_payload = {current_presence_mutex2.lock().await.clone()};
+                let message = ChatMessage::<T::M, T::P>::Presence {presence: presence_payload.clone()};
                 let signed_message = SignedMessage::sign_and_encode(
                     &node_secret_key,
                     &user_secrets.as_ref().secret_key(),
@@ -359,7 +362,7 @@ where
                     tracing::warn!("presence task failed to broadcast: {err}");
                     break;
                 }
-                presence.add_presence(&node_identity).await;
+                presence.add_presence(&node_identity, &presence_payload).await;
                 let wait = PRESENCE_INTERVAL
                     + Duration::from_secs(rand::thread_rng().gen_range(0..3));
                 n0_future::future::race(
@@ -421,8 +424,9 @@ where
         _message_type: PhantomData,
         _presence_type: PhantomData,
         _nonce: rand::thread_rng().gen(),
+        current_presence: current_presence_mutex,
     };
-    Ok(ChatControllerRaw::<T::M, T::P> {
+    Ok(ChatControllerRaw::<T> {
         sender,
         receiver: Box::pin(receiver),
         sleep_manager: sleep_,
@@ -442,7 +446,7 @@ impl<T: ChatMessageType> PartialEq for ChatController<T>
 pub struct ChatController<T: ChatMessageType>
 {
     inner: Arc<ChatControllerInner<T::M, T::P>>,
-    chat_presence: ChatPresence,
+    chat_presence: ChatPresence<T>,
 }
 
 
@@ -461,8 +465,13 @@ impl<T: ChatMessageType> ChatController<T>
 
         Ok(())
     }
-    pub fn chat_presence(&self) -> ChatPresence {
+    pub fn chat_presence(&self) -> ChatPresence<T> {
         self.chat_presence.clone()
+    }
+    pub async fn set_presence(&self, presence: &T::P) {
+        {let mut current_presence = self.inner.sender.current_presence.lock().await;
+        *current_presence = presence.clone();}
+        self.inner.sender._trigger_presence.notify_waiters();
     }
 }
 
@@ -501,18 +510,15 @@ struct ChatControllerInner<M, P>
     _recv_broadcast_task: AbortOnDropHandle<()>,
 }
 
-struct ChatControllerRaw<M, P>
+struct ChatControllerRaw<T: ChatMessageType>
 {
-    pub sender: ChatSender<M, P>,
-    pub receiver: ChatEventStream<M, P>,
+    pub sender: ChatSender<T::M, T::P>,
+    pub receiver: ChatEventStream<T::M, T::P>,
     pub sleep_manager: SleepManager,
-    pub presence: ChatPresence,
+    pub presence: ChatPresence<T>,
 }
 
-impl<T: ChatMessageType> Into<ChatController<T>> for ChatControllerRaw<T::M, T::P>
-where
-    T::M: AcceptableType,
-    T::P: AcceptableType,
+impl<T: ChatMessageType> Into<ChatController<T>> for ChatControllerRaw<T>
 {
     fn into(self) -> ChatController<T> {
         let ChatControllerRaw {
@@ -538,13 +544,13 @@ where
                 if let Ok(NetworkEvent::Message {
                     event:
                         ReceivedMessage {
-                            message: ChatMessage::Presence {..},
+                            message: ChatMessage::Presence {presence},
                             from,
                             ..
                         },
                 }) = &event
                 {
-                    presence_.add_presence(&from).await;
+                    presence_.add_presence(&from, presence).await;
                 }
             }
             warn!("XXX: chat controller raw receiver stream closed.");

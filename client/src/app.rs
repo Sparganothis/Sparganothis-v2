@@ -26,11 +26,30 @@ pub fn App() -> Element {
               padding:0; 
               overflow: hidden;
             ",
-            LocalStorageParent {
-                NetworkConnectionParent {
-                    Router::<Route> {}
+            UrlHolderParent {
+                LocalStorageParent {
+                    NetworkConnectionParent {
+                        Router::<Route> {}
+                    }
                 }
             }
         }
     }
+}
+
+
+#[component]
+fn UrlHolderParent(children: Element) -> Element {
+    let url = use_signal(move || "".to_string());
+    let url_r = use_memo(move || url.read().clone());
+    use_context_provider(move || GlobalUrlContext { url_w: url.into(), url: url_r.into() });
+    rsx! {
+        {children}
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct GlobalUrlContext {
+    pub url_w: Signal<String>,
+    pub url: ReadOnlySignal<String>,
 }

@@ -9,8 +9,8 @@ use protocol::{
         timestamp_now, ChatController, ChatMessage,
         ChatMessageType as ChatMessageType2, NetworkEvent, ReceivedMessage,
     },
-    chat_presence::PresenceFlag,
-    global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker},
+    chat_presence::{PresenceFlag, PresenceList},
+    global_matchmaker::{GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker},
     user_identity::NodeIdentity,
 };
 use tracing::warn;
@@ -24,7 +24,8 @@ impl<T> ChatMessageType for T where
 {
 }
 pub trait RenderElement: ChatMessageType2 {
-    fn render_element(message: <Self as ChatMessageType2>::M) -> Element;
+    fn render_message(message: <Self as ChatMessageType2>::M) -> Element;
+    fn render_presence(payload: <Self as ChatMessageType2>::P) -> Element;
 }
 pub trait FromUserInput: ChatMessageType2 {
     fn from_user_input(input: String) -> <Self as ChatMessageType2>::M;
@@ -36,9 +37,24 @@ impl FromUserInput for GlobalChatMessageType {
     }
 }
 impl RenderElement for GlobalChatMessageType {
-    fn render_element(message: <Self as ChatMessageType2>::M) -> Element {
+    fn render_message(message: <Self as ChatMessageType2>::M) -> Element {
         rsx! {
                 "{message}"
+        }
+    }
+    fn render_presence(payload: GlobalChatPresence) -> Element {
+        rsx! {
+            br{}
+            if ! payload.platform.is_empty() {
+                small { 
+                    "{payload.platform}:"
+                }
+            }
+            if ! payload.url.is_empty() {
+                small {
+                    "{payload.url}"
+                }
+            }
         }
     }
 }
@@ -53,14 +69,16 @@ pub fn GlobalChatPage() -> Element {
     });
     let chat =
         use_memo(move || chat.read().as_ref().map(|c| c.clone()).flatten());
+    let presence = use_context::<NetworkState>().global_presence_list;
     rsx! {
-        ChatRoom<GlobalChatMessageType> { chat }
+        ChatRoom<GlobalChatMessageType> { chat, presence }
     }
 }
 
 #[component]
 fn ChatRoom<T: ChatMessageType>(
     chat: ReadOnlySignal<Option<ChatController<T>>>,
+    presence: ReadOnlySignal<PresenceList<T>>,
 ) -> Element {
     let mut history = use_signal(ChatHistory::<T>::default);
     let mm = use_context::<NetworkState>().global_mm;
@@ -116,7 +134,7 @@ fn ChatRoom<T: ChatMessageType>(
             class: "chat-window-container",
             div {
                 class: "chat-left-pane",
-                ChatPresenceDisplay {  }
+                ChatPresenceDisplay::<T> { presence }
             }
             div {
                 class: "chat-main-pane",
@@ -144,15 +162,15 @@ impl<T: ChatMessageType> Default for ChatHistory<T> {
 }
 
 #[component]
-fn ChatPresenceDisplay() -> Element {
-    let presence = use_context::<NetworkState>().global_presence_list;
+fn ChatPresenceDisplay<T: ChatMessageType>(presence: ReadOnlySignal<PresenceList<T>>) -> Element {
     rsx! {
         ul {
-            for (presence_flag,last_seen, identity) in presence.read().iter() {
-                ChatPresenceDisplayItem {
+            for (presence_flag,last_seen, identity, payload) in presence.read().iter() {
+                ChatPresenceDisplayItem::<T> {
                     presence_flag: presence_flag.clone(),
                     last_seen: last_seen.clone(),
-                    identity: identity.clone()
+                    identity: identity.clone(),
+                    payload: payload.clone() as T::P,
                 }
             }
             if presence.read().is_empty() {
@@ -165,12 +183,14 @@ fn ChatPresenceDisplay() -> Element {
 }
 
 #[component]
-fn ChatPresenceDisplayItem(
+fn ChatPresenceDisplayItem<T: ChatMessageType>(
     presence_flag: ReadOnlySignal<PresenceFlag>,
     last_seen: ReadOnlySignal<Instant>,
     identity: ReadOnlySignal<NodeIdentity>,
+    payload: ReadOnlySignal<T::P>,
 ) -> Element {
     let mut last_seen_txt = use_signal(|| "".to_string());
+    let payload = use_memo(move || T::render_presence(payload.read().clone()));
     let mm = use_context::<NetworkState>().global_mm;
     let _ = use_resource(move || {
         let mm = mm.read().clone();
@@ -191,10 +211,24 @@ fn ChatPresenceDisplayItem(
         }
     });
     let identity = identity.read().clone();
+    
     let color = match presence_flag.read().clone() {
         PresenceFlag::ACTIVE => "darkgreen",
         PresenceFlag::IDLE => "orange",
         PresenceFlag::EXPIRED => "darkred",
+    };
+    let element = rsx! {
+        "{identity.nickname()}",
+        {payload}
+    };
+    let element = if identity.bootstrap_idx().is_some() {
+        rsx! {
+            small {
+                {element}
+            }
+        }
+    } else {
+        element
     };
     rsx! {
         li {
@@ -205,7 +239,7 @@ fn ChatPresenceDisplayItem(
                 (last seen: {last_seen_txt})
             ",
             "data-placement": "bottom",
-            "{identity.nickname()}"
+            {element}
         }
     }
 }
@@ -270,7 +304,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
         message,
     } = message;
     let text: Element = match message {
-        ChatMessage::Message { text } => T::render_element(text),
+        ChatMessage::Message { text } => T::render_message(text),
         _ => rsx! {"{message:#?}"},
     };
     let from_nickname = from.nickname();

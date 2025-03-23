@@ -3,7 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use protocol::{
     chat::{ChatMessage, NetworkChangeEvent, NetworkEvent},
-    global_matchmaker::GlobalMatchmaker,
+    global_matchmaker::{GlobalChatPresence, GlobalMatchmaker},
     user_identity::UserIdentitySecrets,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -47,6 +47,10 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
 
     println!("* waiting for peers ...");
     let controller = global_mm.global_chat_controller().await.unwrap();
+    controller.set_presence(&GlobalChatPresence {
+        url: "".to_string(),
+        platform: "CLI".to_string(),
+    }).await;
     let sender = controller.sender();
     let mut receiver = controller.receiver();
 

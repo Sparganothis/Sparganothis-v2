@@ -40,11 +40,15 @@ pub struct GlobalChatMessageType;
 
 impl ChatMessageType for GlobalChatMessageType {
     type M = String;
-    type P = ();
-
-    fn new_presence() -> Self::P {
-        ()
+    type P = GlobalChatPresence;
+    fn default_presence() -> Self::P {
+        GlobalChatPresence::default()
     }
+}
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize, Default)]
+pub struct GlobalChatPresence {
+    pub url: String,
+    pub platform: String,
 }
 
 struct GlobalMatchmakerInner {
@@ -548,7 +552,7 @@ impl GlobalMatchmaker {
             global_chat.chat_presence().get_presence_list().await;
         let presence_info = presence_info
             .into_iter()
-            .map(|(_b, _, identity)| (_b, identity))
+            .map(|(_b, _, identity, _)| (_b, identity))
             .filter(|(_b, _i)| {
                 (*_b == PresenceFlag::ACTIVE || *_b == PresenceFlag::IDLE)
                     && _i.bootstrap_idx().is_none()
