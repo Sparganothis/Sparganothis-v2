@@ -1,2 +1,5 @@
 [toolchain]
 channel = "nightly"
+
+[fix]
+ignore-targets = ["lib/*"]
