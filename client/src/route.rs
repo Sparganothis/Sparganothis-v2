@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use iroh::NodeId;
 
 use crate::app::GlobalUrlContext;
 use crate::comp::nav::Nav;
@@ -19,11 +20,12 @@ pub enum Route {
     #[route("/chat")]
     GlobalChatPage {},
 
+    #[route("/spectate-homepage/:node_id")]
+    SpectateGamePage { node_id: NodeId },
+
     #[route("/:..x")]
     NotFound { x: Vec<String> },
 
-    #[route("/storage-demo")]
-    StorageDemo {},
 }
 
 #[component]

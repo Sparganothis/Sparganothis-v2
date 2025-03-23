@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, time::Duration};
 
-use crate::comp::game_display::*;
+use crate::{comp::game_display::*, network::NetworkState};
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
 use game::{
@@ -12,6 +12,17 @@ use game::{
 pub fn Home() -> Element {
     let mut game_state = use_signal(GameState::empty);
     let mut pending_actions = use_signal(VecDeque::<TetAction>::new);
+    let mm = use_context::<NetworkState>().global_mm;
+    let _ = use_resource(move || {
+
+        let mm = mm.read().clone();
+
+
+        async move {
+
+        }
+
+    });
     use_interval(Duration::from_secs_f32(0.1), move || {
         let mut g = game_state.write();
         let mut p = pending_actions.write();

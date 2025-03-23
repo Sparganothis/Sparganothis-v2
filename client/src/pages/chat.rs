@@ -76,7 +76,7 @@ pub fn GlobalChatPage() -> Element {
 }
 
 #[component]
-fn ChatRoom<T: ChatMessageType>(
+pub fn ChatRoom<T: ChatMessageType>(
     chat: ReadOnlySignal<Option<ChatController<T>>>,
     presence: ReadOnlySignal<PresenceList<T>>,
 ) -> Element {
