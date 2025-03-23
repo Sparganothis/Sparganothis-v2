@@ -38,7 +38,10 @@ impl RenderElement for GameMessageSpam {
         match message {
             GameMessage::GameState(game_state) => {
                 rsx! {
-                    GameDisplay { game_state }
+                    div {
+                        style:"height: 500px; min-height: 500px;",
+                        GameDisplay { game_state }
+                    }
                 }
             }
             GameMessage::UserText(text) => {

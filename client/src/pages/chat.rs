@@ -353,7 +353,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
                     margin: 10px;
                 ",
                 onmounted: move |_e| async move {
-                    let _e = _e.scroll_to(ScrollBehavior::Smooth).await;
+                    let _e = _e.scroll_to(ScrollBehavior::Instant).await;
                     if let Err(e) = _e {
                         warn!("Failed to scroll to bottom: {}", e);
                     }

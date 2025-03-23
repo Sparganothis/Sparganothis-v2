@@ -12,7 +12,7 @@ dioxus-sdk = { version = "0.6.0", features = ["timing", "storage"] }
 tracing-wasm = "0.2.1"
 game = { path = "../game" }
 protocol = { path = "../protocol" }
-
+web-time = "1"
 uuid = { workspace = true }
 
 anyhow = "1.0.86"
