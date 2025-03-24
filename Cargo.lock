@@ -7992,11 +7992,13 @@ dependencies = [
  "async-broadcast 0.7.2",
  "async-channel 2.3.1",
  "chrono",
+ "futures",
  "hex",
  "iroh",
  "iroh-base",
  "iroh-blake3",
  "iroh-gossip",
+ "matchbox_socket",
  "n0-future",
  "postcard",
  "rand 0.8.5",
@@ -8005,6 +8007,8 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
+ "uuid",
+ "web-time",
 ]
 
 [[package]]

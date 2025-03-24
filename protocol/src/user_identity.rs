@@ -56,6 +56,7 @@ impl UserIdentitySecrets {
 pub struct NodeIdentity {
     user_identity: UserIdentity,
     node_id: PublicKey,
+    matchbox_id: uuid::Uuid,
     bootstrap_idx: Option<u32>,
 }
 
@@ -86,11 +87,13 @@ impl NodeIdentity {
     pub fn new(
         user_identity: UserIdentity,
         node_id: PublicKey,
+        matchbox_id: uuid::Uuid,
         bootstrap_idx: Option<u32>,
     ) -> Self {
         Self {
             user_identity,
             node_id,
+            matchbox_id,
             bootstrap_idx,
         }
     }

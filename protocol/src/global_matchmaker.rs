@@ -32,6 +32,7 @@ pub struct GlobalMatchmaker {
     own_private_key: Arc<SecretKey>,
     inner: Arc<Mutex<GlobalMatchmakerInner>>,
     sleep_manager: SleepManager,
+    matchbox_id: uuid::Uuid,
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -113,6 +114,7 @@ impl GlobalMatchmaker {
         NodeIdentity::new(
             self.user_secrets().user_identity().clone(),
             self.own_public_key.as_ref().clone(),
+            self.matchbox_id,
             None,
         )
     }
@@ -187,11 +189,13 @@ impl GlobalMatchmaker {
                 bs_global_chat_controller: None,
             })),
             sleep_manager: sleep.clone(),
+            matchbox_id: uuid::Uuid::new_v4(),
         };
 
         let node_identity = NodeIdentity::new(
             user.user_identity().clone(),
             own_private_key.public(),
+            mm.matchbox_id,
             None,
         );
         let own_endpoint = MainNode::spawn(
@@ -200,6 +204,7 @@ impl GlobalMatchmaker {
             None,
             user.clone(),
             sleep,
+            mm.matchbox_id,
         )
         .await?;
         {
@@ -401,6 +406,7 @@ impl GlobalMatchmaker {
         let node_identity = NodeIdentity::new(
             self.user_identity(),
             bootstrap_key.public(),
+            self.matchbox_id,
             Some(boostrap_idx as u32),
         );
         let bootstrap_endpoint = MainNode::spawn(
@@ -409,6 +415,7 @@ impl GlobalMatchmaker {
             Some(own_id),
             self.user_secrets.clone(),
             self.sleep_manager.clone(),
+            self.matchbox_id,
         )
         .await?;
         {
