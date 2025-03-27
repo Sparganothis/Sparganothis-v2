@@ -75,8 +75,10 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
                 width: 100%;
                 height: 100%;
                 display: flex;
-                align-items: start;
-                justify-content: end;
+                flex-direction: column;
+                align-items: end;
+                justify-content: start;
+                gap: 20px;
             ",
             div { style: "
                     width: 50%;
@@ -84,6 +86,8 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
                 ",
                 GameBoardDisplayHoldGrid { game_state }
             }
+            
+            GameStateInfo { game_state }
         }
     }
 }
@@ -285,6 +289,50 @@ fn GridCellDisplay(
                 aspect-ratio: 1/1;
                 border: 0.1cqmin solid {GAMEBOARD_GRID_COLOR};
                 " }
+        }
+    }
+}
+
+#[component]
+fn GameStateInfo(game_state: ReadOnlySignal<GameState>) -> Element {
+    let state = game_state.read();
+    rsx! {
+        div { 
+            id: "game-state-info",
+            
+            style: "
+                width: 100%;
+                font-family: monospace;
+                font-size: 1.2em;
+                text-align: right;
+                padding-right: 20px;
+                color: black;
+            ",
+            div { "Score: {state.score}" }
+            div { "Lines: {state.total_lines}" }
+            div { "Moves: {state.total_moves}" }
+            div { "Combo: {state.combo_counter}" }
+            div { "Time: {state.current_time_string()}" }
+            
+            // Show B2B and T-spin indicators if active
+            if state.is_b2b {
+                div { style: "color: #ffd700;", // Gold color for special states
+                    "Back-to-Back!"
+                }
+            }
+            
+            if state.is_t_spin {
+                div { style: "color: #ff69b4;", // Pink color for T-spin
+                    "T-Spin!"
+                }
+            }
+            
+            // Show garbage info if any
+            if state.garbage_recv > 0 {
+                div { style: "color: #ff4444;", // Red color for garbage
+                    "Incoming: {state.garbage_recv - state.garbage_applied}"
+                }
+            }
         }
     }
 }
