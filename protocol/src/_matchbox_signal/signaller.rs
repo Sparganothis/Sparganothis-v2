@@ -26,7 +26,7 @@ use crate::{
     sleep::SleepManager,
 };
 
-use super::MatchboxRoom;
+use super::{ice_servers, MatchboxRoom};
 
 #[derive(Debug, Clone)]
 pub struct MatchboxSignallerHolder {
@@ -103,6 +103,7 @@ impl MatchboxSignallerHolder {
         let (mut socket, loop_fut) = WebRtcSocket::builder(room_url)
             .signaller_builder(s)
             .add_reliable_channel()
+            .ice_server(ice_servers())
             .build();
 
         let chan0 = socket.take_channel(0)?;

@@ -93,7 +93,7 @@ pub fn ChatRoom<T: ChatMessageType>(
             let Some(controller) = chat else {
                 return;
             };
-            let mut recv = controller.receiver().await;
+            let recv = controller.receiver().await;
             while let Some(message) = recv.next_message().await {
                 history.write().messages.push(Ok(message));
             }
