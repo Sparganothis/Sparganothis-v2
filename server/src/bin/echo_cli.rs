@@ -2,12 +2,11 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use protocol::{
-    chat::{ChatMessage, NetworkChangeEvent, NetworkEvent},
+    chat::{IChatController, IChatReceiver, IChatSender},
     global_matchmaker::{GlobalChatPresence, GlobalMatchmaker},
     user_identity::UserIdentitySecrets,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio_stream::StreamExt;
 use tracing::info;
 
 #[tokio::main]
@@ -47,47 +46,50 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
 
     println!("* waiting for peers ...");
     let controller = global_mm.global_chat_controller().await.unwrap();
-    controller.set_presence(&GlobalChatPresence {
-        url: "".to_string(),
-        platform: "CLI".to_string(),
-    }).await;
     let sender = controller.sender();
-    let mut receiver = controller.receiver();
+    let receiver = controller.receiver().await;
 
+    sender
+        .set_presence(&GlobalChatPresence {
+            url: "".to_string(),
+            platform: "CLI".to_string(),
+        })
+        .await;
+
+    println!("***********************************************************");
     println!("* join OK");
+    println!("***********************************************************");
+    println!("> ");
 
     let receive = tokio::task::spawn(async move {
-        while let Some(event) = receiver.next().await {
-            let event = event?;
-            match event {
-                NetworkEvent::NetworkChange { event } => match event {
-                    NetworkChangeEvent::Joined { neighbors } => {
-                        println!(
-                            "* swarm joined {} neighbors",
-                            neighbors.len()
-                        );
-                    }
-                    NetworkChangeEvent::NeighborUp { node_id } => {
-                        println!("* neighbor up: {}", node_id.fmt_short());
-                    }
-                    NetworkChangeEvent::NeighborDown { node_id } => {
-                        println!("* neighbor down: {}", node_id.fmt_short());
-                    }
-                    NetworkChangeEvent::Lagged => {
-                        println!("* lagged");
-                    }
-                },
-                NetworkEvent::Message { event } => match event.message {
-                    ChatMessage::Message { text } => {
-                        let nickname = event.from.nickname();
-                        let node_id = event.from.node_id().fmt_short();
-                        let user_id = event.from.user_id().fmt_short();
+        while let Some(message) = receiver.next_message().await {
+            // let (from, message) = event?;
+            // match event {
+            //     NetworkEvent::NetworkChange { event } => match event {
+            //         NetworkChangeEvent::Joined { neighbors } => {
+            //             println!(
+            //                 "* swarm joined {} neighbors",
+            //                 neighbors.len()
+            //             );
+            //         }
+            //         NetworkChangeEvent::NeighborUp { node_id } => {
+            //             println!("* neighbor up: {}", node_id.fmt_short());
+            //         }
+            //         NetworkChangeEvent::NeighborDown { node_id } => {
+            //             println!("* neighbor down: {}", node_id.fmt_short());
+            //         }
+            //         NetworkChangeEvent::Lagged => {
+            //             println!("* lagged");
+            //         }
+            //     },
+            // NetworkEvent::Message { event } => match event.message {
+            //     ChatMessage::Message { text } => {
+            let nickname = message.from.nickname();
+            let node_id = message.from.node_id().fmt_short();
+            let user_id = message.from.user_id().fmt_short();
+            let message_text = message.message;
 
-                        println!("<{user_id}@{node_id}> {nickname}: {text}");
-                    }
-                    _ => (),
-                },
-            }
+            println!("<{user_id}@{node_id}> {nickname}: {message_text}");
         }
         println!("* recv closed");
         anyhow::Ok(())
@@ -101,7 +103,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                 continue;
             }
             println!("* sending message: {line}");
-            sender.send(line.to_string()).await?;
+            sender.broadcast_message(line.to_string()).await?;
         }
         println!("* sender closed.");
         anyhow::Ok(())

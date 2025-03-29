@@ -1,17 +1,29 @@
-pub mod _const;
-pub mod _random_word;
-pub mod chat;
-pub mod chat_presence;
-pub mod echo;
-pub mod global_matchmaker;
-pub mod main_node;
-pub mod sleep;
-pub mod user_identity;
-pub mod _matchbox_signal;
+use chrono::{DateTime, Utc};
 
 pub(crate) mod _bootstrap_keys;
+pub mod _const;
+pub(crate) mod _matchbox_signal;
+pub(crate) mod _random_word;
+pub mod chat;
+pub mod chat_presence;
+pub mod chat_ticket;
+pub(crate) mod echo;
+pub mod global_matchmaker;
+pub(crate) mod main_node;
+pub(crate) mod signed_message;
+pub(crate) mod sleep;
+pub mod user_identity;
 
-
-pub fn get_timestamp() -> u128 {
-    web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).unwrap().as_micros()
+pub fn timestamp_micros() -> u128 {
+    web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
+        .unwrap()
+        .as_micros()
 }
+
+pub fn datetime_now() -> DateTime<Utc> {
+    let timestamp = timestamp_micros() as i64;
+    DateTime::<Utc>::from_timestamp_micros(timestamp).unwrap()
+}
+
+pub use signed_message::*;

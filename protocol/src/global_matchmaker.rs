@@ -6,6 +6,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use iroh::{endpoint::VarInt, Endpoint, NodeId, PublicKey, SecretKey};
+use matchbox_socket::PeerId;
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -17,10 +18,13 @@ use crate::{
     _const::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
     },
-    chat::{timestamp_now, ChatController, ChatMessageType, ChatTicket},
+    chat::{ChatController, IChatController, IChatSender},
     chat_presence::PresenceFlag,
+    chat_ticket::ChatTicket,
+    datetime_now,
     echo::Echo,
     main_node::MainNode,
+    signed_message::IChatRoomType,
     sleep::SleepManager,
     user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
 };
@@ -32,21 +36,22 @@ pub struct GlobalMatchmaker {
     own_private_key: Arc<SecretKey>,
     inner: Arc<Mutex<GlobalMatchmakerInner>>,
     sleep_manager: SleepManager,
-    matchbox_id: uuid::Uuid,
+    matchbox_id: PeerId,
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct GlobalChatMessageType;
 
-
-impl ChatMessageType for GlobalChatMessageType {
+impl IChatRoomType for GlobalChatMessageType {
     type M = String;
     type P = GlobalChatPresence;
     fn default_presence() -> Self::P {
         GlobalChatPresence::default()
     }
 }
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize, Default)]
+#[derive(
+    Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize, Default,
+)]
 pub struct GlobalChatPresence {
     pub url: String,
     pub platform: String,
@@ -145,7 +150,7 @@ impl GlobalMatchmaker {
         let bs_endpoint = self.bs_endpoint().await.map(|bs| bs.node_id());
         let bs = self.known_bootstrap_nodes().await;
 
-        let date = timestamp_now();
+        let date = datetime_now();
         let mut info_txt = String::new();
         info_txt.push_str(&format!(
             "Global Matchmaker Debug Info\nDate: {}\n\n",
@@ -175,7 +180,6 @@ impl GlobalMatchmaker {
         own_private_key: Arc<SecretKey>,
         user: Arc<UserIdentitySecrets>,
     ) -> Result<Self> {
-        let sleep = SleepManager::new();
         let mm = Self {
             user_secrets: user.clone(),
             own_public_key: Arc::new(own_private_key.public()),
@@ -188,8 +192,8 @@ impl GlobalMatchmaker {
                 global_chat_controller: None,
                 bs_global_chat_controller: None,
             })),
-            sleep_manager: sleep.clone(),
-            matchbox_id: uuid::Uuid::new_v4(),
+            sleep_manager: SleepManager::new(),
+            matchbox_id: PeerId(uuid::Uuid::new_v4()),
         };
 
         let node_identity = NodeIdentity::new(
@@ -198,12 +202,13 @@ impl GlobalMatchmaker {
             mm.matchbox_id,
             None,
         );
+        info!("GlobalMatchmaker created with \n- matchbox id: {}\n- node identity: {:#?}", mm.matchbox_id, node_identity);
         let own_endpoint = MainNode::spawn(
             Arc::new(node_identity),
             own_private_key.clone(),
             None,
             user.clone(),
-            sleep,
+            mm.sleep_manager.clone(),
             mm.matchbox_id,
         )
         .await?;
@@ -346,8 +351,15 @@ impl GlobalMatchmaker {
         let mm = self.clone();
         match bs.join_chat(&ticket).await {
             Ok(c1) => {
+                c1.sender()
+                    .set_presence(&GlobalChatPresence {
+                        url: "".to_string(),
+                        platform: "Bootstrap".to_string(),
+                    })
+                    .await;
                 let mut i = mm.inner.lock().await;
                 i.bs_global_chat_controller = Some(c1);
+
                 Ok(())
             }
             Err(e) => {
@@ -403,10 +415,12 @@ impl GlobalMatchmaker {
         let bootstrap_key =
             SecretKey::from_bytes(&BOOTSTRAP_SECRET_KEYS[boostrap_idx]);
 
+        let bootstrap_matchbox_id = PeerId(uuid::Uuid::new_v4());
+
         let node_identity = NodeIdentity::new(
             self.user_identity(),
             bootstrap_key.public(),
-            self.matchbox_id,
+            bootstrap_matchbox_id,
             Some(boostrap_idx as u32),
         );
         let bootstrap_endpoint = MainNode::spawn(
@@ -415,7 +429,7 @@ impl GlobalMatchmaker {
             Some(own_id),
             self.user_secrets.clone(),
             self.sleep_manager.clone(),
-            self.matchbox_id,
+            bootstrap_matchbox_id,
         )
         .await?;
         {
@@ -559,7 +573,7 @@ impl GlobalMatchmaker {
             global_chat.chat_presence().get_presence_list().await;
         let presence_info = presence_info
             .into_iter()
-            .map(|(_b, _, identity, _)| (_b, identity))
+            .map(|(_b, _, identity, _, _)| (_b, identity))
             .filter(|(_b, _i)| {
                 (*_b == PresenceFlag::ACTIVE || *_b == PresenceFlag::IDLE)
                     && _i.bootstrap_idx().is_none()

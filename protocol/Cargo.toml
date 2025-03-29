@@ -14,6 +14,7 @@ iroh-base = { workspace = true, default-features = false, features = ["ticket"] 
 iroh-gossip = { workspace = true, default-features = false, features = ["net"] }
 n0-future = "0.1.2"
 postcard = "1.1.1"
+bincode = "1.3.3"
 rand = "0.8"
 serde = "1"
 tokio = { version = "1", default-features = false, features = ["sync"] }
@@ -23,7 +24,8 @@ async-channel = "2.3.1"
 async-broadcast = "0.7.2"
 chrono = "0.4.40"
 # async-std = "1.13.1"
-matchbox_socket = { path = "../lib/matchbox/matchbox_socket" }
+matchbox_socket = { path = "../vendor/matchbox/matchbox_socket" }
 web-time = "1.1"
 futures = "0.3"
 uuid = {version = "1", features = ["v4"]}
+serde_json = "1"

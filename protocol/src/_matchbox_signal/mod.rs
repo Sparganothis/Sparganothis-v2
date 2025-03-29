@@ -1,7 +1,9 @@
 mod direct_message;
-mod open_socket;
+mod peer_tracker;
+mod room_controller;
 mod signaller;
 
-
-pub(crate) use signaller::*;
 pub(crate) use direct_message::*;
+pub(crate) use peer_tracker::*;
+pub(crate) use room_controller::*;
+pub(crate) use signaller::*;

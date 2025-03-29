@@ -1,6 +1,5 @@
 use std::{collections::VecDeque, time::Duration};
 
-
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
 use game::{
@@ -112,7 +111,7 @@ pub fn Home() -> Element {
 //     });
 //     let speed = use_signal(|| 30.0);
 //     let _ = use_resource(move || {
-        
+
 //         let speed = speed.read().clone();
 //         async move { loop {
 //         let mut g = game_state.write();

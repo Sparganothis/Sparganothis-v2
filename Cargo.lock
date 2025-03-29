@@ -624,6 +624,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "async_example"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-broadcast 0.7.2",
+ "console_error_panic_hook",
+ "console_log",
+ "futures",
+ "futures-timer",
+ "getrandom 0.3.1",
+ "js-sys",
+ "log",
+ "matchbox_socket",
+ "n0-future",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-wasm",
+ "uuid",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
+]
+
+[[package]]
 name = "async_io_stream"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7991,6 +8019,7 @@ dependencies = [
  "anyhow",
  "async-broadcast 0.7.2",
  "async-channel 2.3.1",
+ "bincode",
  "chrono",
  "futures",
  "hex",
@@ -8004,6 +8033,7 @@ dependencies = [
  "rand 0.8.5",
  "random_word",
  "serde",
+ "serde_json",
  "tokio",
  "tokio-stream",
  "tracing",

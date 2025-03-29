@@ -1,14 +1,16 @@
 use iroh::{PublicKey, SecretKey};
+use matchbox_socket::PeerId;
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(
+    Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq,
+)]
 pub struct UserIdentity {
     user_id: PublicKey,
-    user_nickname: String,
 }
 
 impl UserIdentity {
-    pub fn nickname(&self) -> &str {
-        &self.user_nickname
+    pub fn nickname(&self) -> String {
+        crate::_random_word::get_nickname_from_pubkey(self.user_id.clone())
     }
     pub fn user_id(&self) -> &PublicKey {
         &self.user_id
@@ -39,12 +41,7 @@ impl UserIdentitySecrets {
     pub fn generate() -> Self {
         let _user_private_key = SecretKey::generate(rand::thread_rng());
         let user_id = _user_private_key.public();
-        let user_nickname =
-            crate::_random_word::get_nickname_from_pubkey(user_id.clone());
-        let user_identity = UserIdentity {
-            user_id,
-            user_nickname,
-        };
+        let user_identity = UserIdentity { user_id };
         Self {
             _user_private_key,
             user_identity,
@@ -52,11 +49,13 @@ impl UserIdentitySecrets {
     }
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+#[derive(
+    Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq,
+)]
 pub struct NodeIdentity {
     user_identity: UserIdentity,
     node_id: PublicKey,
-    matchbox_id: uuid::Uuid,
+    matchbox_id: PeerId,
     bootstrap_idx: Option<u32>,
 }
 
@@ -84,10 +83,13 @@ impl NodeIdentity {
     pub fn bootstrap_idx(&self) -> Option<u32> {
         self.bootstrap_idx
     }
+    pub fn matchbox_id(&self) -> &PeerId {
+        &self.matchbox_id
+    }
     pub fn new(
         user_identity: UserIdentity,
         node_id: PublicKey,
-        matchbox_id: uuid::Uuid,
+        matchbox_id: PeerId,
         bootstrap_idx: Option<u32>,
     ) -> Self {
         Self {

@@ -37,12 +37,14 @@ pub fn App() -> Element {
     }
 }
 
-
 #[component]
 fn UrlHolderParent(children: Element) -> Element {
     let url = use_signal(move || "".to_string());
     let url_r = use_memo(move || url.read().clone());
-    use_context_provider(move || GlobalUrlContext { url_w: url.into(), url: url_r.into() });
+    use_context_provider(move || GlobalUrlContext {
+        url_w: url.into(),
+        url: url_r.into(),
+    });
     rsx! {
         {children}
     }

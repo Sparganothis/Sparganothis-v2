@@ -37,11 +37,11 @@ fn NotFound(x: Vec<String>) -> Element {
 /// Shared navbar component.
 #[component]
 fn NavbarLayout() -> Element {
-    let mut url = use_context::<GlobalUrlContext>().url_w; 
+    let mut url = use_context::<GlobalUrlContext>().url_w;
     use_effect(move || {
         let route = use_route::<Route>();
         url.set(route.to_string());
-    })  ; 
+    });
     rsx! {
         div {
             class: "container-fluid",

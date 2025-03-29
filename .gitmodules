@@ -1,9 +1,9 @@
 [submodule "lib/iroh"]
-	path = lib/iroh
+	path = vendor/iroh
 	url = https://github.com/n0-computer/iroh
 [submodule "lib/iroh-gossip"]
-	path = lib/iroh-gossip
+	path = vendor/iroh-gossip
 	url = https://github.com/n0-computer/iroh-gossip
 [submodule "lib/matchbox"]
-	path = lib/matchbox
+	path = vendor/matchbox
 	url = https://github.com/Sparganothis/matchbox

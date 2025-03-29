@@ -3,15 +3,15 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 use iroh::PublicKey;
-use n0_future::StreamExt;
 use protocol::{
-    chat::{
-        timestamp_now, ChatController, ChatMessage,
-        ChatMessageType as ChatMessageType2, NetworkEvent, ReceivedMessage,
-    },
+    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_presence::{PresenceFlag, PresenceList},
-    global_matchmaker::{GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker},
+    datetime_now,
+    global_matchmaker::{
+        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
+    },
     user_identity::NodeIdentity,
+    IChatRoomType as ChatMessageType2, ReceivedMessage,
 };
 use tracing::warn;
 
@@ -46,7 +46,7 @@ impl RenderElement for GlobalChatMessageType {
         rsx! {
             br{}
             if ! payload.platform.is_empty() {
-                small { 
+                small {
                     "{payload.platform}:"
                 }
             }
@@ -93,21 +93,9 @@ pub fn ChatRoom<T: ChatMessageType>(
             let Some(controller) = chat else {
                 return;
             };
-            let mut recv = controller.receiver();
-            while let Some(event) = recv.next().await {
-                let t: Result<ReceivedMessage<T::M, T::P>, String> = match event {
-                    Ok(NetworkEvent::Message { event }) => {
-                        match event.message {
-                            ChatMessage::Message { .. } => Ok(event),
-                            _ => continue,
-                        }
-                    }
-                    Err(e) => Err(e.to_string()),
-                    _ => {
-                        continue;
-                    }
-                };
-                history.write().messages.push(t);
+            let mut recv = controller.receiver().await;
+            while let Some(message) = recv.next_message().await {
+                history.write().messages.push(Ok(message));
             }
             warn!("XXX: ChatRoom receiver stream closed");
         }
@@ -153,7 +141,7 @@ pub fn ChatRoom<T: ChatMessageType>(
 
 #[derive(Clone, Debug, PartialEq)]
 struct ChatHistory<T: ChatMessageType> {
-    pub messages: Vec<Result<ReceivedMessage<T::M, T::P>, String>>,
+    pub messages: Vec<Result<ReceivedMessage<T>, String>>,
 }
 impl<T: ChatMessageType> Default for ChatHistory<T> {
     fn default() -> Self {
@@ -162,15 +150,18 @@ impl<T: ChatMessageType> Default for ChatHistory<T> {
 }
 
 #[component]
-fn ChatPresenceDisplay<T: ChatMessageType>(presence: ReadOnlySignal<PresenceList<T>>) -> Element {
+fn ChatPresenceDisplay<T: ChatMessageType>(
+    presence: ReadOnlySignal<PresenceList<T>>,
+) -> Element {
     rsx! {
         ul {
-            for (presence_flag,last_seen, identity, payload) in presence.read().iter() {
+            for (presence_flag,last_seen, identity, payload, rtt) in presence.read().iter() {
                 ChatPresenceDisplayItem::<T> {
                     presence_flag: presence_flag.clone(),
                     last_seen: last_seen.clone(),
                     identity: identity.clone(),
                     payload: payload.clone() as T::P,
+                    rtt: rtt.clone(),
                 }
             }
             if presence.read().is_empty() {
@@ -188,16 +179,19 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
     last_seen: ReadOnlySignal<Instant>,
     identity: ReadOnlySignal<NodeIdentity>,
     payload: ReadOnlySignal<T::P>,
+    rtt: ReadOnlySignal<Option<u16>>,
 ) -> Element {
     let mut last_seen_txt = use_signal(|| "".to_string());
     let payload = use_memo(move || T::render_presence(payload.read().clone()));
     let mm = use_context::<NetworkState>().global_mm;
+    let mut own_node_id = use_signal(|| None);
     let _ = use_resource(move || {
         let mm = mm.read().clone();
         async move {
             let Some(mm) = mm else {
                 return;
             };
+            own_node_id.set(Some(mm.own_node_identity().node_id().clone()));
             loop {
                 let elapsed = 1 + last_seen.peek().elapsed().as_secs();
                 let elapsed_txt = pretty_duration::pretty_duration(
@@ -210,8 +204,13 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
             }
         }
     });
+    let is_own_node = use_memo(move || {
+        let own_node_id = own_node_id.read().clone();
+        let identity = identity.read().clone();
+        own_node_id == Some(identity.node_id().clone())
+    });
     let identity = identity.read().clone();
-    
+
     let color = match presence_flag.read().clone() {
         PresenceFlag::ACTIVE => "darkgreen",
         PresenceFlag::IDLE => "orange",
@@ -240,6 +239,14 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
             ",
             "data-placement": "bottom",
             {element}
+            small { small {
+                style: "float: right; color: #666;",
+                if let Some(rtt) = rtt.read().clone() {
+                    "{rtt} ms"
+                } else if is_own_node.read().clone() {
+                    "(you)"
+                }
+            }}
         }
     }
 }
@@ -274,7 +281,7 @@ fn ChatHistoryDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
-    message: Result<ReceivedMessage<T::M, T::P>, String>,
+    message: Result<ReceivedMessage<T>, String>,
 ) -> Element {
     let mm = use_context::<NetworkState>().global_mm;
     let Some(mm) = mm.read().clone() else {
@@ -295,18 +302,19 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatMessageDisplay<T: ChatMessageType>(
-    message: ReceivedMessage<T::M, T::P>,
+    message: ReceivedMessage<T>,
     user_id: PublicKey,
 ) -> Element {
     let ReceivedMessage {
-        timestamp,
+        _sender_timestamp: _,
+        _received_timestamp: timestamp,
+        _message_id,
         from,
-        message,
+        message: text,
     } = message;
-    let text: Element = match message {
-        ChatMessage::Message { text } => T::render_message(text),
-        _ => rsx! {"{message:#?}"},
-    };
+
+    let text = T::render_message(text);
+
     let from_nickname = from.nickname();
     let from_user_id = from.user_id().fmt_short();
     let from_node_id = from.node_id().fmt_short();
@@ -325,7 +333,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
                 return;
             };
             loop {
-                let elapsed = (1 + timestamp_now().timestamp()
+                let elapsed = (1 + datetime_now().timestamp()
                     - timestamp.timestamp())
                 .abs() as u64;
                 let elapsed_txt = pretty_duration::pretty_duration(
@@ -384,7 +392,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatInput<T: ChatMessageType>(
-    on_user_message: Callback<T::M, Option<ReceivedMessage<T::M, T::P>>>,
+    on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
 ) -> Element {
     let mut message_input = use_signal(String::new);
     let is_connected = use_context::<NetworkState>().is_connected;
@@ -438,25 +446,23 @@ fn chat_send_message<T: ChatMessageType>(
     mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
     chat: ReadOnlySignal<Option<ChatController<T>>>,
     message: T::M,
-) -> Option<ReceivedMessage<T::M, T::P>> {
+) -> Option<ReceivedMessage<T>> {
     let Some(mm) = mm.peek().clone() else {
         return None;
     };
-    let from = mm.own_node_identity().clone();
-    let ts = timestamp_now();
     let msg_preview = ReceivedMessage {
-        timestamp: ts,
-        from,
-        message: ChatMessage::Message {
-            text: message.clone(),
-        },
+        _sender_timestamp: datetime_now(),
+        _received_timestamp: datetime_now(),
+        _message_id: uuid::Uuid::new_v4(),
+        from: mm.own_node_identity(),
+        message: message.clone(),
     };
     spawn(async move {
         let Some(controller) = chat.peek().clone() else {
             return;
         };
         let sender = controller.sender();
-        match sender.send(message).await {
+        match sender.broadcast_message(message).await {
             Ok(_) => (),
             Err(e) => {
                 warn!("Failed to send message: {}", e);

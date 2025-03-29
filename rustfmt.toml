@@ -1,2 +1,2 @@
 max_width = 80
-ignore = ["lib", "lib/*"]
+ignore = ["lib", "lib/*", "vendor", "vendor/*"]

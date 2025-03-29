@@ -7,21 +7,30 @@ use iroh::{
     Endpoint, NodeId, SecretKey,
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
+use matchbox_socket::{PeerEvent, PeerId};
 use tracing::info;
 
 use crate::{
-    _matchbox_signal::{DirectMessageProtocol, IrohGossipSignallerBuilder, DIRECT_MESSAGE_ALPN}, chat::{join_chat, ChatController, ChatMessageType, ChatTicket}, echo::Echo, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentitySecrets}
+    _matchbox_signal::{
+        DirectMessageProtocol, MatchboxSignallerHolder, PeerTracker,
+        DIRECT_MESSAGE_ALPN,
+    },
+    chat::ChatController,
+    chat_ticket::ChatTicket,
+    echo::Echo,
+    signed_message::{IChatRoomType, MessageSigner},
+    sleep::SleepManager,
+    user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]
 pub struct MainNode {
-    node_secret_key: Arc<SecretKey>,
     router: Router,
     gossip: Gossip,
     node_identity: Arc<NodeIdentity>,
-    user_secrets: Arc<UserIdentitySecrets>,
     sleep_manager: SleepManager,
-    matchbox_signal_builder: IrohGossipSignallerBuilder,
+    matchbox_signal_builder: MatchboxSignallerHolder,
+    message_signer: MessageSigner,
 }
 
 impl MainNode {
@@ -31,13 +40,27 @@ impl MainNode {
         own_endpoint_node_id: Option<NodeId>,
         user_secrets: Arc<UserIdentitySecrets>,
         sleep_manager: SleepManager,
-        matchbox_id: uuid::Uuid,
+        matchbox_id: PeerId,
     ) -> Result<Self> {
         assert!(node_secret_key.public() == *node_identity.node_id());
+        assert!(
+            node_identity.user_id() == user_secrets.user_identity().user_id()
+        );
+        assert!(*node_identity.user_id() == user_secrets.secret_key().public());
+        let message_signer = MessageSigner {
+            node_secret_key: node_secret_key.clone(),
+            user_secrets: user_secrets.clone(),
+            node_identity: node_identity.clone(),
+        };
+
         let endpoint = Endpoint::builder()
             .secret_key(node_secret_key.as_ref().clone())
             .discovery_n0()
-            .alpns(vec![Echo::ALPN.to_vec(), GOSSIP_ALPN.to_vec(), DIRECT_MESSAGE_ALPN.to_vec()])
+            .alpns(vec![
+                Echo::ALPN.to_vec(),
+                GOSSIP_ALPN.to_vec(),
+                DIRECT_MESSAGE_ALPN.to_vec(),
+            ])
             .bind()
             .await?;
         let gossip = Gossip::builder().spawn(endpoint.clone()).await?;
@@ -45,30 +68,35 @@ impl MainNode {
             own_endpoint_node_id.unwrap_or(endpoint.node_id()),
             sleep_manager.clone(),
         );
-        let (direct_message_send, direct_message_recv) = async_broadcast::broadcast(2048);
-        let direct_message = DirectMessageProtocol(direct_message_send);
+        let (direct_message_send, direct_message_recv) =
+            async_broadcast::broadcast(2048);
+        let direct_message = DirectMessageProtocol::<PeerEvent> {
+            sender: direct_message_send,
+            sleep_manager: sleep_manager.clone(),
+        };
         let router = Router::builder(endpoint.clone())
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())
             .accept(DIRECT_MESSAGE_ALPN, direct_message)
             .spawn()
             .await?;
-        let matchbox_signal_builder = IrohGossipSignallerBuilder{
-            matchbox_id: matchbox_socket::PeerId(matchbox_id),
+        let matchbox_signal_builder = MatchboxSignallerHolder {
+            matchbox_id,
             iroh_id: endpoint.node_id().clone(),
-            router: router.clone(),
             endpoint: endpoint.clone(),
             gossip: gossip.clone(),
             direct_message_recv: direct_message_recv.deactivate(),
+            message_signer: message_signer.clone(),
+            peer_tracker: PeerTracker::new(),
+            sleep_manager: sleep_manager.clone(),
         };
         Ok(Self {
             router,
-            node_secret_key,
             gossip,
             node_identity,
-            user_secrets,
             sleep_manager,
             matchbox_signal_builder,
+            message_signer,
         })
     }
 
@@ -106,16 +134,17 @@ impl MainNode {
         ticket: &ChatTicket,
     ) -> Result<ChatController<T>>
     where
-        T: ChatMessageType,
+        T: IChatRoomType,
     {
-        join_chat(
-            self.gossip.clone(),
-            self.node_secret_key.clone(),
-            ticket,
-            self.user_secrets.clone(),
-            self.node_identity.clone(),
+        let room = self
+            .matchbox_signal_builder
+            .open_socket(ticket.clone())
+            .await?;
+
+        Ok(ChatController::<T>::new(
+            Arc::new(room),
+            self.message_signer.clone(),
             self.sleep_manager.clone(),
-        )
-        .await
+        ))
     }
 }
