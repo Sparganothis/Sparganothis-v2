@@ -569,18 +569,11 @@ impl GlobalMatchmaker {
         known_bs2.remove(self.own_node_identity().node_id());
         // let known_bs = known_bs1.union(&known_bs2).cloned().collect::<HashSet<_>>();
 
-        let presence_info =
-            global_chat.chat_presence().get_presence_list().await;
-        let presence_info = presence_info
-            .into_iter()
-            .map(|(_b, _, identity, _, _)| (_b, identity))
-            .filter(|(_b, _i)| {
-                (*_b == PresenceFlag::ACTIVE || *_b == PresenceFlag::IDLE)
-                    && _i.bootstrap_idx().is_none()
-            })
-            .map(|(_b, identity)| identity)
-            .map(|i| i.node_id().clone())
-            .collect::<HashSet<_>>();
+        // let presence_info =
+            // global_chat.chat_presence().get_presence_list().await;
+        let peer_tracker = global_chat.peer_tracker().await.peers().await.iter().map(|p| *p.node_id()).collect::<HashSet<_>>();
+        let presence_info = peer_tracker;
+        
         // all the pks in known_bs but not in presence_info
         let new_bs = known_bs2
             .difference(&presence_info)

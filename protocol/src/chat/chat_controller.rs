@@ -39,6 +39,9 @@ impl<T: IChatRoomType> PartialEq for ChatController<T> {
 }
 
 impl<T: IChatRoomType> ChatController<T> {
+    pub(crate) async fn peer_tracker(&self) -> PeerTracker {
+        self.inner.peer_tracker().await
+    }
     pub(crate) fn new(
         inner: Arc<dyn IChatRoomRaw>,
         message_signer: MessageSigner,
@@ -141,8 +144,8 @@ impl<T: IChatRoomType> ChatController<T> {
                             );
                         }
                         PeerState::Disconnected => {
-                            let peer_tracker = inner2.peer_tracker().await;
-                            peer_tracker.drop_peers(vec![peer]).await;
+                            // let peer_tracker = inner2.peer_tracker().await;
+                            // peer_tracker.drop_peers(vec![peer]).await;
                             _presence.remove_presence(&peer).await;
                             info!(
                                 "_events_task: \n Peer disconnected: {:?}",
