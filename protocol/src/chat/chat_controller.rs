@@ -6,7 +6,7 @@ use iroh::NodeId;
 use matchbox_socket::{async_trait, PeerState};
 use n0_future::task::{spawn, AbortOnDropHandle};
 use tokio::sync::Mutex;
-use tracing::{info, warn};
+use tracing::{debug, warn};
 
 use crate::{
     _const::PRESENCE_INTERVAL,
@@ -136,7 +136,7 @@ impl<T: IChatRoomType> ChatController<T> {
                             let peer_tracker = inner2.peer_tracker().await;
                             peer_tracker.confirm_peer(peer).await;
                             _sender.direct_presence(peer).await?;
-                            info!(
+                            debug!(
                                 "_events_task: \n Peer connected: {:?}",
                                 peer.matchbox_id()
                             );
@@ -145,7 +145,7 @@ impl<T: IChatRoomType> ChatController<T> {
                             // let peer_tracker = inner2.peer_tracker().await;
                             // peer_tracker.drop_peers(vec![peer]).await;
                             _presence.remove_presence(&peer).await;
-                            info!(
+                            debug!(
                                 "_events_task: \n Peer disconnected: {:?}",
                                 peer.matchbox_id()
                             );
@@ -155,7 +155,7 @@ impl<T: IChatRoomType> ChatController<T> {
                 } else {
                     err += 1;
                     if err > 10 {
-                        warn!("_events_task: Events task closed");
+                        tracing::error!("_events_task: Events task closed");
                         anyhow::bail!("_events_task: Events task closed");
                     }
                 }
