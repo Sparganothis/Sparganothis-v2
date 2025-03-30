@@ -34,31 +34,31 @@ services:
         limits:
           memory: 420M
 
-  coturn:
-    container_name: coturn
-    image: coturn/coturn:4.6.3-r3
-    # ports:
-    #   - "31233:31233"
-    #   - "31233:31233/udp"
-    #   - "31234:31234"
-    #   - "31234:31234/udp"
-    #   - "49160-49200:49160-49200/udp"
-    command: [
-      "--listening-port=31233",
-      "--listening-ip=0.0.0.0",
-      "--tls-listening-port=31234",
-      "--min-port=49160",
-      "--max-port=49200",
-      "--log-file=stdout",
-      "--external-ip=$(detect-external-ip)",
-      "--relay-ip=$(detect-external-ip)",
-      "--user=free3:free4",
-    ]
-    restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 800M
-    network_mode: host
-    cap_add:
-      - NET_BIND_SERVICE
+  # coturn:
+  #   container_name: coturn
+  #   image: coturn/coturn:4.6.3-r3
+  #   # ports:
+  #   #   - "31233:31233"
+  #   #   - "31233:31233/udp"
+  #   #   - "31234:31234"
+  #   #   - "31234:31234/udp"
+  #   #   - "49160-49200:49160-49200/udp"
+  #   command: [
+  #     "--listening-port=31233",
+  #     "--listening-ip=0.0.0.0",
+  #     "--tls-listening-port=31234",
+  #     "--min-port=49160",
+  #     "--max-port=49200",
+  #     "--log-file=stdout",
+  #     "--external-ip=$(detect-external-ip)",
+  #     "--relay-ip=$(detect-external-ip)",
+  #     "--user=free3:free4",
+  #   ]
+  #   restart: always
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 800M
+  #   network_mode: host
+  #   cap_add:
+  #     - NET_BIND_SERVICE
