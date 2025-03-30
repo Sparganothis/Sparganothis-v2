@@ -1,0 +1,59 @@
+services:
+  iroh-relay:
+    container_name: iroh-relay
+    image: n0computer/iroh-relay:v0.34.0
+    ports:
+      - "31232:3478/udp"
+      - "8084:80/tcp"
+      - "9090:9090/tcp"
+    restart: always
+    command: ["--config-path", "/config/iroh-relay.toml"]
+    environment:
+      - RUST_LOG=debug
+    deploy:
+      resources:
+        limits:
+          memory: 420M
+    volumes:
+      - ./iroh-relay.toml:/config/iroh-relay.toml
+
+  iroh-dns:
+    container_name: iroh-dns
+    image: n0computer/iroh-dns-server:v0.34.0
+    ports:
+      - "53:53/udp"
+      - "18080:18080/tcp"
+    restart: always
+    volumes:
+      - ./iroh-dns-server-dev.toml:/config/iroh-dns-server-dev.toml
+    command: ["--config", "/config/iroh-dns-server-dev.toml"]
+    environment:
+      - RUST_LOG=debug
+    deploy:
+      resources:
+        limits:
+          memory: 420M
+
+  # coturn:
+  #   container_name: coturn
+  #   image: coturn/coturn:4.6.3-r3
+  #   ports:
+  #     - "31233:31233"
+  #     - "31233:31233/udp"
+  #     - "31234:31234"
+  #     - "31234:31234/udp"
+  #     - "49160-49200:49160-49200/udp"
+  #   command: [
+  #     "--listening-port=31233",
+  #     "--tls-listening-port=31234",
+  #     "--min-port=49160",
+  #     "--max-port=49200",
+  #     "--log-file=stdout",
+  #     "--external-ip=$(detect-external-ip)",
+  #     "--user=free:free",
+  #   ]
+  #   restart: always
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 256M

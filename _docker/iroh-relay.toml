@@ -1,0 +1,12 @@
+secret_key = "5652b1397259bb29d21cebbf6bb30023f70457a5924b3a6a9b4bcccb78927a34"
+# public key 7c4cb5c05406235638fd29609743eb09cbce641cce58c72ecfe0cb260eeba987
+addr = "0.0.0.0:80"
+stun_port = 3478
+hostname = "localhost"
+enable_stun = true
+
+# https://github.com/n0-computer/iroh/blob/v0.34.0/iroh-relay/src/main.rs#L112
+enable_relay = true
+
+[tls_config]
+dangerous_http_only = true

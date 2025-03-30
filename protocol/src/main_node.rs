@@ -2,9 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use iroh::{
-    endpoint::RemoteInfo,
-    protocol::{ProtocolHandler, Router},
-    Endpoint, NodeId, SecretKey,
+    discovery::pkarr::PkarrPublisher, endpoint::RemoteInfo, protocol::{ProtocolHandler, Router}, Endpoint, NodeId, RelayMap, RelayNode, SecretKey
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 use matchbox_socket::{PeerEvent, PeerId};
@@ -15,6 +13,7 @@ use crate::{
         DirectMessageProtocol, MatchboxSignallerHolder, PeerTracker,
         DIRECT_MESSAGE_ALPN,
     },
+    _const::IROH_RELAY_DOMAIN,
     chat::ChatController,
     chat_ticket::ChatTicket,
     echo::Echo,
@@ -31,6 +30,47 @@ pub struct MainNode {
     sleep_manager: SleepManager,
     matchbox_signal_builder: MatchboxSignallerHolder,
     message_signer: MessageSigner,
+}
+
+async fn create_endpoint(
+    node_secret_key: Arc<SecretKey>,
+) -> anyhow::Result<Endpoint> {
+    let relay_url = format!("http://{}:8084", IROH_RELAY_DOMAIN);
+    let pkarr_url = format!("http://{}:18080/pkarr", IROH_RELAY_DOMAIN);
+    let relay_map = RelayMap::from_nodes([
+        RelayNode {
+            url: relay_url.parse().unwrap(),
+            stun_only: false,
+            stun_port: 31232,
+            quic: None,
+        },
+    ]).unwrap();
+    let pkarr_publisher = PkarrPublisher::new(
+        node_secret_key.as_ref().clone(), 
+        pkarr_url.parse().unwrap());
+
+    // #[cfg(target_arch = "wasm32")]
+    let discovery2 =  iroh::discovery::pkarr::PkarrResolver::new(
+        pkarr_url.parse().unwrap()
+    );
+    // #[cfg(not(target_arch = "wasm32"))]
+    // let discovery2 = iroh::discovery::dns::DnsDiscovery::new(
+    //     "127.0.0.1".parse().unwrap()
+    // );
+
+    Endpoint::builder()
+        .secret_key(node_secret_key.as_ref().clone())
+        // .discovery_n0()
+        .relay_mode(iroh::RelayMode::Custom(relay_map))
+        .add_discovery(|_| Some(pkarr_publisher))
+        .add_discovery(|_| Some(discovery2))
+        .alpns(vec![
+            Echo::ALPN.to_vec(),
+            GOSSIP_ALPN.to_vec(),
+            DIRECT_MESSAGE_ALPN.to_vec(),
+        ])
+        .bind()
+        .await
 }
 
 impl MainNode {
@@ -53,16 +93,7 @@ impl MainNode {
             node_identity: node_identity.clone(),
         };
 
-        let endpoint = Endpoint::builder()
-            .secret_key(node_secret_key.as_ref().clone())
-            .discovery_n0()
-            .alpns(vec![
-                Echo::ALPN.to_vec(),
-                GOSSIP_ALPN.to_vec(),
-                DIRECT_MESSAGE_ALPN.to_vec(),
-            ])
-            .bind()
-            .await?;
+        let endpoint = create_endpoint(node_secret_key.clone()).await?;
         let gossip = Gossip::builder().spawn(endpoint.clone()).await?;
         let echo = Echo::new(
             own_endpoint_node_id.unwrap_or(endpoint.node_id()),

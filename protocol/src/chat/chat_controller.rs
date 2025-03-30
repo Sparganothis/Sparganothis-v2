@@ -13,7 +13,7 @@ use crate::{
     chat_presence::ChatPresence,
     datetime_now,
     signed_message::{IChatRoomType, MessageSigner, SignedMessage},
-    sleep::{self, SleepManager},
+    sleep::SleepManager,
     user_identity::NodeIdentity,
     ReceivedMessage,
     _matchbox_signal::PeerTracker,
@@ -68,15 +68,16 @@ impl<T: IChatRoomType> ChatController<T> {
         let _sleep_manager = sleep_manager.clone();
         let _dispatch_task = AbortOnDropHandle::new(spawn(async move {
             let mut errors = 0;
-            loop 
-            {
+            loop {
                 let Some((peer, message)) = inner2.next_message().await else {
                     errors += 1;
                     if errors > 10 {
                         warn!("_dispatch_task: Chat room closed");
                         anyhow::bail!("_dispatch_task: Chat room closed");
                     }
-                    _sleep_manager.sleep(std::time::Duration::from_millis(8)).await;
+                    _sleep_manager
+                        .sleep(std::time::Duration::from_millis(8))
+                        .await;
                     continue;
                 };
                 errors = 0;
@@ -85,8 +86,10 @@ impl<T: IChatRoomType> ChatController<T> {
                 );
                 match msg {
                     Ok(m) => {
-                        if m.from !=  peer {
-                            tracing::error!("_dispatch_task: Message from wrong peer");
+                        if m.from != peer {
+                            tracing::error!(
+                                "_dispatch_task: Message from wrong peer"
+                            );
                             continue;
                         }
                         match m.message {
@@ -151,7 +154,9 @@ impl<T: IChatRoomType> ChatController<T> {
                         tracing::error!("_events_task: Events task closed");
                         anyhow::bail!("_events_task: Events task closed");
                     }
-                    _sleep_manager.sleep(std::time::Duration::from_millis(8)).await;
+                    _sleep_manager
+                        .sleep(std::time::Duration::from_millis(8))
+                        .await;
                     continue;
                 };
                 err = 0;
