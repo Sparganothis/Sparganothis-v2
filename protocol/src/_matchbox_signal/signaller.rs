@@ -253,15 +253,15 @@ impl MatchboxSignallerHolder {
                             let is_new =  peer_tracker.get_peer_by_matchbox_id(matchbox_id).await.is_none();
                             peer_tracker.add_peer(from).await;
                             if is_new {
-                                info!("New peer connection:
+                                debug!("New peer connection:
                                 - new peer matchbox ID {matchbox_id}
                                 - new peer iroh ID {iroh_id}");
 
                                 if matchbox_id < self.matchbox_id {
-                                    info!("Sending NewPeer event for smaller id");
+                                    debug!("Sending NewPeer event for smaller id");
                                     event_send.send(PeerEvent::NewPeer(matchbox_id)).await?;
                                 } else {
-                                    info!("Not sending NewPeer event for larger id");
+                                    debug!("Not sending NewPeer event for larger id");
                                 }
                                 // on new peer, send gossip message to ensure new peer has our iroh id
                                 self.send_gossip_message(&gossip_send).await?;

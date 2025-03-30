@@ -4,7 +4,10 @@ use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::{Notify, RwLock};
 
 use crate::{
-    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE}, _matchbox_signal::PeerTracker, signed_message::IChatRoomType, user_identity::NodeIdentity
+    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
+    _matchbox_signal::PeerTracker,
+    signed_message::IChatRoomType,
+    user_identity::NodeIdentity,
 };
 
 #[derive(Clone, Debug)]
@@ -93,7 +96,8 @@ impl<T: IChatRoomType> ChatPresence<T> {
                 _userid.nickname().to_string(),
             )
         });
-        let mut v: Vec<_> = p.into_iter()
+        let mut v: Vec<_> = p
+            .into_iter()
             .map(|(_node_id, (last_seen, identity, payload, rtt))| {
                 (
                     PresenceFlag::from_instant(last_seen),
@@ -109,10 +113,16 @@ impl<T: IChatRoomType> ChatPresence<T> {
         let mut v2 = vec![];
         for tracked_peer in self.peer_tracker.peers().await {
             if !p_map.contains_key(&*tracked_peer.node_id()) {
-                v2.push((PresenceFlag::UNCONFIRMED, Instant::now(), tracked_peer, None, None));
+                v2.push((
+                    PresenceFlag::UNCONFIRMED,
+                    Instant::now(),
+                    tracked_peer,
+                    None,
+                    None,
+                ));
             }
         }
-        v2.sort_by_key(|((_flag, _k, _userid, _payload, _rtt))| {
+        v2.sort_by_key(|(_flag, _k, _userid, _payload, _rtt)| {
             (
                 _userid.user_id().to_string(),
                 _userid.nickname().to_string(),

@@ -25,7 +25,9 @@ impl<T> ChatMessageType for T where
 }
 pub trait RenderElement: ChatMessageType2 {
     fn render_message(message: <Self as ChatMessageType2>::M) -> Element;
-    fn render_presence(payload: Option<<Self as ChatMessageType2>::P>) -> Element;
+    fn render_presence(
+        payload: Option<<Self as ChatMessageType2>::P>,
+    ) -> Element;
 }
 pub trait FromUserInput: ChatMessageType2 {
     fn from_user_input(input: String) -> <Self as ChatMessageType2>::M;
@@ -61,7 +63,7 @@ impl RenderElement for GlobalChatMessageType {
             }
             None => rsx! {
                 br{}
-            }
+            },
         }
     }
 }

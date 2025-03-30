@@ -187,13 +187,11 @@ impl<T: IChatRoomType> ChatController<T> {
             receiver,
         }
     }
-    
+
     pub(crate) async fn peer_tracker(&self) -> PeerTracker {
         self.inner.peer_tracker().await
     }
 }
-
-
 
 #[async_trait::async_trait]
 impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
