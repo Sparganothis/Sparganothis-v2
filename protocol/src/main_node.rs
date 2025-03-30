@@ -9,17 +9,10 @@ use matchbox_socket::{PeerEvent, PeerId};
 use tracing::info;
 
 use crate::{
-    _matchbox_signal::{
+    _const::get_relay_domain, _matchbox_signal::{
         DirectMessageProtocol, MatchboxSignallerHolder, PeerTracker,
         DIRECT_MESSAGE_ALPN,
-    },
-    _const::IROH_RELAY_DOMAIN,
-    chat::ChatController,
-    chat_ticket::ChatTicket,
-    echo::Echo,
-    signed_message::{IChatRoomType, MessageSigner},
-    sleep::SleepManager,
-    user_identity::{NodeIdentity, UserIdentitySecrets},
+    }, chat::ChatController, chat_ticket::ChatTicket, echo::Echo, signed_message::{IChatRoomType, MessageSigner}, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentitySecrets}
 };
 
 #[derive(Clone)]
@@ -35,8 +28,8 @@ pub struct MainNode {
 async fn create_endpoint(
     node_secret_key: Arc<SecretKey>,
 ) -> anyhow::Result<Endpoint> {
-    let relay_url = format!("http://{}:8084", IROH_RELAY_DOMAIN);
-    let pkarr_url = format!("http://{}:18080/pkarr", IROH_RELAY_DOMAIN);
+    let relay_url = format!("http://{}:8084", get_relay_domain());
+    let pkarr_url = format!("http://{}:18080/pkarr", get_relay_domain());
     let relay_map = RelayMap::from_nodes([
         RelayNode {
             url: relay_url.parse().unwrap(),

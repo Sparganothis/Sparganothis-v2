@@ -9,4 +9,7 @@ pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(3);
 pub const GLOBAL_PERIODIC_TASK_INTERVAL: Duration = Duration::from_secs(5);
 
 
-pub const IROH_RELAY_DOMAIN: &str = "127.0.0.1";
+pub fn get_relay_domain() -> String {
+    let s = include_str!("iroh-relay.txt");
+    s.trim().chars().rev().collect()
+}
