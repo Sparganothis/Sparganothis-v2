@@ -54,7 +54,7 @@ impl RenderElement for GameMessageSpam {
         }
     }
 
-    fn render_presence(_payload: <Self as ChatMessageType2>::P) -> Element {
+    fn render_presence(_payload: Option<<Self as ChatMessageType2>::P>) -> Element {
         rsx! {
             br{}
         }

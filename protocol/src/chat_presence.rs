@@ -4,15 +4,14 @@ use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::{Notify, RwLock};
 
 use crate::{
-    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
-    signed_message::IChatRoomType,
-    user_identity::NodeIdentity,
+    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE}, _matchbox_signal::PeerTracker, signed_message::IChatRoomType, user_identity::NodeIdentity
 };
 
 #[derive(Clone, Debug)]
 pub struct ChatPresence<T: IChatRoomType> {
     presence: Arc<RwLock<ChatPresenceData<T>>>,
     notify: Arc<Notify>,
+    peer_tracker: PeerTracker,
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -20,6 +19,7 @@ pub enum PresenceFlag {
     ACTIVE,
     IDLE,
     EXPIRED,
+    UNCONFIRMED,
 }
 
 impl PresenceFlag {
@@ -27,7 +27,7 @@ impl PresenceFlag {
         let duration = instant.elapsed();
         if duration < PRESENCE_IDLE {
             Self::ACTIVE
-        } else if duration < PRESENCE_EXPIRATION - PRESENCE_IDLE {
+        } else if duration < PRESENCE_EXPIRATION {
             Self::IDLE
         } else {
             Self::EXPIRED
@@ -38,15 +38,16 @@ pub type PresenceList<T> = Vec<(
     PresenceFlag,
     Instant,
     NodeIdentity,
-    <T as IChatRoomType>::P,
+    Option<<T as IChatRoomType>::P>,
     Option<u16>,
 )>;
 
 impl<T: IChatRoomType> ChatPresence<T> {
-    pub fn new() -> Self {
+    pub fn new(peer_tracker: PeerTracker) -> Self {
         Self {
             presence: Arc::new(RwLock::new(ChatPresenceData::default())),
             notify: Arc::new(Notify::new()),
+            peer_tracker,
         }
     }
     pub fn notified(&self) -> tokio::sync::futures::Notified<'_> {
@@ -64,7 +65,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
             .unwrap_or(None);
         w.map.insert(
             identity.node_id().clone(),
-            (now, identity, payload.clone(), old_ping),
+            (now, identity, Some(payload.clone()), old_ping),
         );
         w.map.retain(|_, (last_seen, _, _, _)| {
             now.duration_since(*last_seen) < PRESENCE_EXPIRATION
@@ -83,7 +84,8 @@ impl<T: IChatRoomType> ChatPresence<T> {
         entry.3 = Some(rtt);
     }
     pub async fn get_presence_list(&self) -> PresenceList<T> {
-        let p = self.presence.read().await.map.clone();
+        let p_map = self.presence.read().await.map.clone();
+        let p = p_map.clone();
         let mut p = p.into_iter().collect::<Vec<_>>();
         p.sort_by_key(|(_, (_k, _userid, _payload, _rtt))| {
             (
@@ -91,7 +93,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
                 _userid.nickname().to_string(),
             )
         });
-        p.into_iter()
+        let mut v: Vec<_> = p.into_iter()
             .map(|(_node_id, (last_seen, identity, payload, rtt))| {
                 (
                     PresenceFlag::from_instant(last_seen),
@@ -101,7 +103,23 @@ impl<T: IChatRoomType> ChatPresence<T> {
                     rtt,
                 )
             })
-            .collect()
+            .collect();
+
+        // set as UNCONFIRMED if not in p_map but in peer_tracker
+        let mut v2 = vec![];
+        for tracked_peer in self.peer_tracker.peers().await {
+            if !p_map.contains_key(&*tracked_peer.node_id()) {
+                v2.push((PresenceFlag::UNCONFIRMED, Instant::now(), tracked_peer, None, None));
+            }
+        }
+        v2.sort_by_key(|((_flag, _k, _userid, _payload, _rtt))| {
+            (
+                _userid.user_id().to_string(),
+                _userid.nickname().to_string(),
+            )
+        });
+        v.extend(v2);
+        v
     }
     pub async fn remove_presence(&self, identity: &NodeIdentity) {
         let identity = identity.clone();
@@ -114,7 +132,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
 
 #[derive(Clone, Debug, PartialEq)]
 struct ChatPresenceData<T: IChatRoomType> {
-    map: BTreeMap<NodeId, (Instant, NodeIdentity, T::P, Option<u16>)>,
+    map: BTreeMap<NodeId, (Instant, NodeIdentity, Option<T::P>, Option<u16>)>,
 }
 impl<T: IChatRoomType> Default for ChatPresenceData<T> {
     fn default() -> Self {

@@ -19,7 +19,6 @@ use crate::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
     },
     chat::{ChatController, IChatController, IChatSender},
-    chat_presence::PresenceFlag,
     chat_ticket::ChatTicket,
     datetime_now,
     echo::Echo,
@@ -570,10 +569,17 @@ impl GlobalMatchmaker {
         // let known_bs = known_bs1.union(&known_bs2).cloned().collect::<HashSet<_>>();
 
         // let presence_info =
-            // global_chat.chat_presence().get_presence_list().await;
-        let peer_tracker = global_chat.peer_tracker().await.peers().await.iter().map(|p| *p.node_id()).collect::<HashSet<_>>();
+        // global_chat.chat_presence().get_presence_list().await;
+        let peer_tracker = global_chat
+            .peer_tracker()
+            .await
+            .peers()
+            .await
+            .iter()
+            .map(|p| *p.node_id())
+            .collect::<HashSet<_>>();
         let presence_info = peer_tracker;
-        
+
         // all the pks in known_bs but not in presence_info
         let new_bs = known_bs2
             .difference(&presence_info)

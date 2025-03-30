@@ -145,6 +145,7 @@ impl MainNode {
             Arc::new(room),
             self.message_signer.clone(),
             self.sleep_manager.clone(),
+            self.matchbox_signal_builder.peer_tracker.clone(),
         ))
     }
 }

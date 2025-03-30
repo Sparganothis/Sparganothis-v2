@@ -19,6 +19,6 @@ pub fn ice_servers() -> RtcIceServerConfigs {
             //     username: Some("free".to_string()),
             //     credential: Some("free".to_string()),
             // }
-        ]
+        ],
     }
 }

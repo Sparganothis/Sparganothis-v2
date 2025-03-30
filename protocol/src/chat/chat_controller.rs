@@ -39,15 +39,13 @@ impl<T: IChatRoomType> PartialEq for ChatController<T> {
 }
 
 impl<T: IChatRoomType> ChatController<T> {
-    pub(crate) async fn peer_tracker(&self) -> PeerTracker {
-        self.inner.peer_tracker().await
-    }
     pub(crate) fn new(
         inner: Arc<dyn IChatRoomRaw>,
         message_signer: MessageSigner,
         sleep_manager: SleepManager,
+        peer_tracker: PeerTracker,
     ) -> Self {
-        let presence = ChatPresence::new();
+        let presence = ChatPresence::new(peer_tracker);
         let sender = ChatSender {
             inner: inner.clone(),
             message_signer: message_signer.clone(),
@@ -189,7 +187,14 @@ impl<T: IChatRoomType> ChatController<T> {
             receiver,
         }
     }
+    
+    pub(crate) async fn peer_tracker(&self) -> PeerTracker {
+        self.inner.peer_tracker().await
+    }
 }
+
+
+
 #[async_trait::async_trait]
 impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
     fn sender(&self) -> ChatSender<T> {

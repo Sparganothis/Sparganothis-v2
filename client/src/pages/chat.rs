@@ -25,7 +25,7 @@ impl<T> ChatMessageType for T where
 }
 pub trait RenderElement: ChatMessageType2 {
     fn render_message(message: <Self as ChatMessageType2>::M) -> Element;
-    fn render_presence(payload: <Self as ChatMessageType2>::P) -> Element;
+    fn render_presence(payload: Option<<Self as ChatMessageType2>::P>) -> Element;
 }
 pub trait FromUserInput: ChatMessageType2 {
     fn from_user_input(input: String) -> <Self as ChatMessageType2>::M;
@@ -42,18 +42,25 @@ impl RenderElement for GlobalChatMessageType {
                 "{message}"
         }
     }
-    fn render_presence(payload: GlobalChatPresence) -> Element {
-        rsx! {
-            br{}
-            if ! payload.platform.is_empty() {
-                small {
-                    "{payload.platform}:"
+    fn render_presence(payload: Option<GlobalChatPresence>) -> Element {
+        match payload {
+            Some(payload) => {
+                rsx! {
+                    br{}
+                    if ! payload.platform.is_empty() {
+                        small {
+                            "{payload.platform}:"
+                        }
+                    }
+                    if ! payload.url.is_empty() {
+                        small {
+                            "{payload.url}"
+                        }
+                    }
                 }
             }
-            if ! payload.url.is_empty() {
-                small {
-                    "{payload.url}"
-                }
+            None => rsx! {
+                br{}
             }
         }
     }
@@ -160,7 +167,7 @@ fn ChatPresenceDisplay<T: ChatMessageType>(
                     presence_flag: presence_flag.clone(),
                     last_seen: last_seen.clone(),
                     identity: identity.clone(),
-                    payload: payload.clone() as T::P,
+                    payload: payload.clone() as Option<T::P>,
                     rtt: rtt.clone(),
                 }
             }
@@ -178,7 +185,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
     presence_flag: ReadOnlySignal<PresenceFlag>,
     last_seen: ReadOnlySignal<Instant>,
     identity: ReadOnlySignal<NodeIdentity>,
-    payload: ReadOnlySignal<T::P>,
+    payload: ReadOnlySignal<Option<T::P>>,
     rtt: ReadOnlySignal<Option<u16>>,
 ) -> Element {
     let mut last_seen_txt = use_signal(|| "".to_string());
@@ -215,6 +222,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
         PresenceFlag::ACTIVE => "darkgreen",
         PresenceFlag::IDLE => "orange",
         PresenceFlag::EXPIRED => "darkred",
+        PresenceFlag::UNCONFIRMED => "red",
     };
     let element = rsx! {
         "{identity.nickname()}",
