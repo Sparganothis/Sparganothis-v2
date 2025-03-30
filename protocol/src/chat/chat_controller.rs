@@ -13,7 +13,7 @@ use crate::{
     chat_presence::ChatPresence,
     datetime_now,
     signed_message::{IChatRoomType, MessageSigner, SignedMessage},
-    sleep::SleepManager,
+    sleep::{self, SleepManager},
     user_identity::NodeIdentity,
     ReceivedMessage,
     _matchbox_signal::PeerTracker,
@@ -65,14 +65,30 @@ impl<T: IChatRoomType> ChatController<T> {
         let inner2 = inner.clone();
         let _presence = presence.clone();
         let _sender = sender.clone();
+        let _sleep_manager = sleep_manager.clone();
         let _dispatch_task = AbortOnDropHandle::new(spawn(async move {
-            while let Some((peer, message)) = inner2.next_message().await {
+            let mut errors = 0;
+            loop 
+            {
+                let Some((peer, message)) = inner2.next_message().await else {
+                    errors += 1;
+                    if errors > 10 {
+                        warn!("_dispatch_task: Chat room closed");
+                        anyhow::bail!("_dispatch_task: Chat room closed");
+                    }
+                    _sleep_manager.sleep(std::time::Duration::from_millis(8)).await;
+                    continue;
+                };
+                errors = 0;
                 let msg = SignedMessage::verify_and_decode::<ChatMessage<T>>(
                     &message,
                 );
                 match msg {
                     Ok(m) => {
-                        assert_eq!(m.from, peer);
+                        if m.from !=  peer {
+                            tracing::error!("_dispatch_task: Message from wrong peer");
+                            continue;
+                        }
                         match m.message {
                             ChatMessage::Message(message) => {
                                 msg_sender
@@ -120,43 +136,43 @@ impl<T: IChatRoomType> ChatController<T> {
                     }
                 }
             }
-            warn!("_dispatch_task: Chat room closed");
-            anyhow::bail!("_dispatch_task: Chat room closed");
         }));
 
         let inner2 = inner.clone();
         let _sender = sender.clone();
         let _presence = presence.clone();
+        let _sleep_manager = sleep_manager.clone();
         let _events_task = AbortOnDropHandle::new(spawn(async move {
             let mut err = 0;
             loop {
-                if let Some((peer, event)) = inner2.next_peer_event().await {
-                    match event {
-                        PeerState::Connected => {
-                            let peer_tracker = inner2.peer_tracker().await;
-                            peer_tracker.confirm_peer(peer).await;
-                            _sender.direct_presence(peer).await?;
-                            debug!(
-                                "_events_task: \n Peer connected: {:?}",
-                                peer.matchbox_id()
-                            );
-                        }
-                        PeerState::Disconnected => {
-                            // let peer_tracker = inner2.peer_tracker().await;
-                            // peer_tracker.drop_peers(vec![peer]).await;
-                            _presence.remove_presence(&peer).await;
-                            debug!(
-                                "_events_task: \n Peer disconnected: {:?}",
-                                peer.matchbox_id()
-                            );
-                        }
-                    }
-                    err = 0;
-                } else {
+                let Some((peer, event)) = inner2.next_peer_event().await else {
                     err += 1;
                     if err > 10 {
                         tracing::error!("_events_task: Events task closed");
                         anyhow::bail!("_events_task: Events task closed");
+                    }
+                    _sleep_manager.sleep(std::time::Duration::from_millis(8)).await;
+                    continue;
+                };
+                err = 0;
+                match event {
+                    PeerState::Connected => {
+                        let peer_tracker = inner2.peer_tracker().await;
+                        peer_tracker.confirm_peer(peer).await;
+                        _sender.direct_presence(peer).await?;
+                        debug!(
+                            "_events_task: \n Peer connected: {:?}",
+                            peer.matchbox_id()
+                        );
+                    }
+                    PeerState::Disconnected => {
+                        // let peer_tracker = inner2.peer_tracker().await;
+                        // peer_tracker.drop_peers(vec![peer]).await;
+                        _presence.remove_presence(&peer).await;
+                        debug!(
+                            "_events_task: \n Peer disconnected: {:?}",
+                            peer.matchbox_id()
+                        );
                     }
                 }
             }
