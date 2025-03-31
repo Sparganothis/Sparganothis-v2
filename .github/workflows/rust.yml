@@ -98,7 +98,7 @@ jobs:
       with:
         allowUpdates: true
         commit: "${{ github.sha }}"
-        tag: "${{ github.sha }}"
+        tag: "latest"
         makeLatest: true
         artifacts: "release_exes/**/*"
         bodyFile: ".github/release_template.md"

@@ -1,3 +1,4 @@
-# Github Release ${ github.sha }
+# Github Release
 
-XXX
+- branch ${{ github.branch }} 
+- commit ${{ github.sha }}
