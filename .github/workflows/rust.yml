@@ -87,8 +87,9 @@ jobs:
 
     - name: Zip website and exe
       run: |
-        zip -r website.zip ./dist
+        set -ex
         mkdir -p release_exes/
+        zip -r website.zip ./dist
         mv website.zip release_exes/
         cp target/debug/echo_cli release_exes/echo_cli_linux_x64
 
@@ -97,6 +98,7 @@ jobs:
       with:
         allowUpdates: true
         commit: "${{ github.sha }}"
+        tag: "${{ github.sha }}"
         makeLatest: true
         artifacts: "release_exes/**/*"
         bodyFile: ".github/release_template.md"
