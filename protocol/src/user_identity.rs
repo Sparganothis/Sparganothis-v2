@@ -1,5 +1,4 @@
 use iroh::{PublicKey, SecretKey};
-use matchbox_socket::PeerId;
 
 #[derive(
     Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq,
@@ -55,7 +54,6 @@ impl UserIdentitySecrets {
 pub struct NodeIdentity {
     user_identity: UserIdentity,
     node_id: PublicKey,
-    matchbox_id: PeerId,
     bootstrap_idx: Option<u32>,
 }
 
@@ -83,19 +81,15 @@ impl NodeIdentity {
     pub fn bootstrap_idx(&self) -> Option<u32> {
         self.bootstrap_idx
     }
-    pub fn matchbox_id(&self) -> &PeerId {
-        &self.matchbox_id
-    }
+
     pub fn new(
         user_identity: UserIdentity,
         node_id: PublicKey,
-        matchbox_id: PeerId,
         bootstrap_idx: Option<u32>,
     ) -> Self {
         Self {
             user_identity,
             node_id,
-            matchbox_id,
             bootstrap_idx,
         }
     }

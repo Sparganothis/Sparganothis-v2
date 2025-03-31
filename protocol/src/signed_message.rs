@@ -46,11 +46,11 @@ impl SignedMessage {
     pub fn verify_and_decode<T: AcceptableType>(
         bytes: &[u8],
     ) -> Result<WireMessage<T>> {
-        // let signed_message: Self = postcard::from_bytes(bytes)?;
-        // let message: WireMessage<T> = postcard::from_bytes(&signed_message.data)?;
-        let signed_message: Self = bincode::deserialize(bytes)?;
-        let message: WireMessage<T> =
-            bincode::deserialize(&signed_message.data)?;
+        let signed_message: Self = postcard::from_bytes(bytes)?;
+        let message: WireMessage<T> = postcard::from_bytes(&signed_message.data)?;
+        // let signed_message: Self = bincode::deserialize(bytes)?;
+        // let message: WireMessage<T> =
+            // bincode::deserialize(&signed_message.data)?;
 
         if message.from.user_id() != &signed_message.user_pubkey {
             return Err(anyhow::anyhow!("user id mismatch"));
@@ -91,8 +91,8 @@ impl MessageSigner {
             from,
             _message_id: uuid::Uuid::new_v4(),
         };
-        // let data = postcard::to_stdvec(&wire_message)?;
-        let data = bincode::serialize(&wire_message)?;
+        let data = postcard::to_stdvec(&wire_message)?;
+        // let data = bincode::serialize(&wire_message)?;
         let node_signature = self.node_secret_key.sign(&data);
         let user_signature = self.user_secrets.secret_key().sign(&data);
         let signed_message = SignedMessage {
@@ -102,8 +102,8 @@ impl MessageSigner {
             node_signature,
             user_signature,
         };
-        // let encoded = postcard::to_stdvec(&signed_message)?;
-        let encoded = bincode::serialize(&signed_message)?;
+        let encoded = postcard::to_stdvec(&signed_message)?;
+        // let encoded = bincode::serialize(&signed_message)?;
         Ok(encoded)
     }
 }

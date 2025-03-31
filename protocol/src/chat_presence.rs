@@ -5,7 +5,6 @@ use tokio::sync::{Notify, RwLock};
 
 use crate::{
     _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
-    _matchbox_signal::PeerTracker,
     signed_message::IChatRoomType,
     user_identity::NodeIdentity,
 };
@@ -14,7 +13,6 @@ use crate::{
 pub struct ChatPresence<T: IChatRoomType> {
     presence: Arc<RwLock<ChatPresenceData<T>>>,
     notify: Arc<Notify>,
-    peer_tracker: PeerTracker,
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
@@ -46,17 +44,21 @@ pub type PresenceList<T> = Vec<(
 )>;
 
 impl<T: IChatRoomType> ChatPresence<T> {
-    pub fn new(peer_tracker: PeerTracker) -> Self {
+    pub fn new() -> Self {
         Self {
             presence: Arc::new(RwLock::new(ChatPresenceData::default())),
             notify: Arc::new(Notify::new()),
-            peer_tracker,
         }
     }
     pub fn notified(&self) -> tokio::sync::futures::Notified<'_> {
         self.notify.notified()
     }
-    pub async fn add_presence(&self, identity: &NodeIdentity, payload: &T::P) {
+    /// returns true if the presence was added to list
+    pub async fn add_presence(
+        &self,
+        identity: &NodeIdentity,
+        payload: &Option<T::P>,
+    ) -> bool {
         let identity = identity.clone();
         let now = Instant::now();
         let mut w = self.presence.write().await;
@@ -66,10 +68,13 @@ impl<T: IChatRoomType> ChatPresence<T> {
             .get(&identity.node_id().clone())
             .map(|(_, _, _, rtt)| rtt.clone())
             .unwrap_or(None);
-        w.map.insert(
-            identity.node_id().clone(),
-            (now, identity, Some(payload.clone()), old_ping),
-        );
+        let was_added = w
+            .map
+            .insert(
+                identity.node_id().clone(),
+                (now, identity, payload.clone(), old_ping),
+            )
+            .is_none();
         w.map.retain(|_, (last_seen, _, _, _)| {
             now.duration_since(*last_seen) < PRESENCE_EXPIRATION
         });
@@ -77,6 +82,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
         if old_value != new_value {
             self.notify.notify_waiters();
         }
+        was_added
     }
     pub async fn update_ping(&self, identity: &NodeIdentity, rtt: u16) {
         let identity = identity.clone();
@@ -96,7 +102,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
                 _userid.nickname().to_string(),
             )
         });
-        let mut v: Vec<_> = p
+        let v: Vec<_> = p
             .into_iter()
             .map(|(_node_id, (last_seen, identity, payload, rtt))| {
                 (
@@ -109,26 +115,6 @@ impl<T: IChatRoomType> ChatPresence<T> {
             })
             .collect();
 
-        // set as UNCONFIRMED if not in p_map but in peer_tracker
-        let mut v2 = vec![];
-        for tracked_peer in self.peer_tracker.peers().await {
-            if !p_map.contains_key(&*tracked_peer.node_id()) {
-                v2.push((
-                    PresenceFlag::UNCONFIRMED,
-                    Instant::now(),
-                    tracked_peer,
-                    None,
-                    None,
-                ));
-            }
-        }
-        v2.sort_by_key(|(_flag, _k, _userid, _payload, _rtt)| {
-            (
-                _userid.user_id().to_string(),
-                _userid.nickname().to_string(),
-            )
-        });
-        v.extend(v2);
         v
     }
     pub async fn remove_presence(&self, identity: &NodeIdentity) {

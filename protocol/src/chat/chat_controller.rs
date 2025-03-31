@@ -3,29 +3,21 @@ use std::{marker::PhantomData, sync::Arc};
 use chrono::{DateTime, Utc};
 use futures::{FutureExt, StreamExt};
 use iroh::NodeId;
-use matchbox_socket::{async_trait, PeerState};
 use n0_future::task::{spawn, AbortOnDropHandle};
 use tokio::sync::Mutex;
-use tracing::{debug, warn};
+use tracing::{info, warn};
 
 use crate::{
-    _const::PRESENCE_INTERVAL,
-    chat_presence::ChatPresence,
-    datetime_now,
-    signed_message::{IChatRoomType, MessageSigner, SignedMessage},
-    sleep::SleepManager,
-    user_identity::NodeIdentity,
-    ReceivedMessage,
-    _matchbox_signal::PeerTracker,
+    _const::{CONNECT_TIMEOUT, PRESENCE_INTERVAL}, chat_presence::ChatPresence, chat_ticket::ChatTicket, datetime_now, signed_message::{IChatRoomType, MessageSigner, SignedMessage}, sleep::SleepManager, user_identity::NodeIdentity, ReceivedMessage
 };
 
 #[derive(Clone, Debug)]
 pub struct ChatController<T: IChatRoomType> {
+    ticket: ChatTicket,
     inner: Arc<dyn IChatRoomRaw>,
     presence: ChatPresence<T>,
     _p: PhantomData<T>,
     _dispatch_task: Arc<AbortOnDropHandle<anyhow::Result<()>>>,
-    _events_task: Arc<AbortOnDropHandle<anyhow::Result<()>>>,
     _presence_task: Arc<AbortOnDropHandle<anyhow::Result<()>>>,
     sender: ChatSender<T>,
     receiver: ChatReceiver<T>,
@@ -38,14 +30,55 @@ impl<T: IChatRoomType> PartialEq for ChatController<T> {
     }
 }
 
+async fn _dispatch_inner_loop<T: IChatRoomType>(m: crate::WireMessage<ChatMessage<T>>, msg_sender: &mut async_broadcast::Sender<ReceivedMessage<T>>, _presence: ChatPresence<T>, _sender: ChatSender<T>) -> anyhow::Result<()> {
+    match m.message {
+        ChatMessage::Message(message) => {
+            msg_sender
+                .broadcast(ReceivedMessage {
+                    _sender_timestamp: m._timestamp,
+                    _received_timestamp: datetime_now(),
+                    _message_id: m._message_id,
+                    from: m.from,
+                    message,
+                })
+                .await?;
+        }
+        ChatMessage::Presence(presence) => {
+            let was_added = _presence
+                .add_presence(&m.from, &presence)
+                .await;
+            if was_added {
+                _sender.direct_presence(m.from).await?;
+            }
+            let ping_sender_ts = m._timestamp;
+            _sender.direct_pong(m.from, ping_sender_ts).await?;
+        }
+        ChatMessage::Pong { ping_sender_ts } => {
+            let now = datetime_now();
+            let dt = now
+                .signed_duration_since(ping_sender_ts)
+                .to_std()
+                .ok();
+            if let Some(dt) = dt {
+                let rtt = dt.as_micros() as f64 / 1000.0;
+                if rtt > 0.0 && rtt < 65000.0 {
+                    let rtt = rtt as u16 + 1;
+                    _presence.update_ping(&m.from, rtt).await;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 impl<T: IChatRoomType> ChatController<T> {
     pub(crate) fn new(
+        ticket: ChatTicket,
         inner: Arc<dyn IChatRoomRaw>,
         message_signer: MessageSigner,
         sleep_manager: SleepManager,
-        peer_tracker: PeerTracker,
     ) -> Self {
-        let presence = ChatPresence::new(peer_tracker);
+        let presence = ChatPresence::new();
         let sender = ChatSender {
             inner: inner.clone(),
             message_signer: message_signer.clone(),
@@ -66,10 +99,10 @@ impl<T: IChatRoomType> ChatController<T> {
         let _presence = presence.clone();
         let _sender = sender.clone();
         let _sleep_manager = sleep_manager.clone();
-        let _dispatch_task = AbortOnDropHandle::new(spawn(async move {
+        let _dispatch_task =async move {
             let mut errors = 0;
             loop {
-                let Some((peer, message)) = inner2.next_message().await else {
+                let Ok(Some(message)) = inner2.next_message().await else {
                     errors += 1;
                     if errors > 10 {
                         warn!("_dispatch_task: Chat room closed");
@@ -86,51 +119,10 @@ impl<T: IChatRoomType> ChatController<T> {
                 );
                 match msg {
                     Ok(m) => {
-                        if m.from != peer {
-                            tracing::error!(
-                                "_dispatch_task: Message from wrong peer"
-                            );
-                            continue;
+                        if let Err(e) = _dispatch_inner_loop::<T>(m, &mut msg_sender, _presence.clone(), _sender.clone()).await {
+                            warn!("_dispatch_task: Error dispatching message: {:?}", e);
                         }
-                        match m.message {
-                            ChatMessage::Message(message) => {
-                                msg_sender
-                                    .broadcast(ReceivedMessage {
-                                        _sender_timestamp: m._timestamp,
-                                        _received_timestamp: datetime_now(),
-                                        _message_id: m._message_id,
-                                        from: m.from,
-                                        message,
-                                    })
-                                    .await?;
-                            }
-                            ChatMessage::Presence(presence) => {
-                                _presence
-                                    .add_presence(&m.from, &presence)
-                                    .await;
-                                let ping_sender_ts = m._timestamp;
-                                _sender
-                                    .direct_pong(m.from, ping_sender_ts)
-                                    .await?;
-                            }
-                            ChatMessage::Pong { ping_sender_ts } => {
-                                let now = datetime_now();
-                                let dt = now
-                                    .signed_duration_since(ping_sender_ts)
-                                    .to_std()
-                                    .ok();
-                                if let Some(dt) = dt {
-                                    let rtt = dt.as_micros() as f64 / 1000.0;
-                                    if rtt > 0.0 && rtt < 65000.0 {
-                                        let rtt = rtt as u16 + 1;
-                                        _presence
-                                            .update_ping(&m.from, rtt)
-                                            .await;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    },
                     Err(e) => {
                         warn!(
                             "_dispatch_task: Error verifying message: {:?}",
@@ -139,52 +131,16 @@ impl<T: IChatRoomType> ChatController<T> {
                     }
                 }
             }
+        };
+        let _dispatch_task = AbortOnDropHandle::new(spawn(async move {
+            let r = _dispatch_task.await;
+            warn!("_dispatch_task: Chat room closed: {r:#?}");
+            r
         }));
 
-        let inner2 = inner.clone();
-        let _sender = sender.clone();
-        let _presence = presence.clone();
-        let _sleep_manager = sleep_manager.clone();
-        let _events_task = AbortOnDropHandle::new(spawn(async move {
-            let mut err = 0;
-            loop {
-                let Some((peer, event)) = inner2.next_peer_event().await else {
-                    err += 1;
-                    if err > 10 {
-                        tracing::error!("_events_task: Events task closed");
-                        anyhow::bail!("_events_task: Events task closed");
-                    }
-                    _sleep_manager
-                        .sleep(std::time::Duration::from_millis(8))
-                        .await;
-                    continue;
-                };
-                err = 0;
-                match event {
-                    PeerState::Connected => {
-                        let peer_tracker = inner2.peer_tracker().await;
-                        peer_tracker.confirm_peer(peer).await;
-                        _sender.direct_presence(peer).await?;
-                        debug!(
-                            "_events_task: \n Peer connected: {:?}",
-                            peer.matchbox_id()
-                        );
-                    }
-                    PeerState::Disconnected => {
-                        // let peer_tracker = inner2.peer_tracker().await;
-                        // peer_tracker.drop_peers(vec![peer]).await;
-                        _presence.remove_presence(&peer).await;
-                        debug!(
-                            "_events_task: \n Peer disconnected: {:?}",
-                            peer.matchbox_id()
-                        );
-                    }
-                }
-            }
-        }));
         let _sleep_manager = sleep_manager.clone();
         let _sender = sender.clone();
-        let _presence_task = AbortOnDropHandle::new(spawn(async move {
+        let _presence_task =async move {
             loop {
                 let _ = _sleep_manager.sleep(PRESENCE_INTERVAL).await;
                 if let Err(e) = _sender.broadcast_presence().await {
@@ -194,24 +150,27 @@ impl<T: IChatRoomType> ChatController<T> {
                     );
                 }
             }
+        };
+        let _presence_task = AbortOnDropHandle::new(spawn(async move {
+            let r = _presence_task.await;
+            warn!("_presence_task: Chat room closed: {r:#?}");
+            r
         }));
 
-        Self {
+        let controller = Self {
             _controller_id: uuid::Uuid::new_v4(),
             inner,
             presence,
             _p: PhantomData,
             _dispatch_task: Arc::new(_dispatch_task),
-            _events_task: Arc::new(_events_task),
             _presence_task: Arc::new(_presence_task),
             sender,
             receiver,
-        }
+            ticket,
+        };
+        controller
     }
 
-    pub(crate) async fn peer_tracker(&self) -> PeerTracker {
-        self.inner.peer_tracker().await
-    }
 }
 
 #[async_trait::async_trait]
@@ -238,12 +197,38 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
     fn chat_presence(&self) -> ChatPresence<T> {
         self.presence.clone()
     }
+    async fn wait_joined(&self) -> anyhow::Result<()> {
+        let mut bootstrap = self.ticket.bootstrap.clone();
+        if bootstrap.is_empty() {
+            return Ok(());
+        }
+        let mut x = 0;
+        let p = self.chat_presence();
+        while !bootstrap.is_empty() && x <= 3 {
+            let presence_list = p.get_presence_list().await.into_iter().map(|p| *p.2.node_id()).collect::<Vec<_>>();
+            info!("wait_until_joined: found {:?}/{:?}", presence_list.len(), bootstrap.len());
+            if presence_list.len() >= 3 {
+                break;
+            }
+            for k in presence_list {
+                if bootstrap.remove(&k) {
+                    x += 1;
+                }
+            }
+            if bootstrap.is_empty() || x >= 3 {
+                break;
+            }
+           let _ =  n0_future::time::timeout(CONNECT_TIMEOUT/20, p.notified()).await;
+            x += 1;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum ChatMessage<T: IChatRoomType> {
     Message(T::M),
-    Presence(T::P),
+    Presence(Option<T::P>),
     Pong { ping_sender_ts: DateTime<Utc> },
 }
 
@@ -255,6 +240,7 @@ pub trait IChatController<T: IChatRoomType>:
     async fn receiver(&self) -> ChatReceiver<T>;
     async fn shutdown(&self) -> anyhow::Result<()>;
     fn chat_presence(&self) -> ChatPresence<T>;
+    async fn wait_joined(&self) -> anyhow::Result<()>;
 }
 
 #[derive(Clone, Debug)]
@@ -296,9 +282,6 @@ impl<T: IChatRoomType> IChatSender<T> for ChatSender<T> {
 impl<T: IChatRoomType> ChatSender<T> {
     async fn broadcast_presence(&self) -> anyhow::Result<()> {
         let presence = { self.current_presence.lock().await.clone() };
-        let Some(presence) = presence else {
-            return Ok(());
-        };
         self.chatroom_presence
             .add_presence(&self.message_signer.node_identity, &presence)
             .await;
@@ -308,9 +291,7 @@ impl<T: IChatRoomType> ChatSender<T> {
     }
     async fn direct_presence(&self, to: NodeIdentity) -> anyhow::Result<()> {
         let presence = { self.current_presence.lock().await.clone() };
-        let Some(presence) = presence else {
-            return Ok(());
-        };
+
         let presence = ChatMessage::<T>::Presence(presence);
         let presence = self.message_signer.sign_and_encode(presence)?;
         self.inner.direct_message(to, presence).await
@@ -368,9 +349,7 @@ pub trait IChatRoomRaw: Send + Sync + 'static + std::fmt::Debug {
         to: NodeIdentity,
         message: Vec<u8>,
     ) -> anyhow::Result<()>;
-    async fn next_message(&self) -> Option<(NodeIdentity, Vec<u8>)>;
-    async fn next_peer_event(&self) -> Option<(NodeIdentity, PeerState)>;
+    async fn next_message(&self) -> anyhow::Result<Option<Arc<Vec<u8>>>>;
     async fn join_peers(&self, peers: Vec<NodeId>) -> anyhow::Result<()>;
     async fn shutdown(&self) -> anyhow::Result<()>;
-    async fn peer_tracker(&self) -> PeerTracker;
 }

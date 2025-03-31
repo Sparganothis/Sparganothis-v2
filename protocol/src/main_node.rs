@@ -2,27 +2,39 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use iroh::{
-    discovery::pkarr::PkarrPublisher, endpoint::RemoteInfo, protocol::{ProtocolHandler, Router}, Endpoint, NodeId, RelayMap, RelayNode, SecretKey
+    discovery::pkarr::PkarrPublisher,
+    endpoint::RemoteInfo,
+    protocol::{ProtocolHandler, Router},
+    Endpoint, NodeId, PublicKey, RelayMap, RelayNode, SecretKey,
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
-use matchbox_socket::{PeerEvent, PeerId};
 use tracing::info;
 
 use crate::{
-    _const::get_relay_domain, _matchbox_signal::{
-        DirectMessageProtocol, MatchboxSignallerHolder, PeerTracker,
-        DIRECT_MESSAGE_ALPN,
-    }, chat::ChatController, chat_ticket::ChatTicket, echo::Echo, signed_message::{IChatRoomType, MessageSigner}, sleep::SleepManager, user_identity::{NodeIdentity, UserIdentitySecrets}
+    _const::get_relay_domain,
+    chat::{
+        ChatController, ChatDirectMessage, DirectMessageProtocol, GossipChatRoom, CHAT_DIRECT_MESSAGE_ALPN
+    },
+    chat_ticket::ChatTicket,
+    echo::Echo,
+    signed_message::{IChatRoomType, MessageSigner},
+    sleep::SleepManager,
+    user_identity::{NodeIdentity, UserIdentitySecrets},
+    WireMessage,
 };
 
 #[derive(Clone)]
 pub struct MainNode {
-    router: Router,
-    gossip: Gossip,
-    node_identity: Arc<NodeIdentity>,
-    sleep_manager: SleepManager,
-    matchbox_signal_builder: MatchboxSignallerHolder,
-    message_signer: MessageSigner,
+    pub(crate) router: Router,
+    pub(crate) gossip: Gossip,
+    pub(crate) node_identity: Arc<NodeIdentity>,
+    pub(crate) sleep_manager: SleepManager,
+    pub(crate) message_signer: MessageSigner,
+    pub(crate) direct_message_recv: async_broadcast::InactiveReceiver<(
+        PublicKey,
+        WireMessage<ChatDirectMessage>,
+    )>,
+    pub(crate) chat_direct_message: DirectMessageProtocol<ChatDirectMessage>,
 }
 
 async fn create_endpoint(
@@ -30,22 +42,21 @@ async fn create_endpoint(
 ) -> anyhow::Result<Endpoint> {
     let relay_url = format!("http://{}:8084", get_relay_domain());
     let pkarr_url = format!("http://{}:18080/pkarr", get_relay_domain());
-    let relay_map = RelayMap::from_nodes([
-        RelayNode {
-            url: relay_url.parse().unwrap(),
-            stun_only: false,
-            stun_port: 31232,
-            quic: None,
-        },
-    ]).unwrap();
+    let relay_map = RelayMap::from_nodes([RelayNode {
+        url: relay_url.parse().unwrap(),
+        stun_only: false,
+        stun_port: 31232,
+        quic: None,
+    }])
+    .unwrap();
     let pkarr_publisher = PkarrPublisher::new(
-        node_secret_key.as_ref().clone(), 
-        pkarr_url.parse().unwrap());
+        node_secret_key.as_ref().clone(),
+        pkarr_url.parse().unwrap(),
+    );
 
     // #[cfg(target_arch = "wasm32")]
-    let discovery2 =  iroh::discovery::pkarr::PkarrResolver::new(
-        pkarr_url.parse().unwrap()
-    );
+    let discovery2 =
+        iroh::discovery::pkarr::PkarrResolver::new(pkarr_url.parse().unwrap());
     // #[cfg(not(target_arch = "wasm32"))]
     // let discovery2 = iroh::discovery::dns::DnsDiscovery::new(
     //     "127.0.0.1".parse().unwrap()
@@ -60,7 +71,7 @@ async fn create_endpoint(
         .alpns(vec![
             Echo::ALPN.to_vec(),
             GOSSIP_ALPN.to_vec(),
-            DIRECT_MESSAGE_ALPN.to_vec(),
+            // DIRECT_MESSAGE_ALPN.to_vec(),
         ])
         .bind()
         .await
@@ -73,7 +84,6 @@ impl MainNode {
         own_endpoint_node_id: Option<NodeId>,
         user_secrets: Arc<UserIdentitySecrets>,
         sleep_manager: SleepManager,
-        matchbox_id: PeerId,
     ) -> Result<Self> {
         assert!(node_secret_key.public() == *node_identity.node_id());
         assert!(
@@ -92,35 +102,31 @@ impl MainNode {
             own_endpoint_node_id.unwrap_or(endpoint.node_id()),
             sleep_manager.clone(),
         );
-        let (direct_message_send, direct_message_recv) =
+        let (mut direct_message_send, mut direct_message_recv) =
             async_broadcast::broadcast(2048);
-        let direct_message = DirectMessageProtocol::<PeerEvent> {
-            sender: direct_message_send,
+        direct_message_send.set_overflow(true);
+        direct_message_recv.set_overflow(true);
+
+        let chat_direct_message = DirectMessageProtocol::<ChatDirectMessage> {
+            received_message_broadcaster: direct_message_send,
             sleep_manager: sleep_manager.clone(),
+            endpoint: endpoint.clone(),
         };
         let router = Router::builder(endpoint.clone())
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())
-            .accept(DIRECT_MESSAGE_ALPN, direct_message)
+            .accept(CHAT_DIRECT_MESSAGE_ALPN, chat_direct_message.clone())
             .spawn()
             .await?;
-        let matchbox_signal_builder = MatchboxSignallerHolder {
-            matchbox_id,
-            iroh_id: endpoint.node_id().clone(),
-            endpoint: endpoint.clone(),
-            gossip: gossip.clone(),
-            direct_message_recv: direct_message_recv.deactivate(),
-            message_signer: message_signer.clone(),
-            peer_tracker: PeerTracker::new(),
-            sleep_manager: sleep_manager.clone(),
-        };
+
         Ok(Self {
             router,
             gossip,
             node_identity,
             sleep_manager,
-            matchbox_signal_builder,
             message_signer,
+            direct_message_recv: direct_message_recv.deactivate(),
+            chat_direct_message,
         })
     }
 
@@ -160,16 +166,15 @@ impl MainNode {
     where
         T: IChatRoomType,
     {
-        let room = self
-            .matchbox_signal_builder
-            .open_socket(ticket.clone())
-            .await?;
-
-        Ok(ChatController::<T>::new(
+        let mut ticket = ticket.clone();
+        ticket.bootstrap.remove(&self.node_id());
+        let room = GossipChatRoom::new(self, &ticket).await?;
+        let cc = ChatController::<T>::new(
+            ticket,
             Arc::new(room),
             self.message_signer.clone(),
             self.sleep_manager.clone(),
-            self.matchbox_signal_builder.peer_tracker.clone(),
-        ))
+        );
+        Ok(cc)
     }
 }

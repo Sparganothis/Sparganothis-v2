@@ -4,6 +4,3 @@
 [submodule "lib/iroh-gossip"]
 	path = vendor/iroh-gossip
 	url = https://github.com/n0-computer/iroh-gossip
-[submodule "lib/matchbox"]
-	path = vendor/matchbox
-	url = https://github.com/Sparganothis/matchbox

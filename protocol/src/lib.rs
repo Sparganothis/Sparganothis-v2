@@ -2,7 +2,6 @@ use chrono::{DateTime, Utc};
 
 pub(crate) mod _bootstrap_keys;
 pub mod _const;
-pub(crate) mod _matchbox_signal;
 pub(crate) mod _random_word;
 pub mod chat;
 pub mod chat_presence;

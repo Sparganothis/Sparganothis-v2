@@ -56,6 +56,8 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
         })
         .await;
 
+    controller.wait_joined().await?;
+
     println!("***********************************************************");
     println!("* join OK");
     println!("***********************************************************");

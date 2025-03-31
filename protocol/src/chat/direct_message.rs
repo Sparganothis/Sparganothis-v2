@@ -1,20 +1,28 @@
+use std::sync::Arc;
+
 use iroh::{
     endpoint::Connection, protocol::ProtocolHandler, Endpoint, PublicKey,
 };
+use iroh_gossip::proto::TopicId;
 
 use crate::{
+    _const::CONNECT_TIMEOUT,
     signed_message::{
         AcceptableType, MessageSigner, SignedMessage, WireMessage,
     },
     sleep::SleepManager,
 };
 
-pub const DIRECT_MESSAGE_ALPN: &[u8] = b"/matchbox-direct-message/0";
+pub const CHAT_DIRECT_MESSAGE_ALPN: &[u8] = b"/chat-direct-message/0";
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ChatDirectMessage (pub TopicId, pub Arc<Vec<u8>>);
 
 #[derive(Debug, Clone)]
 pub struct DirectMessageProtocol<T> {
-    pub sender: async_broadcast::Sender<(PublicKey, WireMessage<T>)>,
+    pub received_message_broadcaster: async_broadcast::Sender<(PublicKey, WireMessage<T>)>,
     pub sleep_manager: SleepManager,
+    pub endpoint: Endpoint,
 }
 
 impl<T: AcceptableType> DirectMessageProtocol<T> {
@@ -30,8 +38,28 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         if data.from.node_id() != &_remote_node_id {
             return Err(anyhow::anyhow!("node id mismatch"));
         }
-        self.sender.broadcast((_remote_node_id, data)).await?;
+        self.received_message_broadcaster.broadcast((_remote_node_id, data)).await?;
         self.sleep_manager.wake_up();
+        Ok(())
+    }
+
+    pub async fn send_direct_message(
+        &self,
+        iroh_target: PublicKey,
+        payload: T,
+        message_signer: &MessageSigner,
+    ) -> anyhow::Result<()> {
+        let connection = n0_future::time::timeout(
+            CONNECT_TIMEOUT,
+            self.endpoint.connect(iroh_target, CHAT_DIRECT_MESSAGE_ALPN),
+        )
+        .await??;
+        let payload = message_signer.sign_and_encode(payload)?;
+        let mut send_stream = connection.open_uni().await?;
+        send_stream.write_all(&payload).await?;
+        send_stream.finish()?;
+        connection.closed().await;
+        // connection.close(0u8.into(), b"done");
         Ok(())
     }
 }
@@ -44,18 +72,4 @@ impl<T: AcceptableType> ProtocolHandler for DirectMessageProtocol<T> {
         Box::pin(self.clone().handle_connection(connection))
     }
 }
-pub async fn send_direct_message<T: AcceptableType>(
-    endpoint: &Endpoint,
-    iroh_target: PublicKey,
-    payload: T,
-    message_signer: &MessageSigner,
-) -> anyhow::Result<()> {
-    let connection = endpoint.connect(iroh_target, DIRECT_MESSAGE_ALPN).await?;
-    let payload = message_signer.sign_and_encode(payload)?;
-    let mut send_stream = connection.open_uni().await?;
-    send_stream.write_all(&payload).await?;
-    send_stream.finish()?;
-    connection.closed().await;
-    // connection.close(0u8.into(), b"done");
-    Ok(())
-}
+

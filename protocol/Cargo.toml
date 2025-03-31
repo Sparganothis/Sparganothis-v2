@@ -24,8 +24,8 @@ async-channel = "2.3.1"
 async-broadcast = "0.7.2"
 chrono = "0.4.40"
 # async-std = "1.13.1"
-matchbox_socket = { path = "../vendor/matchbox/matchbox_socket" }
 web-time = "1.1"
 futures = "0.3"
 uuid = {version = "1", features = ["v4"]}
 serde_json = "1"
+async-trait = "0.1.88"
