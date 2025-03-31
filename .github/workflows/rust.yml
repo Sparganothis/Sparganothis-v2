@@ -69,7 +69,7 @@ jobs:
       run: |
         text=$(git log -1 --no-merges --pretty=%B)
         sha=$(git rev-parse --short HEAD)
-        echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh
+        ( echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh ) || true
 
     - name: Build Web Release
       run: chmod +x ./build_web_release.sh && ./build_web_release.sh
@@ -78,7 +78,7 @@ jobs:
       run: |
         text=$(git log -1 --no-merges --pretty=%B)
         sha=$(git rev-parse --short HEAD)
-        echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh
+        ( echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh ) || true
 
     - name: Upload artifact
       uses: actions/upload-pages-artifact@v3
@@ -90,16 +90,16 @@ jobs:
         zip -r website.zip ./dist
         mkdir -p release_exes/
         mv website.zip release_exes/
-        cp target/debug/echo_cli release_exes/echo_cli_linux_x64.exe
+        cp target/debug/echo_cli release_exes/echo_cli_linux_x64
 
     - name: Github Release
       uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          commit: "${{ github.sha }}"
-          makeLatest: true
-          artifacts: "release_exes/**/*"
-          bodyFile: ".github/release_template.md"
+      with:
+        allowUpdates: true
+        commit: "${{ github.sha }}"
+        makeLatest: true
+        artifacts: "release_exes/**/*"
+        bodyFile: ".github/release_template.md"
 
   release_pages:
     name: Release Github Pages
