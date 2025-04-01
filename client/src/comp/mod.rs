@@ -5,3 +5,5 @@ pub mod slider;
 pub mod user_info_display;
 pub mod chat_comp;
 pub mod bot_player;
+pub mod chat_mini;
+pub mod icon;
