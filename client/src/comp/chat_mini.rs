@@ -63,8 +63,8 @@ pub fn MiniChatOverlay () -> Element {
             bottom: 1.5rem;
             padding: 0.5rem;
             margin: 0.5rem;
-            width: 350px;
-            height: 450px;
+            width: 420px;
+            height: 666px;
             // border: 3px dashed blue;
             z-index: 2;
             background-color: white;
@@ -101,7 +101,7 @@ pub fn MiniChatRoom<T: ChatMessageType> (
             style: r#"
             display: grid; 
             grid-template-columns: 1fr; 
-            grid-template-rows: 0.3fr 1.9fr 0.3fr; 
+            grid-template-rows: 0.2fr 1.9fr 0.3fr; 
             gap: 0px 0px; 
             grid-template-areas: "topbar"   "mainchat"  "tabs"; 
             width: 100%;
@@ -139,6 +139,7 @@ pub fn MiniChatRoom<T: ChatMessageType> (
                 height: 100%;
                 // border: 1px solid blue;
                 container-type: size;
+                margin-top: -30px;
                 ",
                 ChatInput::<T> { on_user_message }
             }
@@ -175,18 +176,21 @@ fn MiniChatTopBar (selected: Signal<MiniChatTabSelection>) -> Element {
                 color: "green",
                 selected:  *chat_selected.read(),
                 onclick: click_chat,
+                tooltip: "Chat".to_string(),
             },
             Icon {
                 icon: BsPersonLinesFill,
                 color: "blue",
                 selected: *user_list_selected.read(),
                 onclick: click_userlist,
+                tooltip: "User List".to_string(),
             },
             Icon {
                 icon:  BsXLg,
                 color: "red",
                 selected: false,
                 onclick: click_x,
+                tooltip: "Close".to_string(),
             }
         }
     }

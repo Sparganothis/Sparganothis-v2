@@ -9,5 +9,10 @@ fn main() {
         .expect("logger failed to init");
 
     dioxus_sdk::storage::set_dir!();
+
+    #[cfg(feature = "desktop")]
+    dioxus_native::launch(App);
+
+    #[cfg(not(feature = "desktop"))]
     dioxus::launch(App);
 }
