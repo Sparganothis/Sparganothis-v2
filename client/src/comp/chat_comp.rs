@@ -347,8 +347,8 @@ fn ChatMessageDisplay<T: ChatMessageType>(
     let text = T::render_message(text);
 
     let from_nickname = from.nickname();
-    let from_user_id = from.user_id().fmt_short();
-    let from_node_id = from.node_id().fmt_short();
+    // let from_user_id = from.user_id().fmt_short();
+    // let from_node_id = from.node_id().fmt_short();
     let from_color = from.color();
     let align = if from.user_id() != &my_user_id {
         "left"
@@ -405,28 +405,30 @@ fn ChatMessageDisplay<T: ChatMessageType>(
                         "{from_nickname}"
                     }
                     small {
-                        style: "color: #666;",
-                        "{from_user_id}@{from_node_id}"
+                        style: "padding-top: 0px; margin-top: 0px; color: #666;",
+                        small {
+                            "{last_seen_txt}"
+                        }
                     }
                 }
                 p {
                     style: "position:relative;",
-                    {text},
+                    div {
+                        style: "
+                        padding-{align}: 3rem;
+                        ",
+                        {text},
+                    }
                     div {
                         style: "
                         {align}: 0rem;
-                        top: -1.8rem;
+                        top: -0.2rem;
                         position:absolute;
                         ",
                         ChatUserPortraitBox {  own_color: from_color }
                     }
                 }
-                footer {
-                    style: "padding-top: 0px; margin-top: 0px; color: #666;",
-                    small {
-                        "{last_seen_txt}"
-                    }
-                }
+                // footer {                }
             }
         }
     }
