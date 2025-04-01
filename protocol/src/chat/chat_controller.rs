@@ -8,7 +8,14 @@ use tokio::sync::Mutex;
 use tracing::{info, warn};
 
 use crate::{
-    _const::{CONNECT_TIMEOUT, PRESENCE_INTERVAL}, chat_presence::ChatPresence, chat_ticket::ChatTicket, datetime_now, signed_message::{IChatRoomType, MessageSigner, SignedMessage}, sleep::SleepManager, user_identity::NodeIdentity, ReceivedMessage
+    _const::{CONNECT_TIMEOUT, PRESENCE_INTERVAL},
+    chat_presence::ChatPresence,
+    chat_ticket::ChatTicket,
+    datetime_now,
+    signed_message::{IChatRoomType, MessageSigner, SignedMessage},
+    sleep::SleepManager,
+    user_identity::NodeIdentity,
+    ReceivedMessage,
 };
 
 #[derive(Clone, Debug)]
@@ -30,7 +37,12 @@ impl<T: IChatRoomType> PartialEq for ChatController<T> {
     }
 }
 
-async fn _dispatch_inner_loop<T: IChatRoomType>(m: crate::WireMessage<ChatMessage<T>>, msg_sender: &mut async_broadcast::Sender<ReceivedMessage<T>>, _presence: ChatPresence<T>, _sender: ChatSender<T>) -> anyhow::Result<()> {
+async fn _dispatch_inner_loop<T: IChatRoomType>(
+    m: crate::WireMessage<ChatMessage<T>>,
+    msg_sender: &mut async_broadcast::Sender<ReceivedMessage<T>>,
+    _presence: ChatPresence<T>,
+    _sender: ChatSender<T>,
+) -> anyhow::Result<()> {
     match m.message {
         ChatMessage::Message(message) => {
             msg_sender
@@ -44,9 +56,7 @@ async fn _dispatch_inner_loop<T: IChatRoomType>(m: crate::WireMessage<ChatMessag
                 .await?;
         }
         ChatMessage::Presence(presence) => {
-            let was_added = _presence
-                .add_presence(&m.from, &presence)
-                .await;
+            let was_added = _presence.add_presence(&m.from, &presence).await;
             if was_added {
                 _sender.direct_presence(m.from).await?;
             }
@@ -55,10 +65,7 @@ async fn _dispatch_inner_loop<T: IChatRoomType>(m: crate::WireMessage<ChatMessag
         }
         ChatMessage::Pong { ping_sender_ts } => {
             let now = datetime_now();
-            let dt = now
-                .signed_duration_since(ping_sender_ts)
-                .to_std()
-                .ok();
+            let dt = now.signed_duration_since(ping_sender_ts).to_std().ok();
             if let Some(dt) = dt {
                 let rtt = dt.as_micros() as f64 / 1000.0;
                 if rtt > 0.0 && rtt < 65000.0 {
@@ -99,7 +106,7 @@ impl<T: IChatRoomType> ChatController<T> {
         let _presence = presence.clone();
         let _sender = sender.clone();
         let _sleep_manager = sleep_manager.clone();
-        let _dispatch_task =async move {
+        let _dispatch_task = async move {
             let mut errors = 0;
             loop {
                 let Ok(Some(message)) = inner2.next_message().await else {
@@ -119,10 +126,17 @@ impl<T: IChatRoomType> ChatController<T> {
                 );
                 match msg {
                     Ok(m) => {
-                        if let Err(e) = _dispatch_inner_loop::<T>(m, &mut msg_sender, _presence.clone(), _sender.clone()).await {
+                        if let Err(e) = _dispatch_inner_loop::<T>(
+                            m,
+                            &mut msg_sender,
+                            _presence.clone(),
+                            _sender.clone(),
+                        )
+                        .await
+                        {
                             warn!("_dispatch_task: Error dispatching message: {:?}", e);
                         }
-                    },
+                    }
                     Err(e) => {
                         warn!(
                             "_dispatch_task: Error verifying message: {:?}",
@@ -140,7 +154,7 @@ impl<T: IChatRoomType> ChatController<T> {
 
         let _sleep_manager = sleep_manager.clone();
         let _sender = sender.clone();
-        let _presence_task =async move {
+        let _presence_task = async move {
             loop {
                 let _ = _sleep_manager.sleep(PRESENCE_INTERVAL).await;
                 if let Err(e) = _sender.broadcast_presence().await {
@@ -170,7 +184,6 @@ impl<T: IChatRoomType> ChatController<T> {
         };
         controller
     }
-
 }
 
 #[async_trait::async_trait]
@@ -205,8 +218,17 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
         let mut x = 0;
         let p = self.chat_presence();
         while !bootstrap.is_empty() && x <= 3 {
-            let presence_list = p.get_presence_list().await.into_iter().map(|p| *p.2.node_id()).collect::<Vec<_>>();
-            info!("wait_until_joined: found {:?}/{:?}", presence_list.len(), bootstrap.len());
+            let presence_list = p
+                .get_presence_list()
+                .await
+                .into_iter()
+                .map(|p| *p.2.node_id())
+                .collect::<Vec<_>>();
+            info!(
+                "wait_until_joined: found {:?}/{:?}",
+                presence_list.len(),
+                bootstrap.len()
+            );
             if presence_list.len() >= 3 {
                 break;
             }
@@ -218,7 +240,9 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
             if bootstrap.is_empty() || x >= 3 {
                 break;
             }
-           let _ =  n0_future::time::timeout(CONNECT_TIMEOUT/20, p.notified()).await;
+            let _ =
+                n0_future::time::timeout(CONNECT_TIMEOUT / 20, p.notified())
+                    .await;
             x += 1;
         }
         Ok(())

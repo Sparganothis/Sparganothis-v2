@@ -101,7 +101,7 @@ impl GlobalMatchmaker {
                 let _ = cc.shutdown().await;
             }
             sleep.sleep(Duration::from_secs_f32(0.1)).await;
-            
+
             if let Some(bootstrap_endpoint) = inner.bootstrap_main_node.take() {
                 bootstrap_endpoint.shutdown().await?;
             }
@@ -477,7 +477,7 @@ impl GlobalMatchmaker {
         Ok(true)
     }
 
-    pub async fn connect_to_bootstrap(&self, exit_early:  bool) -> Result<()> {
+    pub async fn connect_to_bootstrap(&self, exit_early: bool) -> Result<()> {
         let mut fut = FuturesUnordered::new();
         let endpoint = self
             .own_endpoint()
@@ -532,7 +532,8 @@ impl GlobalMatchmaker {
                         inner.known_bootstrap_nodes.insert(info.bs_idx, info);
                     if _r.is_none() {
                         info!("added connection to bootstrap node #{i}");
-                        if exit_early && inner.known_bootstrap_nodes.len() >= 2 {
+                        if exit_early && inner.known_bootstrap_nodes.len() >= 2
+                        {
                             info!("exiting connect_to_bootstrap() early: found 2 hosts.");
                             return Ok(());
                         }

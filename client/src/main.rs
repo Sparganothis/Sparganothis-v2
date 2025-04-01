@@ -7,5 +7,7 @@ const LOG_ENV_FILTER: &str =
 fn main() {
     init_with_env_filter(LOG_LEVEL, LOG_ENV_FILTER.to_string())
         .expect("logger failed to init");
+
+    dioxus_sdk::storage::set_dir!();
     dioxus::launch(App);
 }

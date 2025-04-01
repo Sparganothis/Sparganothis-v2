@@ -1,24 +1,23 @@
 use std::sync::Arc;
 
+use crate::{
+    _const::CONNECT_TIMEOUT, signed_message::AcceptableType,
+    sleep::SleepManager,
+};
 use iroh::{
     endpoint::Connection, protocol::ProtocolHandler, Endpoint, PublicKey,
 };
 use iroh_gossip::proto::TopicId;
-use n0_future::task::AbortOnDropHandle;
 use n0_future::task::spawn;
+use n0_future::task::AbortOnDropHandle;
 use tokio::sync::Mutex;
 use tracing::info;
 use tracing::warn;
-use crate::{
-    _const::CONNECT_TIMEOUT,
-    signed_message::AcceptableType,
-    sleep::SleepManager,
-};
 
 pub const CHAT_DIRECT_MESSAGE_ALPN: &[u8] = b"/chat-direct-message/0";
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct ChatDirectMessage (pub TopicId, pub Arc<Vec<u8>>);
+pub struct ChatDirectMessage(pub TopicId, pub Arc<Vec<u8>>);
 
 #[derive(Debug, Clone)]
 pub struct DirectMessageProtocol<T> {
@@ -47,7 +46,13 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         let _endpoint = endpoint.clone();
         let task = async move {
             while let Some((iroh_target, payload)) = sender_rx.recv().await {
-                if let Err(e) = Self::do_send_direct_message(&_endpoint,iroh_target, payload).await {
+                if let Err(e) = Self::do_send_direct_message(
+                    &_endpoint,
+                    iroh_target,
+                    payload,
+                )
+                .await
+                {
                     warn!("failed to send direct message: {:?}", e);
                 }
             }
@@ -56,7 +61,13 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         };
         let task = AbortOnDropHandle::new(spawn(task));
         let task = Arc::new(Mutex::new(Some(task)));
-        Self { received_message_broadcaster, sleep_manager, _endpoint: endpoint, _task: task, sender_tx }
+        Self {
+            received_message_broadcaster,
+            sleep_manager,
+            _endpoint: endpoint,
+            _task: task,
+            sender_tx,
+        }
     }
 
     async fn handle_connection(
@@ -68,11 +79,13 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         let data = recv.read_to_end(1024 * 63).await?;
         connection.close(0u8.into(), b"done");
         let data = postcard::from_bytes(&data)?;
-        self.received_message_broadcaster.broadcast((_remote_node_id, data)).await?;
+        self.received_message_broadcaster
+            .broadcast((_remote_node_id, data))
+            .await?;
         self.sleep_manager.wake_up();
         Ok(())
     }
-    
+
     pub async fn send_direct_message(
         &self,
         iroh_target: PublicKey,
@@ -110,4 +123,3 @@ impl<T: AcceptableType> ProtocolHandler for DirectMessageProtocol<T> {
         Box::pin(self.clone().handle_connection(connection))
     }
 }
-

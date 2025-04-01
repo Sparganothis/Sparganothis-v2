@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use super::{ChatDirectMessage, DirectMessageProtocol, IChatRoomRaw};
 use crate::{
-    chat_ticket::ChatTicket, main_node::MainNode, user_identity::NodeIdentity, _const::CONNECT_TIMEOUT,
+    _const::CONNECT_TIMEOUT, chat_ticket::ChatTicket, main_node::MainNode,
+    user_identity::NodeIdentity,
 };
 use anyhow::{Context, Result};
 use futures::{FutureExt, StreamExt};
@@ -39,8 +40,11 @@ impl GossipChatRoom {
         let mut gossip_topic =
             node.gossip.subscribe(ticket.topic_id.clone(), bootstrap)?;
         if have_bootstrap {
-            let _ = n0_future::time::timeout(CONNECT_TIMEOUT, gossip_topic.joined())
-                .await;
+            let _ = n0_future::time::timeout(
+                CONNECT_TIMEOUT,
+                gossip_topic.joined(),
+            )
+            .await;
         }
         let (gossip_send, gossip_recv) = gossip_topic.split();
         let gossip_send = Arc::new(Mutex::new(Some(gossip_send)));
@@ -150,12 +154,11 @@ impl IChatRoomRaw for GossipChatRoom {
         to: NodeIdentity,
         message: Vec<u8>,
     ) -> anyhow::Result<()> {
-        let message = ChatDirectMessage(self.topic_id.clone(), Arc::new(message));
-        self.direct_message.send_direct_message(
-            *to.node_id(),
-            message,
-        )
-        .await
+        let message =
+            ChatDirectMessage(self.topic_id.clone(), Arc::new(message));
+        self.direct_message
+            .send_direct_message(*to.node_id(), message)
+            .await
     }
 
     async fn next_message(&self) -> anyhow::Result<Option<Arc<Vec<u8>>>> {
@@ -165,7 +168,10 @@ impl IChatRoomRaw for GossipChatRoom {
     }
 
     async fn join_peers(&self, peers: Vec<NodeId>) -> anyhow::Result<()> {
-        let peers: Vec<PublicKey> = peers.into_iter().filter(|p| *p != self.own_node_id).collect();
+        let peers: Vec<PublicKey> = peers
+            .into_iter()
+            .filter(|p| *p != self.own_node_id)
+            .collect();
         if peers.is_empty() {
             return Ok(());
         }

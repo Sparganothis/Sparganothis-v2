@@ -13,7 +13,8 @@ use tracing::info;
 use crate::{
     _const::get_relay_domain,
     chat::{
-        ChatController, ChatDirectMessage, DirectMessageProtocol, GossipChatRoom, CHAT_DIRECT_MESSAGE_ALPN
+        ChatController, ChatDirectMessage, DirectMessageProtocol,
+        GossipChatRoom, CHAT_DIRECT_MESSAGE_ALPN,
     },
     chat_ticket::ChatTicket,
     echo::Echo,
@@ -29,10 +30,8 @@ pub struct MainNode {
     pub(crate) node_identity: Arc<NodeIdentity>,
     pub(crate) sleep_manager: SleepManager,
     pub(crate) message_signer: MessageSigner,
-    pub(crate) direct_message_recv: async_broadcast::InactiveReceiver<(
-        PublicKey,
-        ChatDirectMessage,
-    )>,
+    pub(crate) direct_message_recv:
+        async_broadcast::InactiveReceiver<(PublicKey, ChatDirectMessage)>,
     pub(crate) chat_direct_message: DirectMessageProtocol<ChatDirectMessage>,
 }
 
@@ -106,11 +105,12 @@ impl MainNode {
         direct_message_send.set_overflow(true);
         direct_message_recv.set_overflow(true);
 
-        let chat_direct_message = DirectMessageProtocol::<ChatDirectMessage>::new(
-            direct_message_send,
-            sleep_manager.clone(),
-            endpoint.clone(),
-        );
+        let chat_direct_message =
+            DirectMessageProtocol::<ChatDirectMessage>::new(
+                direct_message_send,
+                sleep_manager.clone(),
+                endpoint.clone(),
+            );
         let router = Router::builder(endpoint.clone())
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())

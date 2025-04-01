@@ -12,7 +12,7 @@ title = "Sparganothis-v2"
 [web.resource]
 
 # Additional CSS style files
-# style = ["/assets/main.css"]
+# style = ["/assets/main.css", "/assets/pico.jade.min.css"]
 style = []
 
 # Additional JavaScript files
