@@ -21,6 +21,9 @@ pub enum Route {
     #[route("/spectate-homepage/:node_id")]
     SpectateGamePage { node_id: NodeId },
 
+    #[route("/singleplayer")]
+    Singleplayer {},
+
     #[route("/:..x")]
     NotFound { x: Vec<String> },
 

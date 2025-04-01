@@ -9,3 +9,6 @@ pub use spectate_game::*;
 
 mod my_profile;
 pub use my_profile::*;
+
+mod singleplayer;
+pub use singleplayer::*;

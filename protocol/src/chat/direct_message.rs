@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use crate::_const::PRESENCE_EXPIRATION;
 use crate::{
     _const::CONNECT_TIMEOUT, signed_message::AcceptableType,
     sleep::SleepManager,
 };
+use anyhow::Context;
 use iroh::{
     endpoint::Connection, protocol::ProtocolHandler, Endpoint, PublicKey,
 };
@@ -171,7 +173,10 @@ impl<T: AcceptableType> MessageDispatcher<T> {
             )
             .await??;
 
-            while let Some(payload) = receiver.recv().await {
+            while let Some(payload) = n0_future::time::timeout(
+                PRESENCE_EXPIRATION, 
+                receiver.recv())
+                .await.context("no direct message requested, exiting")? {
                 let payload = postcard::to_stdvec(&payload)?;
                 let len = (payload.len() as u32).to_le_bytes();
                 n0_future::time::timeout(   
@@ -186,8 +191,15 @@ impl<T: AcceptableType> MessageDispatcher<T> {
                 .await??;
             }
 
-            send_stream.finish()?;
-            connection.closed().await;
+            n0_future::time::timeout(
+                CONNECT_TIMEOUT,
+                async move {
+                    send_stream.finish()?;
+                    connection.closed().await;
+                    anyhow::Ok(())
+                }
+            ).await??;
+
             anyhow::Ok(())
         };
         let _task = async move {

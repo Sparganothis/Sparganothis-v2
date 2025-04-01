@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    comp::game_display::GameDisplay, network::NetworkState, pages::ChatRoom,
+    comp::{chat_comp::{ChatRoom, FromUserInput, RenderElement}, game_display::GameDisplay}, network::NetworkState,
 };
 use dioxus::prelude::*;
 use game::tet::GameState;
@@ -10,7 +10,6 @@ use protocol::{chat_ticket::ChatTicket, IChatRoomType as ChatMessageType2};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
-use super::{FromUserInput, RenderElement};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GameMessageSpam;

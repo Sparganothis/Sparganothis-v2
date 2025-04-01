@@ -15,6 +15,7 @@ pub fn Nav() -> Element {
             ul {
                 li {
                     Link { to: Route::Home {},   strong { "{APP_TITLE}" } }
+                    Link { to: Route::Singleplayer {  }, small { "singleplayer" } }
                 }
             }
             ul {
