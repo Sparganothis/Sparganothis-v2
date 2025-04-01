@@ -165,13 +165,25 @@ impl<T: AcceptableType> MessageDispatcher<T> {
                 endpoint.connect(target, CHAT_DIRECT_MESSAGE_ALPN),
             )
             .await??;
-            let mut send_stream = connection.open_uni().await?;
+            let mut send_stream = n0_future::time::timeout(
+                CONNECT_TIMEOUT,
+                connection.open_uni(),
+            )
+            .await??;
 
             while let Some(payload) = receiver.recv().await {
                 let payload = postcard::to_stdvec(&payload)?;
                 let len = (payload.len() as u32).to_le_bytes();
-                send_stream.write_all(&len).await?;
-                send_stream.write_all(&payload).await?;
+                n0_future::time::timeout(   
+                    CONNECT_TIMEOUT,
+                    send_stream.write_all(&len),
+                )
+                .await??;
+                n0_future::time::timeout(
+                    CONNECT_TIMEOUT,
+                    send_stream.write_all(&payload),
+                )
+                .await??;
             }
 
             send_stream.finish()?;
