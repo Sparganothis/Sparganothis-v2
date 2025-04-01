@@ -214,6 +214,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
         own_node_id == Some(identity.node_id().clone())
     });
     let identity = identity.read().clone();
+    let own_color = identity.color();
 
     let color = match presence_flag.read().clone() {
         PresenceFlag::ACTIVE => "darkgreen",
@@ -237,7 +238,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
     rsx! {
         li {
             key: "{identity.node_id()}",
-            style: "width: calc(90%-30px); color: {color};",
+            style: "width: calc(90%-30px); color: {color}; position: relative;",
             "data-tooltip": "
                 {identity.user_id().fmt_short()}@{identity.node_id().fmt_short()}
                 (last seen: {last_seen_txt})
@@ -252,9 +253,34 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
                     "(you)"
                 }
             }}
+            div {
+                style: "
+                left: -2.1rem;
+                top: 0.5rem;
+                position:absolute;
+                ",
+                ChatUserPortraitBox {  own_color: own_color }
+            }
         }
     }
 }
+
+#[component]
+fn ChatUserPortraitBox (
+    own_color: ReadOnlySignal<String>,
+) -> Element {
+    rsx! {
+        div {
+            style: "
+            width: 1.8rem;
+            height: 1.8rem;
+            border: 0.5rem solid {own_color};
+            z-index:1;
+            "
+        }
+    }
+}
+
 #[component]
 fn ChatHistoryDisplay<T: ChatMessageType>(
     history: ReadOnlySignal<ChatHistory<T>>,
@@ -292,10 +318,10 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
     let Some(mm) = mm.read().clone() else {
         return rsx! {};
     };
-    let user_id = mm.user().user_id().clone();
+    let my_user_id = mm.user().user_id().clone();
     match message {
         Ok(message) => rsx! {
-            ChatMessageDisplay::<T> { message, user_id}
+            ChatMessageDisplay::<T> { message, my_user_id}
         },
         Err(err) => rsx! {
             pre {
@@ -308,7 +334,7 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
 #[component]
 fn ChatMessageDisplay<T: ChatMessageType>(
     message: ReceivedMessage<T>,
-    user_id: PublicKey,
+    my_user_id: PublicKey,
 ) -> Element {
     let ReceivedMessage {
         _sender_timestamp: _,
@@ -323,7 +349,8 @@ fn ChatMessageDisplay<T: ChatMessageType>(
     let from_nickname = from.nickname();
     let from_user_id = from.user_id().fmt_short();
     let from_node_id = from.node_id().fmt_short();
-    let align = if from.user_id() != &user_id {
+    let from_color = from.color();
+    let align = if from.user_id() != &my_user_id {
         "left"
     } else {
         "right"
@@ -383,7 +410,16 @@ fn ChatMessageDisplay<T: ChatMessageType>(
                     }
                 }
                 p {
-                    {text}
+                    style: "position:relative;",
+                    {text},
+                    div {
+                        style: "
+                        {align}: 0rem;
+                        top: -1.8rem;
+                        position:absolute;
+                        ",
+                        ChatUserPortraitBox {  own_color: from_color }
+                    }
                 }
                 footer {
                     style: "padding-top: 0px; margin-top: 0px; color: #666;",

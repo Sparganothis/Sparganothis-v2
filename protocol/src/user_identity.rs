@@ -14,6 +14,16 @@ impl UserIdentity {
     pub fn user_id(&self) -> &PublicKey {
         &self.user_id
     }
+    pub fn color(&self) -> String {
+        let pubkey_bytes =  self.user_id.as_bytes();
+        let mut color = [0_u8;3];
+        for i in 0..32 {
+            let k = i % 3 as usize;
+            color[k] = color[k] ^ pubkey_bytes[i];
+
+        }
+        format!("rgb({},{},{})", color[0], color[1], color[2])
+    }
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -68,6 +78,9 @@ impl NodeIdentity {
         } else {
             self.user_identity.nickname().to_string()
         }
+    }
+    pub fn color(&self) -> String {
+        self.user_identity.color()
     }
     pub fn user_id(&self) -> &PublicKey {
         &self.user_identity.user_id()
