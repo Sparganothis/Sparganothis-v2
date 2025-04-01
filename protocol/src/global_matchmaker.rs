@@ -85,7 +85,9 @@ impl GlobalMatchmaker {
     }
     pub async fn shutdown(&self) -> Result<()> {
         info!("GlobalMatchmaker shutdown");
+        let sleep = self.sleep_manager.clone();
         {
+            sleep.sleep(Duration::from_secs_f32(0.1)).await;
             let mut inner = self.inner.lock().await;
 
             let _task1 = inner._periodic_task.take();
@@ -94,13 +96,16 @@ impl GlobalMatchmaker {
             if let Some(cc) = inner.global_chat_controller.take() {
                 let _ = cc.shutdown().await;
             }
+            sleep.sleep(Duration::from_secs_f32(0.1)).await;
             if let Some(cc) = inner.bs_global_chat_controller.take() {
                 let _ = cc.shutdown().await;
             }
+            sleep.sleep(Duration::from_secs_f32(0.1)).await;
             
             if let Some(bootstrap_endpoint) = inner.bootstrap_main_node.take() {
                 bootstrap_endpoint.shutdown().await?;
             }
+            sleep.sleep(Duration::from_secs_f32(0.1)).await;
             if let Some(own_endpoint) = inner.own_main_node.take() {
                 own_endpoint.shutdown().await?;
             }
@@ -298,7 +303,7 @@ impl GlobalMatchmaker {
             own_private_key.public()
         );
         let mm = Self::fresh(own_private_key, user).await?;
-        let mm = if let Ok(_) = mm.connect_to_bootstrap().await {
+        let mm = if let Ok(_) = mm.connect_to_bootstrap(true).await {
             info!("Successfully connected to foreign bootstrap node");
             mm
         } else {
@@ -430,7 +435,7 @@ impl GlobalMatchmaker {
         }
 
         info!("Connecting to own bootstrap endpoint");
-        self.connect_to_bootstrap().await?;
+        self.connect_to_bootstrap(false).await?;
         info!("Successfully connected to own bootstrap endpoint");
         self.check_spawned_bootstrap_is_unique().await
     }
@@ -472,7 +477,7 @@ impl GlobalMatchmaker {
         Ok(true)
     }
 
-    pub async fn connect_to_bootstrap(&self) -> Result<()> {
+    pub async fn connect_to_bootstrap(&self, exit_early:  bool) -> Result<()> {
         let mut fut = FuturesUnordered::new();
         let endpoint = self
             .own_endpoint()
@@ -527,6 +532,10 @@ impl GlobalMatchmaker {
                         inner.known_bootstrap_nodes.insert(info.bs_idx, info);
                     if _r.is_none() {
                         info!("added connection to bootstrap node #{i}");
+                        if exit_early && inner.known_bootstrap_nodes.len() >= 2 {
+                            info!("exiting connect_to_bootstrap() early: found 2 hosts.");
+                            return Ok(());
+                        }
                     }
                 }
                 Err(_e) => {
@@ -626,7 +635,7 @@ async fn global_periodic_task(_mm: GlobalMatchmaker) {
 }
 
 async fn global_periodic_task_iteration_1(mm: GlobalMatchmaker) -> Result<()> {
-    mm.connect_to_bootstrap().await?;
+    mm.connect_to_bootstrap(false).await?;
 
     mm.join_global_chats_into_new_bootstrap().await?;
     Ok(())
@@ -634,7 +643,7 @@ async fn global_periodic_task_iteration_1(mm: GlobalMatchmaker) -> Result<()> {
 
 async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
     if mm.bs_endpoint().await.is_none() {
-        mm.connect_to_bootstrap().await?;
+        mm.connect_to_bootstrap(false).await?;
         let added = mm.spawn_bootstrap_endpoint().await?;
         if added {
             info!("global periodic task: spawned new bootstrap endpoint");

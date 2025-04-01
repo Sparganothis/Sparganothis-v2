@@ -20,7 +20,6 @@ use crate::{
     signed_message::{IChatRoomType, MessageSigner},
     sleep::SleepManager,
     user_identity::{NodeIdentity, UserIdentitySecrets},
-    WireMessage,
 };
 
 #[derive(Clone)]
@@ -32,7 +31,7 @@ pub struct MainNode {
     pub(crate) message_signer: MessageSigner,
     pub(crate) direct_message_recv: async_broadcast::InactiveReceiver<(
         PublicKey,
-        WireMessage<ChatDirectMessage>,
+        ChatDirectMessage,
     )>,
     pub(crate) chat_direct_message: DirectMessageProtocol<ChatDirectMessage>,
 }
@@ -107,11 +106,11 @@ impl MainNode {
         direct_message_send.set_overflow(true);
         direct_message_recv.set_overflow(true);
 
-        let chat_direct_message = DirectMessageProtocol::<ChatDirectMessage> {
-            received_message_broadcaster: direct_message_send,
-            sleep_manager: sleep_manager.clone(),
-            endpoint: endpoint.clone(),
-        };
+        let chat_direct_message = DirectMessageProtocol::<ChatDirectMessage>::new(
+            direct_message_send,
+            sleep_manager.clone(),
+            endpoint.clone(),
+        );
         let router = Router::builder(endpoint.clone())
             .accept(Echo::ALPN, echo)
             .accept(GOSSIP_ALPN, gossip.clone())
@@ -151,6 +150,7 @@ impl MainNode {
     pub async fn shutdown(&self) -> Result<()> {
         info!("MainNode shutdown");
         let _ = self.router.shutdown().await;
+        let _ = self.chat_direct_message.shutdown().await;
         self.gossip.shutdown().await;
         self.endpoint().close().await;
         Ok(())

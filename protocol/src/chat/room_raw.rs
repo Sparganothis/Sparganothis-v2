@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use super::{ChatDirectMessage, DirectMessageProtocol, IChatRoomRaw};
 use crate::{
-    chat_ticket::ChatTicket, main_node::MainNode, user_identity::NodeIdentity,
-    MessageSigner, WireMessage, _const::CONNECT_TIMEOUT,
+    chat_ticket::ChatTicket, main_node::MainNode, user_identity::NodeIdentity, _const::CONNECT_TIMEOUT,
 };
 use anyhow::{Context, Result};
 use futures::{FutureExt, StreamExt};
@@ -23,7 +22,6 @@ pub struct GossipChatRoom {
     direct_message: DirectMessageProtocol<ChatDirectMessage>,
     topic_id: TopicId,
     gossip_send: Arc<Mutex<Option<GossipSender>>>,
-    message_signer: MessageSigner,
     task: Arc<Mutex<Option<AbortOnDropHandle<()>>>>,
     msg_recv: Arc<Mutex<Option<tokio::sync::mpsc::Receiver<Arc<Vec<u8>>>>>>,
 }
@@ -41,8 +39,8 @@ impl GossipChatRoom {
         let mut gossip_topic =
             node.gossip.subscribe(ticket.topic_id.clone(), bootstrap)?;
         if have_bootstrap {
-            n0_future::time::timeout(CONNECT_TIMEOUT, gossip_topic.joined())
-                .await??;
+            let _ = n0_future::time::timeout(CONNECT_TIMEOUT, gossip_topic.joined())
+                .await;
         }
         let (gossip_send, gossip_recv) = gossip_topic.split();
         let gossip_send = Arc::new(Mutex::new(Some(gossip_send)));
@@ -53,7 +51,6 @@ impl GossipChatRoom {
             direct_message: node.chat_direct_message.clone(),
             topic_id: ticket.topic_id.clone(),
             gossip_send,
-            message_signer: node.message_signer.clone(),
             task: Arc::new(Mutex::new(None)),
             msg_recv: Arc::new(Mutex::new(Some(msg_recv))),
         };
@@ -79,7 +76,7 @@ async fn task_loop(
     mut gossip_recv: GossipReceiver,
     mut direct_message_recv: async_broadcast::Receiver<(
         PublicKey,
-        WireMessage<ChatDirectMessage>,
+        ChatDirectMessage,
     )>,
     msg_send: tokio::sync::mpsc::Sender<Arc<Vec<u8>>>,
 ) -> Result<()> {
@@ -109,17 +106,11 @@ async fn task_loop(
                 msg_send.send(Arc::new(msg.to_vec())).await?;
             }
             msg = direct_message_recv.next().fuse() => {
-                let Some((from_pubkey, WireMessage {
-                    from, message: ChatDirectMessage(msg_topic_id, msg_data), ..
-                })) = msg else {
+                let Some((_from_pubkey, ChatDirectMessage(msg_topic_id, msg_data))) = msg else {
                     error!("direct message recv closed");
                     anyhow::bail!("direct message recv closed");
                 };
                 if msg_topic_id != topic_id {
-                    continue;
-                }
-                if *from.node_id() != from_pubkey {
-                    warn!("direct message with wrong `from` field!");
                     continue;
                 }
                 msg_send.send(msg_data).await?;
@@ -132,7 +123,7 @@ async fn task_loop(
 impl IChatRoomRaw for GossipChatRoom {
     async fn shutdown(&self) -> anyhow::Result<()> {
         info!(
-            "shutting down gossip chat room, topic_id: {:?}",
+            "shutting down gossip chat room, \n\t topic_id: {:?}",
             self.topic_id
         );
         {
@@ -163,7 +154,6 @@ impl IChatRoomRaw for GossipChatRoom {
         self.direct_message.send_direct_message(
             *to.node_id(),
             message,
-            &self.message_signer,
         )
         .await
     }
