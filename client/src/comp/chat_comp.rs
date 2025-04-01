@@ -134,8 +134,8 @@ pub fn ChatRoom<T: ChatMessageType>(
 }
 
 #[derive(Clone, Debug, PartialEq)]
-struct ChatHistory<T: ChatMessageType> {
-    messages: VecDeque<Result<ReceivedMessage<T>, String>>,
+pub struct ChatHistory<T: ChatMessageType> {
+    pub messages: VecDeque<Result<ReceivedMessage<T>, String>>,
 }
 impl<T: ChatMessageType> Default for ChatHistory<T> {
     fn default() -> Self {
@@ -144,7 +144,7 @@ impl<T: ChatMessageType> Default for ChatHistory<T> {
 }
 
 impl<T: ChatMessageType> ChatHistory<T> {
-    fn push(&mut self, item: Result<ReceivedMessage<T>, String>) {
+    pub fn push(&mut self, item: Result<ReceivedMessage<T>, String>) {
         const UI_MAX_MESSAGE_COUNT: usize = 16;
         self.messages.push_back(item);
         if self.messages.len() > UI_MAX_MESSAGE_COUNT {
@@ -154,7 +154,7 @@ impl<T: ChatMessageType> ChatHistory<T> {
 }
 
 #[component]
-fn ChatPresenceDisplay<T: ChatMessageType>(
+pub fn ChatPresenceDisplay<T: ChatMessageType>(
     presence: ReadOnlySignal<PresenceList<T>>,
 ) -> Element {
     rsx! {
@@ -282,7 +282,7 @@ fn ChatUserPortraitBox (
 }
 
 #[component]
-fn ChatHistoryDisplay<T: ChatMessageType>(
+pub fn ChatHistoryDisplay<T: ChatMessageType>(
     history: ReadOnlySignal<ChatHistory<T>>,
 ) -> Element {
     rsx! {
@@ -435,7 +435,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
 }
 
 #[component]
-fn ChatInput<T: ChatMessageType>(
+pub fn ChatInput<T: ChatMessageType>(
     on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
 ) -> Element {
     let mut message_input = use_signal(String::new);
@@ -486,7 +486,7 @@ fn ChatInput<T: ChatMessageType>(
     }
 }
 
-fn chat_send_message<T: ChatMessageType>(
+pub fn chat_send_message<T: ChatMessageType>(
     mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
     chat: ReadOnlySignal<Option<ChatController<T>>>,
     message: T::M,

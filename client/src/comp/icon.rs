@@ -4,7 +4,8 @@ use dioxus_free_icons::IconShape;
 
 #[component]
 pub fn Icon<T: IconShape + Clone + PartialEq + 'static>
- (icon: T, color: String) -> Element {
+ (icon: T, color: String, selected: bool, onclick: Callback<()> ) -> Element {
+    let color = if selected { color } else {"#666".to_string()};
     use dioxus_free_icons::Icon;
     rsx! {
         div {
@@ -15,6 +16,9 @@ pub fn Icon<T: IconShape + Clone + PartialEq + 'static>
             padding: 4px; margin: 4px;
             flex-grow: 1;
             ",
+            onclick: move |_| {
+                onclick.call(());
+            },
             div {
                 style: "
                 width: 100%;
