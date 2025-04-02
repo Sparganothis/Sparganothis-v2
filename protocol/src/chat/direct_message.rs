@@ -51,11 +51,7 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         let _msg_d2 = msg_d.clone();
         let task = async move {
             while let Some((iroh_target, payload)) = sender_rx.recv().await {
-                if let Err(e) = _msg_d2.send_message(
-                    iroh_target,
-                    payload,
-                )
-                .await
+                if let Err(e) = _msg_d2.send_message(iroh_target, payload).await
                 {
                     warn!("failed to send direct message: {:?}", e);
                     warn!("dropping dispatcher for {}", iroh_target);
@@ -83,15 +79,15 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         let _remote_node_id = connection.remote_node_id()?;
         let mut recv = connection.accept_uni().await?;
         loop {
-            let mut data_len = [0;4];
+            let mut data_len = [0; 4];
             recv.read_exact(&mut data_len).await?;
             let data_len = u32::from_le_bytes(data_len);
             let mut data = vec![0; data_len as usize];
             recv.read_exact(&mut data).await?;
             let data = postcard::from_bytes(&data)?;
             self.received_message_broadcaster
-            .broadcast((_remote_node_id, data))
-                    .await?;
+                .broadcast((_remote_node_id, data))
+                .await?;
             self.sleep_manager.wake_up();
         }
     }
@@ -124,20 +120,27 @@ struct MessageDispatchers<T> {
 impl<T: AcceptableType> MessageDispatchers<T> {
     pub fn new(endpoint: Endpoint) -> Self {
         info!("creating message dispatchers dict");
-        Self { endpoint, dispatchers: Arc::new(Mutex::new(HashMap::new())) }
+        Self {
+            endpoint,
+            dispatchers: Arc::new(Mutex::new(HashMap::new())),
+        }
     }
     pub async fn shutdown(&self) {
         info!("shutting down message dispatchers dict");
         let mut dispatchers = self.dispatchers.lock().await;
         dispatchers.clear();
     }
-    async fn ensure_dispatcher(&self, target: PublicKey) -> Arc<MessageDispatcher<T>> {
+    async fn ensure_dispatcher(
+        &self,
+        target: PublicKey,
+    ) -> Arc<MessageDispatcher<T>> {
         let mut dispatchers = self.dispatchers.lock().await;
         if let Some(dispatcher) = dispatchers.get_mut(&target) {
             return dispatcher.clone();
         }
 
-        let dispatcher = Arc::new(MessageDispatcher::new(target, self.endpoint.clone()));
+        let dispatcher =
+            Arc::new(MessageDispatcher::new(target, self.endpoint.clone()));
         dispatchers.insert(target, dispatcher.clone());
         dispatcher
     }
@@ -145,7 +148,11 @@ impl<T: AcceptableType> MessageDispatchers<T> {
         let mut dispatchers = self.dispatchers.lock().await;
         dispatchers.remove(&target);
     }
-    pub async fn send_message(&self, target: PublicKey, payload: T) -> anyhow::Result<()> {
+    pub async fn send_message(
+        &self,
+        target: PublicKey,
+        payload: T,
+    ) -> anyhow::Result<()> {
         let dispatcher = self.ensure_dispatcher(target).await;
         dispatcher.send_message(payload).await
     }
@@ -173,13 +180,14 @@ impl<T: AcceptableType> MessageDispatcher<T> {
             )
             .await??;
 
-            while let Some(payload) = n0_future::time::timeout(
-                PRESENCE_EXPIRATION, 
-                receiver.recv())
-                .await.context("no direct message requested, exiting")? {
+            while let Some(payload) =
+                n0_future::time::timeout(PRESENCE_EXPIRATION, receiver.recv())
+                    .await
+                    .context("no direct message requested, exiting")?
+            {
                 let payload = postcard::to_stdvec(&payload)?;
                 let len = (payload.len() as u32).to_le_bytes();
-                n0_future::time::timeout(   
+                n0_future::time::timeout(
                     CONNECT_TIMEOUT,
                     send_stream.write_all(&len),
                 )
@@ -191,14 +199,12 @@ impl<T: AcceptableType> MessageDispatcher<T> {
                 .await??;
             }
 
-            n0_future::time::timeout(
-                CONNECT_TIMEOUT,
-                async move {
-                    send_stream.finish()?;
-                    connection.closed().await;
-                    anyhow::Ok(())
-                }
-            ).await??;
+            n0_future::time::timeout(CONNECT_TIMEOUT, async move {
+                send_stream.finish()?;
+                connection.closed().await;
+                anyhow::Ok(())
+            })
+            .await??;
 
             anyhow::Ok(())
         };

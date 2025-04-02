@@ -24,8 +24,6 @@ pub struct NetworkState {
     pub global_mm_loading: ReadOnlySignal<bool>,
     pub is_connected: ReadOnlySignal<bool>,
     pub reset_network: Callback<()>,
-    pub global_presence_list:
-        ReadOnlySignal<PresenceList<GlobalChatMessageType>>,
     pub bootstrap_idx: ReadOnlySignal<Option<u32>>,
     pub debug_info_txt: ReadOnlySignal<String>,
 }
@@ -42,10 +40,6 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
 
     let mut is_connected_w = use_signal(move || false);
     let is_connected = use_memo(move || is_connected_w.read().clone());
-
-    let mut presence_list_w =
-        use_signal(move || PresenceList::<GlobalChatMessageType>::default());
-    let presence_list = use_memo(move || presence_list_w.read().clone());
 
     let mut debug_info_txt_w = use_signal(move || "".to_string());
     let debug_info_txt = use_memo(move || debug_info_txt_w.read().clone());
@@ -107,21 +101,15 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         async move {
             let Some(mm) = mm else {
                 debug_info_txt_w.set("No network connection".to_string());
-                presence_list_w
-                    .set(PresenceList::<GlobalChatMessageType>::default());
                 return;
             };
             let Some(presence) =
                 mm.global_chat_controller().await.map(|c| c.chat_presence())
             else {
                 debug_info_txt_w.set("No chat controller".to_string());
-                presence_list_w
-                    .set(PresenceList::<GlobalChatMessageType>::default());
                 return;
             };
             loop {
-                let presence_list = presence.get_presence_list().await;
-                presence_list_w.set(presence_list);
                 debug_info_txt_w.set(
                     mm.display_debug_info()
                         .await
@@ -163,7 +151,6 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         global_mm_loading: mm_signal_loading.into(),
         reset_network: reset_network.clone(),
         is_connected: is_connected.into(),
-        global_presence_list: presence_list.into(),
         debug_info_txt: debug_info_txt.into(),
         bootstrap_idx: bootstrap_idx.into(),
     });

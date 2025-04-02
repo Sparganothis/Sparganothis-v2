@@ -1,8 +1,10 @@
-
 use dioxus::prelude::*;
 use game::tet::GameState;
 
-use crate::comp::{bot_player::BotPlayer, chat_mini::MiniChatOverlay, game_display::GameDisplay};
+use crate::comp::{
+    bot_player::BotPlayer, chat::chat_window_mini::MiniChatOverlay,
+    game_display::GameDisplay,
+};
 
 /// Home page
 #[component]

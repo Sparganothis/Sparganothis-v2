@@ -2,7 +2,10 @@ use std::{collections::VecDeque, time::Duration};
 
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
-use game::{bot::{wordpress_blog_bot::WordpressBlogBot, TetBot}, tet::{GameState, TetAction}};
+use game::{
+    bot::{wordpress_blog_bot::WordpressBlogBot, TetBot},
+    tet::{GameState, TetAction},
+};
 
 #[component]
 pub fn BotPlayer(game_state: Signal<GameState>) -> Element {
@@ -28,7 +31,7 @@ pub fn BotPlayer(game_state: Signal<GameState>) -> Element {
             }
         }
     });
-    rsx!{
+    rsx! {
         "bot"
     }
 }

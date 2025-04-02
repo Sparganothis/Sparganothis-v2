@@ -1,9 +1,17 @@
 use std::collections::BTreeSet;
 
+use crate::{
+    comp::{bot_player::BotPlayer, game_display::*},
+    network::NetworkState,
+    pages::{GameMessage, GameMessageSpam},
+    route::Route,
+};
 use dioxus::prelude::*;
 use game::tet::GameState;
-use crate::{comp::{bot_player::BotPlayer, game_display::*}, network::NetworkState, pages::{GameMessage, GameMessageSpam}, route::Route};
-use protocol::{chat::{IChatController, IChatSender}, chat_ticket::ChatTicket};
+use protocol::{
+    chat::{IChatController, IChatSender},
+    chat_ticket::ChatTicket,
+};
 use tracing::{info, warn};
 #[component]
 pub fn Singleplayer() -> Element {
@@ -14,7 +22,7 @@ pub fn Singleplayer() -> Element {
     let _link_sender = use_resource(move || {
         let mm = mm.read().clone();
         async move {
-            let Some( mm) = mm else {
+            let Some(mm) = mm else {
                 warn!("No global matchmaker");
                 return;
             };
@@ -23,11 +31,14 @@ pub fn Singleplayer() -> Element {
                 return;
             };
             info!("mm ok");
-            let url = Route::SpectateGamePage { node_id: * mm.own_node_identity().node_id() }.to_string();
+            let url = Route::SpectateGamePage {
+                node_id: *mm.own_node_identity().node_id(),
+            }
+            .to_string();
             let url = format!("http://localhost:8080/Sparganothis-v2{}", url);
             url_sig.set(url.clone());
             warn!("Sending url: {url}");
-            let _r  = cc.sender().broadcast_message(url).await;
+            let _r = cc.sender().broadcast_message(url).await;
             if let Err(e) = _r {
                 warn!("Failed to send message to global chat: {e}");
             }
@@ -37,7 +48,7 @@ pub fn Singleplayer() -> Element {
     let _move_spammer = use_resource(move || {
         let mm = mm.read().clone();
         async move {
-            let Some( mm) = mm else {
+            let Some(mm) = mm else {
                 warn!("No global matchmaker");
                 return;
             };
@@ -45,8 +56,10 @@ pub fn Singleplayer() -> Element {
                 warn!("No own node");
                 return;
             };
-            let chat_ticket = ChatTicket::new_str_bs("play", BTreeSet::from([]));
-            let Ok(chat) = nn.join_chat::<GameMessageSpam>(&chat_ticket).await else {
+            let chat_ticket =
+                ChatTicket::new_str_bs("play", BTreeSet::from([]));
+            let Ok(chat) = nn.join_chat::<GameMessageSpam>(&chat_ticket).await
+            else {
                 warn!("Failed to join chat");
                 return;
             };
@@ -61,7 +74,10 @@ pub fn Singleplayer() -> Element {
                 warn!("No chat");
                 return;
             };
-            let _r = chat.sender().broadcast_message(GameMessage::GameState(game)).await;
+            let _r = chat
+                .sender()
+                .broadcast_message(GameMessage::GameState(game))
+                .await;
             if let Err(e) = _r {
                 warn!("Failed to send message to game chat: {e}");
             }

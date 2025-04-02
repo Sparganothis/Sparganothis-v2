@@ -1,11 +1,15 @@
 use dioxus::prelude::*;
 use dioxus_free_icons::IconShape;
 
-
 #[component]
-pub fn Icon<T: IconShape + Clone + PartialEq + 'static>
- (icon: T, color: String, selected: bool, onclick: Callback<()> , tooltip: String) -> Element {
-    let color = if selected { color } else {"#666".to_string()};
+pub fn Icon<T: IconShape + Clone + PartialEq + 'static>(
+    icon: T,
+    color: String,
+    selected: bool,
+    onclick: Callback<()>,
+    tooltip: String,
+) -> Element {
+    let color = if selected { color } else { "#666".to_string() };
     use dioxus_free_icons::Icon;
     rsx! {
         div {
