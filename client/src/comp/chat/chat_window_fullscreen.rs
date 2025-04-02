@@ -1,8 +1,14 @@
-use super::{chat_signals_hook::{ChatControllerSignal, ChatSignals}, chat_traits::ChatMessageType};
+use super::{
+    chat_signals_hook::ChatControllerSignal, chat_traits::ChatMessageType,
+};
 use crate::comp::chat::{
-            chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
-            chat_input::ChatInput, chat_signals_hook::{use_chat_history_signal, use_chat_message_callback, use_chat_presence_signal},
-        };
+    chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
+    chat_input::ChatInput,
+    chat_signals_hook::{
+        use_chat_history_signal, use_chat_message_callback,
+        use_chat_presence_signal,
+    },
+};
 use dioxus::prelude::*;
 
 #[component]

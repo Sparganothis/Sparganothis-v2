@@ -1,15 +1,8 @@
-use std::collections::VecDeque;
-
 use dioxus::prelude::*;
 use protocol::{
-    chat::{ChatController, IChatController, IChatSender},
-    datetime_now,
-    global_matchmaker::{
-        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
-    },
-    IChatRoomType as ChatMessageType2, ReceivedMessage,
+    global_matchmaker::{GlobalChatMessageType, GlobalChatPresence},
+    IChatRoomType as ChatMessageType2,
 };
-use tracing::warn;
 
 pub trait ChatMessageType:
     ChatMessageType2 + RenderElement + FromUserInput + Clone

@@ -2,14 +2,17 @@ use std::{collections::VecDeque, future::Future};
 
 use dioxus::prelude::*;
 use protocol::{
-    chat::{ChatController, IChatController, IChatReceiver, IChatSender}, chat_presence::PresenceList, datetime_now, global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker}, IChatRoomType, ReceivedMessage
+    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
+    chat_presence::PresenceList,
+    datetime_now,
+    global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker},
+    IChatRoomType, ReceivedMessage,
 };
 use tracing::warn;
 
 use crate::network::NetworkState;
 
 use super::chat_traits::ChatMessageType;
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ChatHistory<T: ChatMessageType> {
@@ -73,10 +76,12 @@ pub struct ChatSignals<T: ChatMessageType> {
     pub on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
 }
 
-pub fn use_chat_signals<T: ChatMessageType, Fut: 'static + Future<Output = Option<ChatController<T>>>>(
+pub fn use_chat_signals<
+    T: ChatMessageType,
+    Fut: 'static + Future<Output = Option<ChatController<T>>>,
+>(
     get_chat_fn: Callback<GlobalMatchmaker, Fut>,
 ) -> ChatControllerSignal<T> {
-
     let mm = use_context::<NetworkState>().global_mm;
     let chat = use_resource(move || {
         let mm = mm.read().clone();
@@ -95,8 +100,7 @@ pub fn use_chat_signals<T: ChatMessageType, Fut: 'static + Future<Output = Optio
 pub fn use_chat_presence_signal<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
 ) -> ReadOnlySignal<PresenceList<T>> {
-    let mut presence_list_w =
-        use_signal(move || PresenceList::<T>::default());
+    let mut presence_list_w = use_signal(move || PresenceList::<T>::default());
     let presence_list = use_memo(move || presence_list_w.read().clone());
     let _poll_presence = use_resource(move || {
         let cc = chat.read().clone();
@@ -140,8 +144,8 @@ pub fn use_chat_message_callback<T: ChatMessageType>(
     history: Option<Signal<ChatHistory<T>>>,
 ) -> Callback<T::M, Option<ReceivedMessage<T>>> {
     let mm = use_context::<NetworkState>().global_mm;
-    let on_user_message = Callback::new(
-        move |message: <T as IChatRoomType>::M| {
+    let on_user_message =
+        Callback::new(move |message: <T as IChatRoomType>::M| {
             let m = chat_send_message(mm.clone(), chat.into(), message);
             if let Some(m) = &m {
                 if let Some(mut history) = history {
@@ -155,12 +159,12 @@ pub fn use_chat_message_callback<T: ChatMessageType>(
                 }
             }
             m
-        },
-    );
+        });
     on_user_message
 }
 
-pub fn use_global_chat_controller_signal() -> ChatControllerSignal<GlobalChatMessageType> {
+pub fn use_global_chat_controller_signal(
+) -> ChatControllerSignal<GlobalChatMessageType> {
     use_chat_signals(Callback::new(move |mm: GlobalMatchmaker| async move {
         Some(mm.global_chat_controller().await?)
     }))

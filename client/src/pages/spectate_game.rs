@@ -1,15 +1,20 @@
 use std::collections::BTreeSet;
 
 use crate::comp::{
-        chat::{
-            chat_signals_hook::use_chat_signals, chat_traits::{FromUserInput, RenderElement}, chat_window_fullscreen::FullscreenChatRoom
-        },
-        game_display::GameDisplay,
-    };
+    chat::{
+        chat_signals_hook::use_chat_signals,
+        chat_traits::{FromUserInput, RenderElement},
+        chat_window_fullscreen::FullscreenChatRoom,
+    },
+    game_display::GameDisplay,
+};
 use dioxus::prelude::*;
 use game::tet::GameState;
 use iroh::NodeId;
-use protocol::{chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker, IChatRoomType as ChatMessageType2};
+use protocol::{
+    chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
+    IChatRoomType as ChatMessageType2,
+};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 
@@ -66,19 +71,21 @@ impl RenderElement for GameMessageSpam {
 
 #[component]
 pub fn SpectateGamePage(node_id: NodeId) -> Element {
-    let chat = use_chat_signals(Callback::new(move |mm: GlobalMatchmaker| async move {
-        let Some(nn) = mm.own_node().await else {
-            return None;
-        };
-        let chat_ticket =
-            ChatTicket::new_str_bs("play", BTreeSet::from([node_id]));
-        let Ok(chat) = nn.join_chat::<GameMessageSpam>(&chat_ticket).await
-        else {
-            warn!("Failed to join chat");
-            return None;
-        };
-        Some(chat)
-    }));
+    let chat = use_chat_signals(Callback::new(
+        move |mm: GlobalMatchmaker| async move {
+            let Some(nn) = mm.own_node().await else {
+                return None;
+            };
+            let chat_ticket =
+                ChatTicket::new_str_bs("play", BTreeSet::from([node_id]));
+            let Ok(chat) = nn.join_chat::<GameMessageSpam>(&chat_ticket).await
+            else {
+                warn!("Failed to join chat");
+                return None;
+            };
+            Some(chat)
+        },
+    ));
 
     rsx! {
         FullscreenChatRoom<GameMessageSpam> { chat }

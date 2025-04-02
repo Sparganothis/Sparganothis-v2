@@ -1,17 +1,21 @@
-
-use dioxus::prelude::*;
 use crate::comp::{
-        chat::{
-            chat_display::{ChatHistoryDisplay, ChatPresenceDisplay}, chat_input::ChatInput, 
-            chat_signals_hook::{use_chat_history_signal, use_chat_message_callback, use_chat_presence_signal, use_global_chat_controller_signal}
+    chat::{
+        chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
+        chat_input::ChatInput,
+        chat_signals_hook::{
+            use_chat_history_signal, use_chat_message_callback,
+            use_chat_presence_signal, use_global_chat_controller_signal,
         },
-        icon::Icon,
-    };
+    },
+    icon::Icon,
+};
+use dioxus::prelude::*;
 use protocol::chat_presence::PresenceList;
 
-use super::{chat_signals_hook::{ChatControllerSignal, ChatHistory, ChatSignals}, chat_traits::ChatMessageType};
-
-
+use super::{
+    chat_signals_hook::{ChatControllerSignal, ChatHistory},
+    chat_traits::ChatMessageType,
+};
 
 #[component]
 pub fn MiniChatOverlay() -> Element {
