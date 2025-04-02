@@ -1,6 +1,7 @@
 use std::{collections::VecDeque, future::Future};
 
 use dioxus::prelude::*;
+use n0_future::StreamExt;
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
@@ -8,10 +9,8 @@ use protocol::{
     global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker},
     IChatRoomType, ReceivedMessage,
 };
-use tracing::warn;
-
+use tracing::{info, warn};
 use crate::network::NetworkState;
-
 use super::chat_traits::ChatMessageType;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -36,34 +35,37 @@ impl<T: ChatMessageType> ChatHistory<T> {
     }
 }
 
-pub fn chat_send_message<T: ChatMessageType>(
-    mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
+async fn chat_do_send_message<T: ChatMessageType>(
     chat: ReadOnlySignal<Option<ChatController<T>>>,
+    message: T::M,
+) -> Option<()> {
+    let Some(controller) = chat.peek().clone() else {
+        return None;
+    };
+    let sender = controller.sender();
+    match sender.broadcast_message(message).await {
+        Ok(_r) => Some(()),
+        Err(e) => {
+            warn!("Failed to send message: {}", e);
+            None
+        }
+    }
+}
+
+pub fn chat_send_message_preview<T: ChatMessageType>(
+    mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
     message: T::M,
 ) -> Option<ReceivedMessage<T>> {
     let Some(mm) = mm.peek().clone() else {
         return None;
     };
-    let msg_preview = ReceivedMessage {
+    Some(ReceivedMessage {
         _sender_timestamp: datetime_now(),
         _received_timestamp: datetime_now(),
         _message_id: uuid::Uuid::new_v4(),
         from: mm.own_node_identity(),
         message: message.clone(),
-    };
-    spawn(async move {
-        let Some(controller) = chat.peek().clone() else {
-            return;
-        };
-        let sender = controller.sender();
-        match sender.broadcast_message(message).await {
-            Ok(_) => (),
-            Err(e) => {
-                warn!("Failed to send message: {}", e);
-            }
-        }
-    });
-    Some(msg_preview)
+    })
 }
 
 pub type ChatControllerSignal<T> = ReadOnlySignal<Option<ChatController<T>>>;
@@ -73,10 +75,10 @@ pub struct ChatSignals<T: ChatMessageType> {
     pub chat: ChatControllerSignal<T>,
     pub presence: ReadOnlySignal<PresenceList<T>>,
     pub history: Signal<ChatHistory<T>>,
-    pub on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
+    pub send_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
 }
 
-pub fn use_chat_signals<
+fn use_chat_controller_signal<
     T: ChatMessageType,
     Fut: 'static + Future<Output = Option<ChatController<T>>>,
 >(
@@ -94,10 +96,25 @@ pub fn use_chat_signals<
     });
     let chat =
         use_memo(move || chat.read().as_ref().map(|c| c.clone()).flatten());
-    chat.into()
+    let r = chat.into();
+    use_drop(move || {
+        info!("use_drop: chat controller signals for T={}", std::any::type_name::<T>());
+        let Some(chat) = chat.peek().clone() else {
+            warn!("Chat is not initialized, so nothing to shutdown.");
+            return;
+        };
+        n0_future::task::spawn(async move {
+            if let Err(e) = chat.shutdown().await{
+                warn!("Failed to shutdown chat {}: {}", std::any::type_name::<T>(), e);
+            } else {
+                info!("Chat {} shutdown successfully.", std::any::type_name::<T>());
+            }
+        });
+    });
+    r
 }
 
-pub fn use_chat_presence_signal<T: ChatMessageType>(
+fn use_chat_presence_signal<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
 ) -> ReadOnlySignal<PresenceList<T>> {
     let mut presence_list_w = use_signal(move || PresenceList::<T>::default());
@@ -118,7 +135,7 @@ pub fn use_chat_presence_signal<T: ChatMessageType>(
     presence_list.into()
 }
 
-pub fn use_chat_history_signal<T: ChatMessageType>(
+fn use_chat_history_signal<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
 ) -> Signal<ChatHistory<T>> {
     let mut history = use_signal(ChatHistory::<T>::default);
@@ -139,32 +156,48 @@ pub fn use_chat_history_signal<T: ChatMessageType>(
     history
 }
 
-pub fn use_chat_message_callback<T: ChatMessageType>(
+fn use_chat_send_message_callback<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
-    history: Option<Signal<ChatHistory<T>>>,
+    mut history: Signal<ChatHistory<T>>,
 ) -> Callback<T::M, Option<ReceivedMessage<T>>> {
     let mm = use_context::<NetworkState>().global_mm;
+    let coro = use_coroutine(move |mut n: UnboundedReceiver<T::M>| async move {
+        while let Some(message) = n.next().await {
+            chat_do_send_message(chat.into(), message).await;
+        }
+    });
     let on_user_message =
         Callback::new(move |message: <T as IChatRoomType>::M| {
-            let m = chat_send_message(mm.clone(), chat.into(), message);
+            let m = chat_send_message_preview(mm.clone(),  message);
             if let Some(m) = &m {
-                if let Some(mut history) = history {
-                    history.write().push(Ok(m.clone()));
-                }
+                history.write().push(Ok(m.clone()));
+                coro.send(m.message.clone());
             } else {
-                if let Some(mut history) = history {
                     history
-                        .write()
-                        .push(Err("Failed to send message".to_string()));
+                    .write()
+                    .push(Err("Failed to send message".to_string()));
                 }
-            }
             m
         });
     on_user_message
 }
 
+pub fn use_chat_signals<
+    T: ChatMessageType,
+    Fut: 'static + Future<Output = Option<ChatController<T>>>,
+>(
+    get_chat_fn: Callback<GlobalMatchmaker, Fut>,
+) -> ChatSignals<T> {
+    info!("use_chat_signals<{}>", std::any::type_name::<T>());
+    let chat = use_chat_controller_signal(get_chat_fn);
+    let presence = use_chat_presence_signal(chat);
+    let history = use_chat_history_signal(chat);
+    let on_user_message = use_chat_send_message_callback(chat, history);
+    ChatSignals { chat, presence, history, send_user_message: on_user_message }
+}
 pub fn use_global_chat_controller_signal(
-) -> ChatControllerSignal<GlobalChatMessageType> {
+) -> ChatSignals<GlobalChatMessageType> {
+    info!("use_global_chat_controller_signal");
     use_chat_signals(Callback::new(move |mm: GlobalMatchmaker| async move {
         Some(mm.global_chat_controller().await?)
     }))

@@ -5,16 +5,15 @@ use n0_future::StreamExt;
 use protocol::{
     _const::PRESENCE_INTERVAL,
     chat::{IChatController, IChatSender},
-    chat_presence::PresenceList,
     global_matchmaker::{
-        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
+        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker
     },
     user_identity::UserIdentitySecrets,
 };
 use tracing::warn;
 
 use crate::{
-    app::GlobalUrlContext, comp::modal::ModalArticle,
+    app::GlobalUrlContext, comp::{chat::chat_signals_hook::{use_global_chat_controller_signal, ChatSignals}, modal::ModalArticle},
     localstorage::LocalStorageContext,
 };
 
@@ -30,6 +29,31 @@ pub struct NetworkState {
 
 #[component]
 pub fn NetworkConnectionParent(children: Element) -> Element {
+    rsx! {
+        GlobalMatchmakerParent {
+            GlobalChatClientParent {
+                {children}
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct GlobalChatClientContext {
+    pub chat: ChatSignals<GlobalChatMessageType>,
+}
+
+#[component]
+fn GlobalChatClientParent(children: Element) -> Element {
+    let chat = use_global_chat_controller_signal();
+    use_context_provider(move || GlobalChatClientContext { chat });
+    rsx! {
+        {children}
+    }
+}
+
+#[component]
+fn GlobalMatchmakerParent(children: Element) -> Element {
     let url = use_context::<GlobalUrlContext>().url;
     let mut mm_signal_w = use_signal(move || None);
     let mm_signal = use_memo(move || mm_signal_w.read().clone());
@@ -155,9 +179,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
         bootstrap_idx: bootstrap_idx.into(),
     });
 
-    rsx! {
-        {children}
-    }
+    children
 }
 
 pub async fn client_connect(

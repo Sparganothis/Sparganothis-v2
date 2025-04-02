@@ -36,7 +36,7 @@ pub struct GlobalMatchmaker {
     sleep_manager: SleepManager,
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct GlobalChatMessageType;
 
 impl IChatRoomType for GlobalChatMessageType {

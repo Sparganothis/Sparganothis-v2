@@ -1,23 +1,19 @@
 use super::{
-    chat_signals_hook::ChatControllerSignal, chat_traits::ChatMessageType,
+    chat_signals_hook::ChatSignals, chat_traits::ChatMessageType,
 };
 use crate::comp::chat::{
     chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
     chat_input::ChatInput,
-    chat_signals_hook::{
-        use_chat_history_signal, use_chat_message_callback,
-        use_chat_presence_signal,
-    },
 };
 use dioxus::prelude::*;
 
 #[component]
 pub fn FullscreenChatRoom<T: ChatMessageType>(
-    chat: ChatControllerSignal<T>,
+    chat: ChatSignals<T>,
 ) -> Element {
-    let presence = use_chat_presence_signal(chat);
-    let history = use_chat_history_signal(chat);
-    let on_user_message = use_chat_message_callback(chat, Some(history));
+    let presence = chat.presence;
+    let history = chat.history;
+    let on_user_message = chat.send_user_message;
 
     rsx! {
         div {

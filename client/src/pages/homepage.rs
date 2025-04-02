@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use game::tet::GameState;
 
 use crate::comp::{
-    bot_player::BotPlayer, chat::chat_window_mini::MiniChatOverlay,
+    bot_player::BotPlayer,
     game_display::GameDisplay,
 };
 
@@ -17,6 +17,5 @@ pub fn Home() -> Element {
             // style: "display: flex;",
             GameDisplay { game_state }
         }
-        MiniChatOverlay {}
     }
 }

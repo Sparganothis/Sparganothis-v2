@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use iroh::NodeId;
 
 use crate::app::GlobalUrlContext;
+use crate::comp::chat::global_chat::GlobalMiniChatOverlayParent;
 use crate::comp::nav::Nav;
 use crate::pages::*;
 
@@ -63,7 +64,10 @@ fn NavbarLayout() -> Element {
                     overflow: auto;
                     height: calc(100% - (max(7%, 80px)));
                 ",
-                 Outlet::<Route> {} }
+                GlobalMiniChatOverlayParent {
+                    Outlet::<Route> {}
+                }
+            }
         }
     }
 }

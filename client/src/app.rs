@@ -1,6 +1,5 @@
 use crate::{
-    constants::APP_TITLE, localstorage::LocalStorageParent,
-    network::NetworkConnectionParent, route::Route,
+     constants::APP_TITLE, localstorage::LocalStorageParent, network::NetworkConnectionParent, route::Route
 };
 use dioxus::prelude::*;
 
@@ -17,15 +16,7 @@ pub fn App() -> Element {
         document::Title { "{APP_TITLE}" }
         div {
             "data-theme": "light",
-            style: "
-              background-color: var(--pico-background-color);
-              color: var(--pico-color);
-              width:100dvw;
-              height:100dvh;
-              margin:0;
-              padding:0; 
-              overflow: hidden;
-            ",
+            class: "global_parent",
             UrlHolderParent {
                 LocalStorageParent {
                     NetworkConnectionParent {
@@ -45,9 +36,7 @@ fn UrlHolderParent(children: Element) -> Element {
         url_w: url.into(),
         url: url_r.into(),
     });
-    rsx! {
-        {children}
-    }
+    children
 }
 
 #[derive(Clone, Debug)]

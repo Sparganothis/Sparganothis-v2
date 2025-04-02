@@ -2,25 +2,58 @@ use crate::comp::{
     chat::{
         chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
         chat_input::ChatInput,
-        chat_signals_hook::{
-            use_chat_history_signal, use_chat_message_callback,
-            use_chat_presence_signal, use_global_chat_controller_signal,
-        },
     },
     icon::Icon,
 };
 use dioxus::prelude::*;
-use protocol::chat_presence::PresenceList;
-
+use dioxus_free_icons::icons::bs_icons::BsMessenger;
+use protocol::{chat_presence::PresenceList, ReceivedMessage};
 use super::{
-    chat_signals_hook::{ChatControllerSignal, ChatHistory},
+    chat_signals_hook::{ChatHistory, ChatSignals},
     chat_traits::ChatMessageType,
 };
 
-#[component]
-pub fn MiniChatOverlay() -> Element {
-    let chat = use_global_chat_controller_signal();
+#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum MiniChatTabSelection {
+    Chat,
+    UserList,
+    Minified,
+}
 
+#[component]
+pub fn MiniChatRoomOverlay<T: ChatMessageType>(
+    chat: ChatSignals<T>,
+) -> Element {
+    let mut tabs_select = use_signal(move || MiniChatTabSelection::Minified);
+    let hide = use_memo(move || *tabs_select.read() == MiniChatTabSelection::Minified);
+    
+    let presence = chat.presence;
+    let history = chat.history;
+    let on_user_message = chat.send_user_message;
+
+    rsx! {
+        if *hide.read() {
+            MiniChatRoomOverlayButton {
+                onclick: Callback::new(move |_| {
+                    tabs_select.set(MiniChatTabSelection::Chat);
+                }),
+            }
+        } else {
+            MiniChatOverlayContainer {
+                MiniChatImpl {
+                    tabs_select,
+                    presence,
+                    history,
+                    on_user_message,
+                }
+            }
+        }
+    }
+}
+
+
+#[component]
+fn MiniChatOverlayContainer(children: Element) -> Element {
     rsx! {
         article {
             id: "mini_chat_overlay",
@@ -31,34 +64,48 @@ pub fn MiniChatOverlay() -> Element {
             padding: 0.5rem;
             margin: 0.5rem;
             width: 420px;
-            height: 666px;
+            height: calc(min(666px, 88%));
             // border: 3px dashed blue;
             z-index: 2;
             background-color: white;
             ",
-            MiniChatRoom {
-                chat
+            {children}
+        }
+    }
+}
+
+#[component]
+fn MiniChatRoomOverlayButton(onclick: Callback<()>) -> Element {
+    rsx! {
+        div {
+            style: "
+            display:pointer;
+            position: absolute;
+            right: 1em;
+            bottom: 1em;
+            ",
+            onclick: move |_| onclick.call(()),
+            button {
+                class: "secondary outline",
+                Icon {
+                    icon: BsMessenger,
+                    color: "blue",
+                    selected: false,
+                    onclick: Callback::new(move |_| onclick.call(())),
+                    tooltip: "Open Chat".to_string(),
+                }
             }
         }
     }
 }
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum MiniChatTabSelection {
-    Chat,
-    UserList,
-    Minified,
-}
-
 #[component]
-pub fn MiniChatRoom<T: ChatMessageType>(
-    chat: ChatControllerSignal<T>,
+fn MiniChatImpl<T: ChatMessageType>(
+    tabs_select: Signal<MiniChatTabSelection>,
+    presence: ReadOnlySignal<PresenceList<T>>,
+    history: ReadOnlySignal<ChatHistory<T>>,
+    on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
 ) -> Element {
-    let tabs_select = use_signal(move || MiniChatTabSelection::Chat);
-    let presence = use_chat_presence_signal(chat);
-    let history = use_chat_history_signal(chat);
-    let on_user_message = use_chat_message_callback(chat, Some(history));
-
     rsx! {
         div {
             style: r#"
@@ -109,6 +156,7 @@ pub fn MiniChatRoom<T: ChatMessageType>(
         }
     }
 }
+
 
 #[component]
 fn MiniChatTopBar(selected: Signal<MiniChatTabSelection>) -> Element {

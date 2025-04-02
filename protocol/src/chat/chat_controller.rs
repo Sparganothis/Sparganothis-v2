@@ -29,6 +29,7 @@ pub struct ChatController<T: IChatRoomType> {
     sender: ChatSender<T>,
     receiver: ChatReceiver<T>,
     _controller_id: uuid::Uuid,
+    node_identity: NodeIdentity,
 }
 
 impl<T: IChatRoomType> PartialEq for ChatController<T> {
@@ -84,6 +85,7 @@ impl<T: IChatRoomType> ChatController<T> {
         inner: Arc<dyn IChatRoomRaw>,
         message_signer: MessageSigner,
         sleep_manager: SleepManager,
+        node_identity: NodeIdentity,
     ) -> Self {
         let presence = ChatPresence::new();
         let sender = ChatSender {
@@ -181,6 +183,7 @@ impl<T: IChatRoomType> ChatController<T> {
             sender,
             receiver,
             ticket,
+            node_identity,
         };
         controller
     }
@@ -188,6 +191,9 @@ impl<T: IChatRoomType> ChatController<T> {
 
 #[async_trait::async_trait]
 impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
+    fn node_identity(&self) -> NodeIdentity {
+        self.node_identity.clone()
+    }
     fn sender(&self) -> ChatSender<T> {
         self.sender.clone()
     }
@@ -205,6 +211,7 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
         }
     }
     async fn shutdown(&self) -> anyhow::Result<()> {
+        info!("shutting down chat controller");
         self.inner.shutdown().await
     }
     fn chat_presence(&self) -> ChatPresence<T> {
@@ -260,6 +267,7 @@ pub enum ChatMessage<T: IChatRoomType> {
 pub trait IChatController<T: IChatRoomType>:
     Send + Sync + 'static + std::fmt::Debug
 {
+    fn node_identity(&self) -> NodeIdentity;
     fn sender(&self) -> ChatSender<T>;
     async fn receiver(&self) -> ChatReceiver<T>;
     async fn shutdown(&self) -> anyhow::Result<()>;

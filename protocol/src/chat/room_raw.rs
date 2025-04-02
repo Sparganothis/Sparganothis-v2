@@ -127,7 +127,7 @@ async fn task_loop(
 impl IChatRoomRaw for GossipChatRoom {
     async fn shutdown(&self) -> anyhow::Result<()> {
         info!(
-            "shutting down gossip chat room, \n\t topic_id: {:?}",
+            "shutting down chat room, \n\t topic_id: {:?}",
             self.topic_id
         );
         {

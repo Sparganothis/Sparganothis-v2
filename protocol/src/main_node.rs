@@ -8,7 +8,7 @@ use iroh::{
     Endpoint, NodeId, PublicKey, RelayMap, RelayNode, SecretKey,
 };
 use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::{
     _const::get_relay_domain,
@@ -168,12 +168,19 @@ impl MainNode {
     {
         let mut ticket = ticket.clone();
         ticket.bootstrap.remove(&self.node_id());
-        let room = GossipChatRoom::new(self, &ticket).await?;
+        let room = match GossipChatRoom::new(self, &ticket).await {
+            Ok(room) => room,
+            Err(e) => {
+                warn!("Failed to join GossipChatRoom: {e}");
+                return Err(e);
+            }
+        };
         let cc = ChatController::<T>::new(
             ticket,
             Arc::new(room),
             self.message_signer.clone(),
             self.sleep_manager.clone(),
+            self.node_identity().clone(),
         );
         Ok(cc)
     }
