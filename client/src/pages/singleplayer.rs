@@ -1,7 +1,10 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    comp::{bot_player::BotPlayer, chat::chat_signals_hook::use_chat_signals, game_display::*},
+    comp::{
+        bot_player::BotPlayer, chat::chat_signals_hook::use_chat_signals,
+        game_display::*,
+    },
     network::GlobalChatClientContext,
     pages::{GameMessage, GameMessageSpam},
     route::Route,
@@ -9,8 +12,8 @@ use crate::{
 use dioxus::prelude::*;
 use game::tet::GameState;
 use protocol::{
-    chat::IChatController,
-    chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
+    chat::IChatController, chat_ticket::ChatTicket,
+    global_matchmaker::GlobalMatchmaker,
 };
 use tracing::{info, warn};
 #[component]
@@ -36,17 +39,22 @@ pub fn Singleplayer() -> Element {
             global_chat.send_user_message.call(url);
         }
     });
-    let game_chat = use_chat_signals(Callback::new(move |mm: GlobalMatchmaker| async move {
-        let chat_ticket =
-        ChatTicket::new_str_bs("play", BTreeSet::from([]));
-        let node = mm.own_node().await?;
-        let chat = node.join_chat::<GameMessageSpam>(&chat_ticket).await.ok()?;
-        Some(chat)
-    }));
+    let game_chat = use_chat_signals(Callback::new(
+        move |mm: GlobalMatchmaker| async move {
+            let chat_ticket =
+                ChatTicket::new_str_bs("play", BTreeSet::from([]));
+            let node = mm.own_node().await?;
+            let chat =
+                node.join_chat::<GameMessageSpam>(&chat_ticket).await.ok()?;
+            Some(chat)
+        },
+    ));
     let _on_game_change_send_to_chat = use_resource(move || {
         let game = game_state.read().clone();
         async move {
-            game_chat.send_user_message.call(GameMessage::GameState(game));
+            game_chat
+                .send_user_message
+                .call(GameMessage::GameState(game));
         }
     });
 

@@ -1,6 +1,11 @@
-use crate::{comp::chat::{
-        chat_window_fullscreen::FullscreenChatRoom, chat_window_mini::MiniChatRoomOverlay,
-    }, network::GlobalChatClientContext, route::Route};
+use crate::{
+    comp::chat::{
+        chat_window_fullscreen::FullscreenChatRoom,
+        chat_window_mini::MiniChatRoomOverlay,
+    },
+    network::GlobalChatClientContext,
+    route::Route,
+};
 use dioxus::prelude::*;
 
 #[component]
@@ -24,4 +29,3 @@ pub fn GlobalMiniChatOverlayParent(children: Element) -> Element {
         }
     }
 }
-

@@ -1,6 +1,4 @@
-use super::{
-    chat_signals_hook::ChatSignals, chat_traits::ChatMessageType,
-};
+use super::{chat_signals_hook::ChatSignals, chat_traits::ChatMessageType};
 use crate::comp::chat::{
     chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
     chat_input::ChatInput,
@@ -8,9 +6,7 @@ use crate::comp::chat::{
 use dioxus::prelude::*;
 
 #[component]
-pub fn FullscreenChatRoom<T: ChatMessageType>(
-    chat: ChatSignals<T>,
-) -> Element {
+pub fn FullscreenChatRoom<T: ChatMessageType>(chat: ChatSignals<T>) -> Element {
     let presence = chat.presence;
     let history = chat.history;
     let on_user_message = chat.send_user_message;

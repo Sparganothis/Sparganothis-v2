@@ -1,5 +1,7 @@
 use std::{collections::VecDeque, future::Future};
 
+use super::chat_traits::ChatMessageType;
+use crate::network::NetworkState;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
@@ -10,8 +12,6 @@ use protocol::{
     IChatRoomType, ReceivedMessage,
 };
 use tracing::{info, warn};
-use crate::network::NetworkState;
-use super::chat_traits::ChatMessageType;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ChatHistory<T: ChatMessageType> {
@@ -98,16 +98,26 @@ fn use_chat_controller_signal<
         use_memo(move || chat.read().as_ref().map(|c| c.clone()).flatten());
     let r = chat.into();
     use_drop(move || {
-        info!("use_drop: chat controller signals for T={}", std::any::type_name::<T>());
+        info!(
+            "use_drop: chat controller signals for T={}",
+            std::any::type_name::<T>()
+        );
         let Some(chat) = chat.peek().clone() else {
             warn!("Chat is not initialized, so nothing to shutdown.");
             return;
         };
         n0_future::task::spawn(async move {
-            if let Err(e) = chat.shutdown().await{
-                warn!("Failed to shutdown chat {}: {}", std::any::type_name::<T>(), e);
+            if let Err(e) = chat.shutdown().await {
+                warn!(
+                    "Failed to shutdown chat {}: {}",
+                    std::any::type_name::<T>(),
+                    e
+                );
             } else {
-                info!("Chat {} shutdown successfully.", std::any::type_name::<T>());
+                info!(
+                    "Chat {} shutdown successfully.",
+                    std::any::type_name::<T>()
+                );
             }
         });
     });
@@ -161,22 +171,23 @@ fn use_chat_send_message_callback<T: ChatMessageType>(
     mut history: Signal<ChatHistory<T>>,
 ) -> Callback<T::M, Option<ReceivedMessage<T>>> {
     let mm = use_context::<NetworkState>().global_mm;
-    let coro = use_coroutine(move |mut n: UnboundedReceiver<T::M>| async move {
-        while let Some(message) = n.next().await {
-            chat_do_send_message(chat.into(), message).await;
-        }
-    });
+    let coro =
+        use_coroutine(move |mut n: UnboundedReceiver<T::M>| async move {
+            while let Some(message) = n.next().await {
+                chat_do_send_message(chat.into(), message).await;
+            }
+        });
     let on_user_message =
         Callback::new(move |message: <T as IChatRoomType>::M| {
-            let m = chat_send_message_preview(mm.clone(),  message);
+            let m = chat_send_message_preview(mm.clone(), message);
             if let Some(m) = &m {
                 history.write().push(Ok(m.clone()));
                 coro.send(m.message.clone());
             } else {
-                    history
+                history
                     .write()
                     .push(Err("Failed to send message".to_string()));
-                }
+            }
             m
         });
     on_user_message
@@ -193,10 +204,15 @@ pub fn use_chat_signals<
     let presence = use_chat_presence_signal(chat);
     let history = use_chat_history_signal(chat);
     let on_user_message = use_chat_send_message_callback(chat, history);
-    ChatSignals { chat, presence, history, send_user_message: on_user_message }
+    ChatSignals {
+        chat,
+        presence,
+        history,
+        send_user_message: on_user_message,
+    }
 }
-pub fn use_global_chat_controller_signal(
-) -> ChatSignals<GlobalChatMessageType> {
+pub fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType>
+{
     info!("use_global_chat_controller_signal");
     use_chat_signals(Callback::new(move |mm: GlobalMatchmaker| async move {
         Some(mm.global_chat_controller().await?)

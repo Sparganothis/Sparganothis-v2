@@ -1,3 +1,7 @@
+use super::{
+    chat_signals_hook::{ChatHistory, ChatSignals},
+    chat_traits::ChatMessageType,
+};
 use crate::comp::{
     chat::{
         chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
@@ -8,10 +12,6 @@ use crate::comp::{
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::bs_icons::BsMessenger;
 use protocol::{chat_presence::PresenceList, ReceivedMessage};
-use super::{
-    chat_signals_hook::{ChatHistory, ChatSignals},
-    chat_traits::ChatMessageType,
-};
 
 #[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum MiniChatTabSelection {
@@ -25,8 +25,9 @@ pub fn MiniChatRoomOverlay<T: ChatMessageType>(
     chat: ChatSignals<T>,
 ) -> Element {
     let mut tabs_select = use_signal(move || MiniChatTabSelection::Minified);
-    let hide = use_memo(move || *tabs_select.read() == MiniChatTabSelection::Minified);
-    
+    let hide =
+        use_memo(move || *tabs_select.read() == MiniChatTabSelection::Minified);
+
     let presence = chat.presence;
     let history = chat.history;
     let on_user_message = chat.send_user_message;
@@ -50,7 +51,6 @@ pub fn MiniChatRoomOverlay<T: ChatMessageType>(
         }
     }
 }
-
 
 #[component]
 fn MiniChatOverlayContainer(children: Element) -> Element {
@@ -156,7 +156,6 @@ fn MiniChatImpl<T: ChatMessageType>(
         }
     }
 }
-
 
 #[component]
 fn MiniChatTopBar(selected: Signal<MiniChatTabSelection>) -> Element {

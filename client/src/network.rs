@@ -6,14 +6,20 @@ use protocol::{
     _const::PRESENCE_INTERVAL,
     chat::{IChatController, IChatSender},
     global_matchmaker::{
-        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker
+        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
     },
     user_identity::UserIdentitySecrets,
 };
 use tracing::warn;
 
 use crate::{
-    app::GlobalUrlContext, comp::{chat::chat_signals_hook::{use_global_chat_controller_signal, ChatSignals}, modal::ModalArticle},
+    app::GlobalUrlContext,
+    comp::{
+        chat::chat_signals_hook::{
+            use_global_chat_controller_signal, ChatSignals,
+        },
+        modal::ModalArticle,
+    },
     localstorage::LocalStorageContext,
 };
 
