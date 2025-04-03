@@ -2,19 +2,21 @@ use super::{
     chat_signals_hook::{ChatHistory, ChatSignals},
     chat_traits::ChatMessageType,
 };
-use crate::comp::{
+use crate::{comp::{
     chat::{
         chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
         chat_input::ChatInput,
     },
     icon::Icon,
-};
+}, localstorage::LocalStorageContext};
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::bs_icons::BsMessenger;
 use protocol::{chat_presence::PresenceList, ReceivedMessage};
+use serde::{Deserialize, Serialize};
+use tracing::info;
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord)]
-enum MiniChatTabSelection {
+#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub enum MiniChatTabSelection {
     Chat,
     UserList,
     Minified,
@@ -24,7 +26,8 @@ enum MiniChatTabSelection {
 pub fn MiniChatRoomOverlay<T: ChatMessageType>(
     chat: ChatSignals<T>,
 ) -> Element {
-    let mut tabs_select = use_signal(move || MiniChatTabSelection::Minified);
+    info!("MiniChatRoomOverlay");
+    let mut tabs_select = use_context::<LocalStorageContext>().session.tab_select;
     let hide =
         use_memo(move || *tabs_select.read() == MiniChatTabSelection::Minified);
 
@@ -69,7 +72,9 @@ fn MiniChatOverlayContainer(children: Element) -> Element {
             z-index: 2;
             background-color: white;
             ",
-            {children}
+            small {
+                {children}
+            }
         }
     }
 }
@@ -111,7 +116,7 @@ fn MiniChatImpl<T: ChatMessageType>(
             style: r#"
             display: grid; 
             grid-template-columns: 1fr; 
-            grid-template-rows: 0.2fr 1.9fr 0.3fr; 
+            grid-template-rows: 0.2fr 1.9fr 0.25fr; 
             gap: 0px 0px; 
             grid-template-areas: "topbar"   "mainchat"  "tabs"; 
             width: 100%;
@@ -151,9 +156,26 @@ fn MiniChatImpl<T: ChatMessageType>(
                 container-type: size;
                 margin-top: -30px;
                 ",
-                ChatInput::<T> { on_user_message }
+                MiniChatFooter::<T> {selected: tabs_select, on_user_message}
             }
         }
+    }
+}
+
+#[component]
+fn MiniChatFooter<T: ChatMessageType>(selected: Signal<MiniChatTabSelection>, on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>) -> Element {
+    match *selected.read() {
+        MiniChatTabSelection::Minified => rsx! {
+            h1 { "X"   }
+        },
+        MiniChatTabSelection::Chat => rsx! {
+            ChatInput::<T> { on_user_message }
+        },
+        MiniChatTabSelection::UserList => rsx! {
+            h1 {
+                "User List"
+            }
+        },
     }
 }
 

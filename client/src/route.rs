@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use iroh::NodeId;
+use tracing::info;
 
 use crate::app::GlobalUrlContext;
 use crate::comp::chat::global_chat::GlobalMiniChatOverlayParent;
@@ -9,7 +10,7 @@ use crate::pages::*;
 #[derive(Debug, Clone, Routable, PartialEq)]
 #[rustfmt::skip]
 pub enum Route {
-    #[layout(NavbarLayout)]
+    #[layout(LayoutParent)]
     #[route("/")]
     Home {},
 
@@ -38,14 +39,25 @@ fn NotFound(x: Vec<String>) -> Element {
     }
 }
 
+#[component]
+fn LayoutParent() -> Element {
+    info!("\n\n     LayoutParent\n\n");
+    let mut url_w = use_context::<GlobalUrlContext>().url_w;
+    let mut route_w = use_context::<GlobalUrlContext>().route_w;
+    use_effect(move || {
+        let route = use_route::<Route>();
+        url_w.set(route.to_string());
+        route_w.set(route);
+    });
+    rsx! {
+        NavbarLayout {}
+    }
+}
+
 /// Shared navbar component.
 #[component]
 fn NavbarLayout() -> Element {
-    let mut url = use_context::<GlobalUrlContext>().url_w;
-    use_effect(move || {
-        let route = use_route::<Route>();
-        url.set(route.to_string());
-    });
+    info!("\n\n     NavbarLayout\n\n");
     rsx! {
         div {
             class: "container-fluid",

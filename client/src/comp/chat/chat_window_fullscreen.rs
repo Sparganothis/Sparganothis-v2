@@ -4,9 +4,11 @@ use crate::comp::chat::{
     chat_input::ChatInput,
 };
 use dioxus::prelude::*;
+use tracing::info;
 
 #[component]
 pub fn FullscreenChatRoom<T: ChatMessageType>(chat: ChatSignals<T>) -> Element {
+    info!("FullscreenChatRoom");
     let presence = chat.presence;
     let history = chat.history;
     let on_user_message = chat.send_user_message;

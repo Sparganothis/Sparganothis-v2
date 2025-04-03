@@ -3,12 +3,15 @@ use crate::localstorage::LocalStorageContext;
 use crate::network::NetworkConnectionStatusIcon;
 use crate::route::Route;
 use dioxus::prelude::*;
+use tracing::info;
 
 #[component]
 pub fn Nav() -> Element {
-    let my_nickname = use_context::<LocalStorageContext>().user_secrets;
+    info!("Nav");
+    let my_secrets = use_context::<LocalStorageContext>()
+        .persistent.user_secrets;
     let my_nickname = use_memo(move || {
-        my_nickname.read().user_identity().nickname().to_string()
+        my_secrets.read().user_identity().nickname().to_string()
     });
     rsx! {
         nav {

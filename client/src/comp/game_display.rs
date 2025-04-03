@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use game::tet::{BoardMatrix, CellValue, GameState, Tet};
 
-const INTER_BOX_PADDING: &'static str = "0px";
+// const INTER_BOX_PADDING: &'static str = "0px";
 const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";
 
 // Add this function to map Tet to color
@@ -145,7 +145,7 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
                 }
 
                 div { style: "
-                        padding: {INTER_BOX_PADDING};
+                        padding: 0px;
                         width: 100%;
                         height: 100%;
                         container-type:size;
@@ -255,7 +255,7 @@ fn GameBoardGridParent(
                 width: 100%;
                 height: 100%;
                 background-color:{GAMEBOARD_GRID_COLOR};
-                padding: {INTER_BOX_PADDING};
+                padding: 0px;
                 border: 1px solid {GAMEBOARD_GRID_COLOR};
                 aspect-ratio: {column_count}/{row_count};
             ",
@@ -273,14 +273,14 @@ fn GridCellDisplay(
     col_count: i8,
 ) -> Element {
     let cell_color = use_memo(move || get_cell_color(cell.read().clone()));
+    //         position: absolute;
+    // width: calc(100cqw/{col_count});
+    // height: calc(100cqh/{row_count});
+    // top: calc((100cqh/{row_count}) * {row});
+    // left: calc((100cqw/{col_count}) * {col});
     rsx! {
         div { style: "
-                posiition: absolute;
-                width: calc(100cqw/{col_count}-{INTER_BOX_PADDING});
-                height: calc(100cqh/{row_count}-{INTER_BOX_PADDING});
-                top: calc((100cqh/{row_count}-{INTER_BOX_PADDING}) * {row});
-                left: calc((100cqw/{col_count}-{INTER_BOX_PADDING}) * {col});
-                padding: {INTER_BOX_PADDING};
+                padding: 0;
             ",
             div { style: "
                 background-color: {cell_color};

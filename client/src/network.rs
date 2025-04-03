@@ -10,7 +10,7 @@ use protocol::{
     },
     user_identity::UserIdentitySecrets,
 };
-use tracing::warn;
+use tracing::{info, warn};
 
 use crate::{
     app::GlobalUrlContext,
@@ -35,6 +35,7 @@ pub struct NetworkState {
 
 #[component]
 pub fn NetworkConnectionParent(children: Element) -> Element {
+    info!("NetworkConnectionParent");
     rsx! {
         GlobalMatchmakerParent {
             GlobalChatClientParent {
@@ -51,6 +52,7 @@ pub struct GlobalChatClientContext {
 
 #[component]
 fn GlobalChatClientParent(children: Element) -> Element {
+    info!("GlobalChatClientParent");
     let chat = use_global_chat_controller_signal();
     use_context_provider(move || GlobalChatClientContext { chat });
     rsx! {
@@ -60,6 +62,7 @@ fn GlobalChatClientParent(children: Element) -> Element {
 
 #[component]
 fn GlobalMatchmakerParent(children: Element) -> Element {
+    info!("GlobalMatchmakerParent");
     let url = use_context::<GlobalUrlContext>().url;
     let mut mm_signal_w = use_signal(move || None);
     let mm_signal = use_memo(move || mm_signal_w.read().clone());
@@ -82,6 +85,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
             mm_signal_loading_w.set(true);
             is_connected_w.set(false);
             let user_secrets = use_context::<LocalStorageContext>()
+                .persistent
                 .user_secrets
                 .peek()
                 .clone();

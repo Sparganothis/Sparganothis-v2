@@ -1,4 +1,4 @@
-div.global_parent {
+.global_parent {
   background-color: var(--pico-background-color);
   color: var(--pico-color);
   width:100dvw;

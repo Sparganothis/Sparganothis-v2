@@ -5,7 +5,7 @@ use crate::{localstorage::LocalStorageContext, network::NetworkState};
 
 #[component]
 pub fn CurrentUserInfoDisplay() -> Element {
-    let user = use_context::<LocalStorageContext>().user_secrets;
+    let user = use_context::<LocalStorageContext>().persistent.user_secrets;
     let user_id = use_memo(move || user.read().user_identity().clone());
 
     let node_info = use_context::<NetworkState>().global_mm;
