@@ -2,7 +2,7 @@ use crate::{
     app::GlobalUrlContext,
     comp::chat::{
         chat_window_fullscreen::FullscreenChatRoom,
-        chat_window_mini::{MiniChatRoomOverlay, MiniChatTabSelection},
+        chat_window_mini::MiniChatRoomOverlay,
     },
     network::GlobalChatClientContext,
     route::Route,
