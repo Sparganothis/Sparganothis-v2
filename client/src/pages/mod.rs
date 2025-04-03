@@ -10,5 +10,8 @@ pub use spectate_game::*;
 mod my_profile;
 pub use my_profile::*;
 
+mod i_am_a_robot_singleplayer;
+pub use i_am_a_robot_singleplayer::*;
+
 mod singleplayer;
 pub use singleplayer::*;

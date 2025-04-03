@@ -2,6 +2,7 @@ pub mod bot_player;
 pub mod chat;
 pub mod game_display;
 pub mod icon;
+pub mod input;
 pub mod modal;
 pub mod nav;
 pub mod slider;

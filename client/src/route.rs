@@ -26,6 +26,9 @@ pub enum Route {
     #[route("/singleplayer")]
     Singleplayer {},
 
+    #[route("/i_am_a_robot_singleplayer")]
+    IAmARobotSingleplayer {},
+
     #[route("/:..x")]
     NotFound { x: Vec<String> },
 

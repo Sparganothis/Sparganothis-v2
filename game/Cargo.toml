@@ -35,6 +35,8 @@ wasm-bindgen-test = "0.3"
 
 bitfield-struct = "0.8.0"
 once_cell = {version="1.18"}
+strum_macros = "0.27.1"
+strum = "0.27.1"
 # endian-num = "0.1.1"
 
 [dev-dependencies]
