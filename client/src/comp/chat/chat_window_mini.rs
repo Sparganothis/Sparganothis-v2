@@ -2,20 +2,25 @@ use super::{
     chat_signals_hook::{ChatHistory, ChatSignals},
     chat_traits::ChatMessageType,
 };
-use crate::{comp::{
-    chat::{
-        chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
-        chat_input::ChatInput,
+use crate::{
+    comp::{
+        chat::{
+            chat_display::{ChatHistoryDisplay, ChatPresenceDisplay},
+            chat_input::ChatInput,
+        },
+        icon::Icon,
     },
-    icon::Icon,
-}, localstorage::LocalStorageContext};
+    localstorage::LocalStorageContext,
+};
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::bs_icons::BsMessenger;
 use protocol::{chat_presence::PresenceList, ReceivedMessage};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-#[derive(Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Clone, Debug, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub enum MiniChatTabSelection {
     Chat,
     UserList,
@@ -27,7 +32,8 @@ pub fn MiniChatRoomOverlay<T: ChatMessageType>(
     chat: ChatSignals<T>,
 ) -> Element {
     info!("MiniChatRoomOverlay");
-    let mut tabs_select = use_context::<LocalStorageContext>().session.tab_select;
+    let mut tabs_select =
+        use_context::<LocalStorageContext>().session.tab_select;
     let hide =
         use_memo(move || *tabs_select.read() == MiniChatTabSelection::Minified);
 
@@ -163,7 +169,10 @@ fn MiniChatImpl<T: ChatMessageType>(
 }
 
 #[component]
-fn MiniChatFooter<T: ChatMessageType>(selected: Signal<MiniChatTabSelection>, on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>) -> Element {
+fn MiniChatFooter<T: ChatMessageType>(
+    selected: Signal<MiniChatTabSelection>,
+    on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
+) -> Element {
     match *selected.read() {
         MiniChatTabSelection::Minified => rsx! {
             h1 { "X"   }

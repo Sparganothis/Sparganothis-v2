@@ -1,8 +1,11 @@
 use crate::{
-    app::GlobalUrlContext, comp::chat::{
+    app::GlobalUrlContext,
+    comp::chat::{
         chat_window_fullscreen::FullscreenChatRoom,
         chat_window_mini::{MiniChatRoomOverlay, MiniChatTabSelection},
-    }, network::GlobalChatClientContext, route::Route
+    },
+    network::GlobalChatClientContext,
+    route::Route,
 };
 use dioxus::prelude::*;
 use tracing::info;
@@ -19,7 +22,8 @@ pub fn GlobalMiniChatOverlayParent(children: Element) -> Element {
 #[component]
 fn OverlayInner(children: Element) -> Element {
     let route = use_context::<GlobalUrlContext>().route;
-    let fullscreen = use_memo(move || *route.read() == Route::GlobalChatPage {});
+    let fullscreen =
+        use_memo(move || *route.read() == Route::GlobalChatPage {});
     let chat = use_context::<GlobalChatClientContext>().chat;
     rsx! {
         if !*fullscreen.read() {

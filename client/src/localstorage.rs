@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use dioxus::prelude::*;
-use dioxus_sdk::storage::{use_storage, use_synced_storage, LocalStorage, SessionStorage};
+use dioxus_sdk::storage::{
+    use_storage, use_synced_storage, LocalStorage, SessionStorage,
+};
 use protocol::user_identity::UserIdentitySecrets;
 use tracing::info;
 
@@ -42,9 +44,7 @@ pub fn LocalStorageParent(children: Element) -> Element {
     );
     use_context_provider(move || LocalStorageContext {
         persistent: LocalPersistentStorage { user_secrets },
-        session: LocalSessionStorage {
-            tab_select,
-        },
+        session: LocalSessionStorage { tab_select },
     });
 
     children
