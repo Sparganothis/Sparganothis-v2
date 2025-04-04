@@ -4,5 +4,5 @@ export RUST_LOG=info,iroh=error,iroh-gossip=error,iroh-relay=error,webrtc=error,
 # export RUST_LOG=debug
 # export RUST_BACKTRACE=1
 # export RUST_LOG=info
-cargo build --bin terminal
-time cargo run --bin terminal 
+cargo build --bin client_terminal
+time cargo run --bin client_terminal 

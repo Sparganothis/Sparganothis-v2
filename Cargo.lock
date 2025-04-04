@@ -1218,6 +1218,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "client_terminal"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-channel",
+ "clap",
+ "color-eyre",
+ "crossterm",
+ "futures",
+ "iroh",
+ "line_drawing",
+ "n0-future",
+ "protocol",
+ "rand 0.8.5",
+ "ratatui",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "cobs"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7973,16 +7995,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-channel",
- "clap",
- "color-eyre",
- "crossterm",
  "futures",
  "iroh",
- "line_drawing",
  "n0-future",
  "protocol",
  "rand 0.8.5",
- "ratatui",
  "tokio",
  "tokio-stream",
  "tracing",

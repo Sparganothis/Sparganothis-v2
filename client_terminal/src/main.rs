@@ -1,7 +1,4 @@
 
-use protocol::user_identity::UserIdentitySecrets;
-
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mut terminal = ratatui::init();
@@ -9,7 +6,7 @@ async fn main() -> anyhow::Result<()> {
     let _r = n0_future::future::race(
         async move {
             let _r =
-                server::terminal_ui::terminal_loop(&mut terminal).await;
+                client_terminal::terminal_ui::terminal_loop(&mut terminal).await;
             println!("* cli_chat_window closed: {:?}", _r);
         },
         async move {

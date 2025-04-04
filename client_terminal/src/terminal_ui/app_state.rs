@@ -21,10 +21,15 @@ pub struct ChatWindowData {
 }
 
 #[derive(Clone, Debug)]
-pub enum WindowData {
+pub struct WindowData {
+    pub data: SpecificWindowData,
+}
+#[derive(Clone, Debug)]
+pub enum SpecificWindowData {
     Loading(LoadingWindowData),
     Chat(ChatWindowData),
 }
+
 
 #[derive(Clone, Debug)]
 pub struct AppState {
@@ -34,17 +39,17 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> Self {
         Self {
-            window_data: Arc::new(Mutex::new(WindowData::Loading(
+            window_data: Arc::new(Mutex::new(WindowData{data: SpecificWindowData::Loading(
                 LoadingWindowData {
                     message: "Loading...".to_string(),
                 },
-            ))),
+            )})),
             window_notify: Arc::new(Notify::new()),
         }
     }
-    pub async fn set_state(&self, state: WindowData) {
+    pub async fn set_state(&self, state: SpecificWindowData) {
         let mut window_data = self.window_data.lock().await;
-        *window_data = state;
+        window_data.data = state;
         self.window_notify.notify_waiters();
     }
     pub async fn set_presence_list(
@@ -52,7 +57,7 @@ impl AppState {
         presence_list: PresenceList<GlobalChatMessageType>,
     ) {
         let mut window_data = self.window_data.lock().await;
-        if let WindowData::Chat(chat_data) = &mut *window_data {
+        if let SpecificWindowData::Chat(chat_data) = &mut window_data.data {
             chat_data.presence = presence_list;
         } else {
             warn!("AppState::set_presence_list: WindowData is not Chat");
@@ -64,7 +69,7 @@ impl AppState {
         msg: ReceivedMessage<GlobalChatMessageType>,
     ) {
         let mut window_data = self.window_data.lock().await;
-        if let WindowData::Chat(chat_data) = &mut *window_data {
+        if let SpecificWindowData::Chat(chat_data) = &mut window_data.data {
             chat_data.msg_history.push(msg);
         } else {
             warn!("AppState::append_msg_history: WindowData is not Chat");
@@ -72,7 +77,7 @@ impl AppState {
         self.window_notify.notify_waiters();
     }
     pub async fn set_loading_message(&self, message: &str) {
-        self.set_state(WindowData::Loading(LoadingWindowData {
+        self.set_state(SpecificWindowData::Loading(LoadingWindowData {
             message: message.to_string(),
         }))
         .await;

@@ -11,16 +11,16 @@ use ratatui::{
     widgets::Block,
 };
 
-use super::app_state::{ChatWindowData, WindowData};
+use super::app_state::{ChatWindowData, SpecificWindowData, WindowData};
 
 pub fn draw_main(frame: &mut Frame, data: &WindowData) {
-    match data {
-        WindowData::Loading(data) => {
+    match &data.data {
+        SpecificWindowData::Loading(data) => {
             let widget = Block::bordered().title("Loading");
             let widget = Paragraph::new(data.message.clone()).block(widget).centered();
             frame.render_widget(widget, frame.area());
         }
-        WindowData::Chat(data) => {
+        SpecificWindowData::Chat(data) => {
             draw_chat(frame, data);
         }
     }
