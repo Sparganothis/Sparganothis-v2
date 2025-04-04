@@ -1,4 +1,3 @@
-
 use protocol::chat_presence::PresenceList;
 use protocol::global_matchmaker::GlobalChatMessageType;
 use protocol::ReceivedMessage;
@@ -17,7 +16,9 @@ pub fn draw_main(frame: &mut Frame, data: &WindowData) {
     match &data.data {
         SpecificWindowData::Loading(data) => {
             let widget = Block::bordered().title("Loading");
-            let widget = Paragraph::new(data.message.clone()).block(widget).centered();
+            let widget = Paragraph::new(data.message.clone())
+                .block(widget)
+                .centered();
             frame.render_widget(widget, frame.area());
         }
         SpecificWindowData::Chat(data) => {
@@ -35,21 +36,31 @@ fn draw_chat(frame: &mut Frame, data: &ChatWindowData) {
     let [left_area, right_area] = horizontal.areas(main_area);
 
     let title_bar = Block::bordered().title("Global Chat");
-    let title_bar = Paragraph::new(data.own_identity.nickname()).block(title_bar).centered();
+    let title_bar = Paragraph::new(data.own_identity.nickname())
+        .block(title_bar)
+        .centered();
 
     frame.render_widget(title_bar, title_area);
     draw_presence_list(frame, left_area, &data.presence);
     draw_chat_messages(frame, right_area, &data.msg_history);
 }
 
-fn draw_presence_list(frame: &mut Frame, area: Rect, data: &PresenceList<GlobalChatMessageType>) {
+fn draw_presence_list(
+    frame: &mut Frame,
+    area: Rect,
+    data: &PresenceList<GlobalChatMessageType>,
+) {
     let block = Block::bordered().title("Presence List");
     let list_txt = format!("{:#?}", data);
     let presence_list = Paragraph::new(list_txt).block(block).centered();
     frame.render_widget(presence_list, area);
 }
 
-fn draw_chat_messages(frame: &mut Frame, area: Rect, data: &Vec<ReceivedMessage<GlobalChatMessageType>>) {
+fn draw_chat_messages(
+    frame: &mut Frame,
+    area: Rect,
+    data: &Vec<ReceivedMessage<GlobalChatMessageType>>,
+) {
     let block = Block::bordered().title("Chat Messages");
     let messages_txt = format!("{:#?}", data);
     let messages = Paragraph::new(messages_txt).block(block).centered();

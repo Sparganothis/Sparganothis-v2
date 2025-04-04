@@ -30,7 +30,6 @@ pub enum SpecificWindowData {
     Chat(ChatWindowData),
 }
 
-
 #[derive(Clone, Debug)]
 pub struct AppState {
     window_data: Arc<Mutex<WindowData>>,
@@ -39,11 +38,11 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> Self {
         Self {
-            window_data: Arc::new(Mutex::new(WindowData{data: SpecificWindowData::Loading(
-                LoadingWindowData {
+            window_data: Arc::new(Mutex::new(WindowData {
+                data: SpecificWindowData::Loading(LoadingWindowData {
                     message: "Loading...".to_string(),
-                },
-            )})),
+                }),
+            })),
             window_notify: Arc::new(Notify::new()),
         }
     }

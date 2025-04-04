@@ -5,12 +5,8 @@ use tokio::sync::mpsc::Receiver;
 use crossterm::event::{Event, EventStream, KeyCode, KeyModifiers};
 use futures::{pin_mut, FutureExt};
 use n0_future::task::AbortOnDropHandle;
-use protocol::chat::{
-    IChatController, IChatReceiver, IChatSender,
-};
-use protocol::global_matchmaker::{
-    GlobalChatPresence, GlobalMatchmaker,
-};
+use protocol::chat::{IChatController, IChatReceiver, IChatSender};
+use protocol::global_matchmaker::{GlobalChatPresence, GlobalMatchmaker};
 use protocol::user_identity::UserIdentitySecrets;
 use ratatui::DefaultTerminal;
 
@@ -75,7 +71,9 @@ async fn app_driver(
     app_state: AppState,
     event_rx: Receiver<Event>,
 ) -> anyhow::Result<()> {
-    app_state.set_loading_message("Generating identity...").await;
+    app_state
+        .set_loading_message("Generating identity...")
+        .await;
     let id = UserIdentitySecrets::generate();
     app_state
         .set_loading_message("Connecting to server...")
@@ -108,11 +106,13 @@ async fn chat_driver(
     app_state.set_loading_message("Waiting for chat...").await;
     controller.wait_joined().await?;
 
-    app_state.set_state(WindowData::Chat(ChatWindowData {
-        own_identity: controller.node_identity(),
-        presence: vec![],
-        msg_history: vec![],
-    })).await;
+    app_state
+        .set_state(WindowData::Chat(ChatWindowData {
+            own_identity: controller.node_identity(),
+            presence: vec![],
+            msg_history: vec![],
+        }))
+        .await;
 
     let presence = controller.chat_presence();
     let recv = controller.receiver().await;

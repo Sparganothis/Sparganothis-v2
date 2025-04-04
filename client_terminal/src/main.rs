@@ -1,12 +1,11 @@
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let mut terminal = ratatui::init();
 
     let _r = n0_future::future::race(
         async move {
-            let _r =
-                client_terminal::terminal_ui::terminal_loop(&mut terminal).await;
+            let _r = client_terminal::terminal_ui::terminal_loop(&mut terminal)
+                .await;
             println!("* cli_chat_window closed: {:?}", _r);
         },
         async move {
