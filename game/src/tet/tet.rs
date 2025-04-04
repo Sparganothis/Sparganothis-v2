@@ -141,7 +141,7 @@ impl Tet {
     }
 }
 
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize, PartialOrd, Ord)]
 pub enum TetAction {
     // 3bit (8 acctions)
     HardDrop,

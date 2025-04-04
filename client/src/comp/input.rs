@@ -29,21 +29,20 @@ pub fn GameInputCaptureParent(
                 border: 1px solid pink; 
                 width: 100%; height: 100%;
                 ",
-            onkeypress: move |_e| {
-                info!("onkeypress: {:#?}", _e);
-                if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
-                    on_key_cb.call((key, GameInputEventType::KeyPress));
-                }
-
-            },
+            // onkeypress: move |_e| {
+            //     info!("onkeypress: {:#?}", _e);
+            //     if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
+            //         on_key_cb.call((key, GameInputEventType::KeyPress));
+            //     }
+            // },
             onkeyup: move |_e| {
-                info!("onkeyup: {:#?}", _e);
+                // info!("onkeyup: {:#?}", _e);
                 if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
                     on_key_cb.call((key, GameInputEventType::KeyUp));
                 }
             },
             onkeydown: move |_e| {
-                info!("onkeydown: {:#?}", _e);
+                // info!("onkeydown: {:#?}", _e);
                 if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
                     on_key_cb.call((key, GameInputEventType::KeyDown));
                 }
@@ -88,6 +87,9 @@ fn default_keymap() -> HashMap<Code, GameInputEventKey> {
 }
 
 fn keyboard_data_to_game_key(key: &KeyboardData) -> Option<GameInputEventKey> {
+    if key.is_auto_repeating() {
+        return None;
+    }
     // https://github.com/Sparganothis/Sparganothis.github.io/blob/ba55b9523b4be3db6959d957965828d81a1ca83c/client/src/comp/hotkey_reader.rs#L94
     let map = default_keymap();
     map.get(&key.code()).copied()

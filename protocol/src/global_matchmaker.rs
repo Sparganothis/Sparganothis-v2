@@ -590,7 +590,7 @@ impl GlobalMatchmaker {
         if new_bs.is_empty() {
             return Ok(());
         }
-        info!("joining global chats with new bootstrap nodes: \n new nodes: {new_bs:#?} \n known nodes: {known_bs2:#?} \n presence info: {presence_info:#?}");
+        // info!("joining global chats with new bootstrap nodes: \n new nodes: {new_bs:#?} \n known nodes: {known_bs2:#?} \n presence info: {presence_info:#?}");
 
         global_chat
             .sender()

@@ -36,7 +36,7 @@ pub struct GameInputEvent {
 pub enum GameInputEventType {
     KeyDown,
     KeyUp,
-    KeyPress,
+    // KeyPress,
 }
 
 #[derive(
