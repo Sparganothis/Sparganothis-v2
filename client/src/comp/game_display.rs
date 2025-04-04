@@ -27,6 +27,27 @@ fn get_cell_color(cell_value: Option<CellValue>) -> &'static str {
 }
 
 #[component]
+pub fn YouDied(game_state: ReadOnlySignal<GameState>, children: Element) -> Element {
+    rsx! {
+        if game_state.read().game_over() {
+            div {
+                style: "position: relative; width: 0; height: 0; margin: 0; padding: 0; top: 0px; left: 0px;",
+                div {
+                    style: "position: absolute; width: 20cqw; height: 20cqh; color: red; z-index: 666;",
+                    h3 {
+    
+                        style: "color:red; z-index: 666; font-size: 6rem; transform: rotate(-45deg); background-color: black; width: fit-content; height: fit-content;",
+                        "YOU DIED"
+                    }
+                }
+            }
+
+        }
+        {children}
+    }
+}
+
+#[component]
 pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
         div { style: "
@@ -54,7 +75,10 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                     justify-content: center;
                 ",
 
-                GameDisplayInner { game_state }
+                YouDied {
+                    game_state,
+                    GameDisplayInner { game_state }
+                }
             }
 
             div { style: "

@@ -18,7 +18,7 @@ pub fn Singleplayer() -> Element {
     
     let on_user_event =
         Callback::new(move |event: GameInputEvent| {
-            if let Some(action) = input_manager.write().on_user_event(event) {
+            if let Some((action, callback)) = input_manager.write().on_user_event(event) {
                 on_tet_action.call(action);
             }
         });
