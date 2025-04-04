@@ -13,7 +13,7 @@ use ratatui::DefaultTerminal;
 use n0_future::stream::StreamExt;
 use n0_future::task::spawn;
 
-use crate::terminal_ui::app_state::{ChatWindowData, WindowData};
+use crate::terminal_ui::app_state::{ChatWindowData, SpecificWindowData, WindowData};
 use crate::terminal_ui::draw::draw_main;
 
 use super::app_state::AppState;
@@ -44,6 +44,12 @@ pub async fn terminal_loop(
                 event_tx.send(event).await?;
             }
             _ = app_state.notified().fuse() => {
+                let data = app_state.get_state().await;
+                terminal.draw(move |frame| {
+                    draw_main(frame, &data);
+                })?;
+            }
+            _ = n0_future::time::sleep(std::time::Duration::from_secs(1)).fuse() => {
                 let data = app_state.get_state().await;
                 terminal.draw(move |frame| {
                     draw_main(frame, &data);
@@ -107,7 +113,7 @@ async fn chat_driver(
     controller.wait_joined().await?;
 
     app_state
-        .set_state(WindowData::Chat(ChatWindowData {
+        .set_state(SpecificWindowData::Chat(ChatWindowData {
             own_identity: controller.node_identity(),
             presence: vec![],
             msg_history: vec![],

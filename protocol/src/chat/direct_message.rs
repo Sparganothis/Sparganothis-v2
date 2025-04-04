@@ -219,7 +219,7 @@ impl<T: AcceptableType> MessageDispatcher<T> {
         let _task = async move {
             let _r = _task.await;
             // info!("direct message dispatcher for {} closed!!", target);
-            message_dispatchers.drop_dispatcher(target).await;
+            // message_dispatchers.drop_dispatcher(target).await;
             _r
         };
         let _task = AbortOnDropHandle::new(spawn(_task));
