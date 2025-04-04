@@ -1,10 +1,7 @@
 use dioxus::prelude::*;
 use game::tet::GameState;
 
-use crate::comp::{
-    bot_player::BotPlayer, game_display::GameDisplay,
-    input::GameInputCaptureParent,
-};
+use crate::comp::{game_display::GameDisplay, input::GameInputCaptureParent};
 
 /// Home page
 #[component]

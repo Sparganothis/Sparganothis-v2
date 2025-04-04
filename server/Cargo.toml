@@ -16,3 +16,12 @@ tracing-subscriber = "0.3.19"
 async-channel = "2.3.1"
 tokio-stream = { version = "0.1.17", default-features = false, features = ["sync"] }
 tracing = "0.1.41"
+ratatui = "0.29.0"
+crossterm = { version = "0.28.1", features = ["event-stream"] }
+futures = "0.3.31"
+color-eyre = "0.6.3"
+# pallete = "1.1.0"
+# palette = "0.7.6"
+line_drawing = "1"
+# strum = {version = "0.27.1", features = ["derive"]}
+# game = { path = "../game" }

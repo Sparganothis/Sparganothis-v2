@@ -35,13 +35,16 @@ impl PresenceFlag {
         }
     }
 }
-pub type PresenceList<T> = Vec<(
-    PresenceFlag,
-    Instant,
-    NodeIdentity,
-    Option<<T as IChatRoomType>::P>,
-    Option<u16>,
-)>;
+pub type PresenceList<T> = Vec<PresenceListItem<T>>;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PresenceListItem<T: IChatRoomType> {
+    pub presence_flag: PresenceFlag,
+    pub last_seen: Instant,
+    pub identity: NodeIdentity,
+    pub payload: Option<<T as IChatRoomType>::P>,
+    pub rtt: Option<u16>,
+}
 
 impl<T: IChatRoomType> ChatPresence<T> {
     pub fn new() -> Self {
@@ -105,13 +108,13 @@ impl<T: IChatRoomType> ChatPresence<T> {
         let v: Vec<_> = p
             .into_iter()
             .map(|(_node_id, (last_seen, identity, payload, rtt))| {
-                (
-                    PresenceFlag::from_instant(last_seen),
+                PresenceListItem {
+                    presence_flag: PresenceFlag::from_instant(last_seen),
                     last_seen,
                     identity,
                     payload,
                     rtt,
-                )
+                }
             })
             .collect();
 

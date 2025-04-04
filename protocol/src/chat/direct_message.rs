@@ -51,10 +51,11 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
         let _msg_d2 = msg_d.clone();
         let task = async move {
             while let Some((iroh_target, payload)) = sender_rx.recv().await {
-                if let Err(e) = _msg_d2.send_message(iroh_target, payload).await
+                if let Err(_e) =
+                    _msg_d2.send_message(iroh_target, payload).await
                 {
-                    warn!("failed to send direct message: {:?}", e);
-                    warn!("dropping dispatcher for {}", iroh_target);
+                    // warn!("failed to send direct message: {:?}", _e);
+                    // warn!("dropping dispatcher for {}", iroh_target);
                     _msg_d2.drop_dispatcher(iroh_target).await;
                 }
             }
@@ -139,8 +140,11 @@ impl<T: AcceptableType> MessageDispatchers<T> {
             return dispatcher.clone();
         }
 
-        let dispatcher =
-            Arc::new(MessageDispatcher::new(target, self.endpoint.clone()));
+        let dispatcher = Arc::new(MessageDispatcher::new(
+            target,
+            self.endpoint.clone(),
+            self.clone(),
+        ));
         dispatchers.insert(target, dispatcher.clone());
         dispatcher
     }
@@ -165,8 +169,12 @@ struct MessageDispatcher<T> {
 }
 
 impl<T: AcceptableType> MessageDispatcher<T> {
-    pub fn new(target: PublicKey, endpoint: Endpoint) -> Self {
-        info!("creating message dispatcher for {}", target);
+    pub fn new(
+        target: PublicKey,
+        endpoint: Endpoint,
+        message_dispatchers: MessageDispatchers<T>,
+    ) -> Self {
+        // info!("creating message dispatcher for {}", target);
         let (sender, mut receiver) = tokio::sync::mpsc::channel(16);
         let _task = async move {
             let connection = n0_future::time::timeout(
@@ -210,7 +218,8 @@ impl<T: AcceptableType> MessageDispatcher<T> {
         };
         let _task = async move {
             let _r = _task.await;
-            info!("direct message dispatcher for {} closed!!", target);
+            // info!("direct message dispatcher for {} closed!!", target);
+            message_dispatchers.drop_dispatcher(target).await;
             _r
         };
         let _task = AbortOnDropHandle::new(spawn(_task));

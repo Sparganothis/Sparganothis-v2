@@ -63,6 +63,28 @@ struct GlobalMatchmakerInner {
     bs_global_chat_controller: Option<ChatController<GlobalChatMessageType>>,
 }
 
+impl GlobalMatchmakerInner {
+    pub async fn shutdown(&mut self) -> Result<()> {
+        let _task1 = self._periodic_task.take();
+        drop(_task1);
+
+        if let Some(cc) = self.global_chat_controller.take() {
+            let _ = cc.shutdown().await;
+        }
+        if let Some(cc) = self.bs_global_chat_controller.take() {
+            let _ = cc.shutdown().await;
+        }
+
+        if let Some(bootstrap_endpoint) = self.bootstrap_main_node.take() {
+            let _ = bootstrap_endpoint.shutdown().await;
+        }
+        if let Some(own_endpoint) = self.own_main_node.take() {
+            let _ = own_endpoint.shutdown().await;
+        }
+        Ok(())
+    }
+}
+
 impl PartialEq for GlobalMatchmaker {
     fn eq(&self, other: &Self) -> bool {
         self.user_secrets == other.user_secrets
@@ -89,26 +111,7 @@ impl GlobalMatchmaker {
         {
             sleep.sleep(Duration::from_secs_f32(0.1)).await;
             let mut inner = self.inner.lock().await;
-
-            let _task1 = inner._periodic_task.take();
-            drop(_task1);
-
-            if let Some(cc) = inner.global_chat_controller.take() {
-                let _ = cc.shutdown().await;
-            }
-            sleep.sleep(Duration::from_secs_f32(0.1)).await;
-            if let Some(cc) = inner.bs_global_chat_controller.take() {
-                let _ = cc.shutdown().await;
-            }
-            sleep.sleep(Duration::from_secs_f32(0.1)).await;
-
-            if let Some(bootstrap_endpoint) = inner.bootstrap_main_node.take() {
-                bootstrap_endpoint.shutdown().await?;
-            }
-            sleep.sleep(Duration::from_secs_f32(0.1)).await;
-            if let Some(own_endpoint) = inner.own_main_node.take() {
-                own_endpoint.shutdown().await?;
-            }
+            inner.shutdown().await?;
         }
         info!("GlobalMatchmaker shutdown complete");
         Ok(())
@@ -576,7 +579,7 @@ impl GlobalMatchmaker {
             .get_presence_list()
             .await
             .iter()
-            .map(|p| *p.2.node_id())
+            .map(|p| *p.identity.node_id())
             .collect::<HashSet<_>>();
 
         // all the pks in known_bs but not in presence_info

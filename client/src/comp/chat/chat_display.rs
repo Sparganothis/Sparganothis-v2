@@ -5,7 +5,7 @@ use crate::network::NetworkState;
 use dioxus::prelude::*;
 use iroh::PublicKey;
 use protocol::{
-    chat_presence::{PresenceFlag, PresenceList},
+    chat_presence::{PresenceFlag, PresenceList, PresenceListItem},
     datetime_now,
     user_identity::NodeIdentity,
     ReceivedMessage,
@@ -20,7 +20,7 @@ pub fn ChatPresenceDisplay<T: ChatMessageType>(
 ) -> Element {
     rsx! {
         ul {
-            for (presence_flag,last_seen, identity, payload, rtt) in presence.read().iter() {
+            for PresenceListItem{presence_flag,last_seen, identity, payload, rtt} in presence.read().iter() {
                 ChatPresenceDisplayItem::<T> {
                     presence_flag: presence_flag.clone(),
                     last_seen: last_seen.clone(),

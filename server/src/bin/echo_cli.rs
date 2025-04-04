@@ -65,32 +65,10 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
 
     let receive = tokio::task::spawn(async move {
         while let Some(message) = receiver.next_message().await {
-            // let (from, message) = event?;
-            // match event {
-            //     NetworkEvent::NetworkChange { event } => match event {
-            //         NetworkChangeEvent::Joined { neighbors } => {
-            //             println!(
-            //                 "* swarm joined {} neighbors",
-            //                 neighbors.len()
-            //             );
-            //         }
-            //         NetworkChangeEvent::NeighborUp { node_id } => {
-            //             println!("* neighbor up: {}", node_id.fmt_short());
-            //         }
-            //         NetworkChangeEvent::NeighborDown { node_id } => {
-            //             println!("* neighbor down: {}", node_id.fmt_short());
-            //         }
-            //         NetworkChangeEvent::Lagged => {
-            //             println!("* lagged");
-            //         }
-            //     },
-            // NetworkEvent::Message { event } => match event.message {
-            //     ChatMessage::Message { text } => {
             let nickname = message.from.nickname();
             let node_id = message.from.node_id().fmt_short();
             let user_id = message.from.user_id().fmt_short();
             let message_text = message.message;
-
             println!("<{user_id}@{node_id}> {nickname}: {message_text}");
         }
         println!("* recv closed");

@@ -13,6 +13,8 @@
 // -- ZOOMIN_ZOOMOUT
 //
 
+use crate::tet::TetAction;
+
 #[derive(Clone, Debug)]
 pub struct GameInputEvent {
     pub key: GameInputEventKey,
@@ -39,6 +41,7 @@ pub enum GameInputEventType {
 
 #[derive(
     strum_macros::EnumString,
+    strum_macros::EnumIter,
     Clone,
     Debug,
     Copy,
@@ -66,4 +69,19 @@ pub enum GameInputEventKey {
     MenuZoomOut,
     // ???
     NoOp,
+}
+
+impl GameInputEventKey {
+    pub fn to_game_action(&self) -> Option<TetAction> {
+        match self {
+            GameInputEventKey::HardDrop => Some(TetAction::HardDrop),
+            GameInputEventKey::SoftDrop => Some(TetAction::SoftDrop),
+            GameInputEventKey::MoveLeft => Some(TetAction::MoveLeft),
+            GameInputEventKey::MoveRight => Some(TetAction::MoveRight),
+            GameInputEventKey::Hold => Some(TetAction::Hold),
+            GameInputEventKey::RotateLeft => Some(TetAction::RotateLeft),
+            GameInputEventKey::RotateRight => Some(TetAction::RotateRight),
+            _ => None,
+        }
+    }
 }

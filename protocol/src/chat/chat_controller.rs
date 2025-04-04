@@ -229,7 +229,7 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
                 .get_presence_list()
                 .await
                 .into_iter()
-                .map(|p| *p.2.node_id())
+                .map(|p| *p.identity.node_id())
                 .collect::<Vec<_>>();
             info!(
                 "wait_until_joined: found {:?}/{:?}",
