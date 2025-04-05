@@ -19,13 +19,12 @@ pub enum PageRoute {
     Singleplayer,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct Router {
     inner: Arc<Mutex<RouterInner>>,
     notify: Arc<Notify>,
 }
 
-#[derive(Debug)]
 pub struct RouterInner {
     pages: BTreeMap<PageRoute, Arc<dyn PageFactory>>,
     current_route: Option<PageRoute>,
@@ -135,7 +134,7 @@ pub trait PageFactory: std::fmt::Debug + Send + Sync + 'static {
     fn create_page(&self, notify: Arc<Notify>) -> DynamicPage;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct DynamicPage(Arc<dyn Page>, Arc<AbortOnDropHandle<()>>);
 
 impl DynamicPage {
@@ -145,7 +144,7 @@ impl DynamicPage {
 }
 
 #[async_trait]
-pub trait Page: std::fmt::Debug + Send + Sync + 'static {
+pub trait Page: Send + Sync + 'static {
     async fn get_drawable(&self) -> Box<dyn Drawable>;
     async fn shutdown(&self);
     async fn handle_event(&self, event: Event);

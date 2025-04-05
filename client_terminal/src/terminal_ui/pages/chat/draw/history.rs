@@ -1,7 +1,7 @@
 use protocol::global_matchmaker::GlobalChatMessageType;
 use protocol::user_identity::NodeIdentity;
 use protocol::{datetime_now, ReceivedMessage};
-use ratatui::layout::{Rect, Layout, Direction, Constraint};
+use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;

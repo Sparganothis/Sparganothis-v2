@@ -82,13 +82,13 @@ impl MessageSigner {
     pub fn sign_and_encode<T: AcceptableType>(
         &self,
         message: T,
-    ) -> Result<Vec<u8>> {
+    ) -> Result<(Vec<u8>, WireMessage<T>)> {
         let timestamp = datetime_now();
         let from: &NodeIdentity = &self.node_identity;
         let from = from.clone();
         let wire_message = WireMessage {
             _timestamp: timestamp,
-            message,
+            message: message.clone(),
             from,
             _message_id: uuid::Uuid::new_v4(),
         };
@@ -111,7 +111,7 @@ impl MessageSigner {
         // let compressed = deflate::deflate_bytes_conf(&encoded, deflate::Compression::Best);
         // info!("Compressed SignedMessage size: {:?}", compressed.len());
         // let encoded = bincode::serialize(&signed_message)?;
-        Ok(encoded)
+        Ok((encoded, wire_message))
     }
 }
 

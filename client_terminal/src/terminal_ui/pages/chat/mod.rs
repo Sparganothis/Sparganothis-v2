@@ -9,7 +9,7 @@ use crossterm::event::Event;
 use futures::FutureExt;
 use n0_future::task::AbortOnDropHandle;
 use protocol::{
-    chat::{IChatController, IChatReceiver, IChatSender},
+    chat::{ChatSender, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
     global_matchmaker::{
         GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
@@ -29,6 +29,8 @@ impl PageFactory for ChatPageFactory {
             data: Arc::new(Mutex::new(ChatPageState::new_loading(
                 "Loading...".to_string(),
             ))),
+            sender: Arc::new(Mutex::new(None)),
+            mm: Arc::new(Mutex::new(None)),
         };
         let task = task_page_driver(page.clone());
         let task = async move {
@@ -40,10 +42,12 @@ impl PageFactory for ChatPageFactory {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ChatPage {
     _notify: Arc<Notify>,
     data: Arc<Mutex<ChatPageState>>,
+    sender: Arc<Mutex<Option<ChatSender<GlobalChatMessageType>>>>,
+    mm: Arc<Mutex<Option<GlobalMatchmaker>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -52,6 +56,7 @@ pub enum ChatPageState {
         own_identity: NodeIdentity,
         presence: PresenceList<GlobalChatMessageType>,
         msg_history: Vec<ReceivedMessage<GlobalChatMessageType>>,
+        input_buffer: String,
     },
     ChatLoading {
         message: String,
@@ -63,8 +68,34 @@ impl Page for ChatPage {
     async fn get_drawable(&self) -> Box<dyn Drawable> {
         Box::new(self.data.lock().await.clone())
     }
-    async fn shutdown(&self) {}
-    async fn handle_event(&self, _event: Event) {}
+    async fn shutdown(&self) {
+        let i = self.mm.lock().await;
+        if let Some(mm) = i.as_ref() {
+            let _ = mm.shutdown().await;
+        }
+    }
+    async fn handle_event(&self, event: Event) {
+        match event {
+            Event::Key(key_event) => {
+                if key_event.kind != crossterm::event::KeyEventKind::Press {
+                    return;
+                }
+                match key_event.code {
+                    crossterm::event::KeyCode::Char(c) => {
+                        self.handle_key(c).await;
+                    }
+                    crossterm::event::KeyCode::Backspace => {
+                        self.handle_backspace().await;
+                    }
+                    crossterm::event::KeyCode::Enter => {
+                        self.send_message().await;
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 impl Drawable for ChatPageState {
@@ -74,6 +105,48 @@ impl Drawable for ChatPageState {
 }
 
 impl ChatPage {
+    pub async fn send_message(&self) {
+        if let Some(sender) = &self.sender.lock().await.as_ref() {
+            let mut state = self.data.lock().await;
+            if let ChatPageState::ChatLoaded { input_buffer, .. } = &mut *state
+            {
+                if !input_buffer.is_empty() {
+                    let msg = input_buffer.clone();
+                    *input_buffer = String::new();
+                    drop(state); // Release lock before async operation
+
+                    let _r = sender.broadcast_message(msg).await;
+                    match _r {
+                        Ok(_r) => {
+                            self.clear_input_buffer().await;
+                            self.chat_append_msg_history(_r).await;
+                            self._notify.notify_waiters();
+                        }
+                        Err(e) => {
+                            tracing::warn!("Error sending message: {:?}", e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn handle_key(&self, c: char) {
+        let mut state = self.data.lock().await;
+        if let ChatPageState::ChatLoaded { input_buffer, .. } = &mut *state {
+            input_buffer.push(c);
+            self._notify.notify_waiters();
+        }
+    }
+
+    pub async fn handle_backspace(&self) {
+        let mut state = self.data.lock().await;
+        if let ChatPageState::ChatLoaded { input_buffer, .. } = &mut *state {
+            input_buffer.pop();
+            self._notify.notify_waiters();
+        }
+    }
+
     async fn chat_set_loading(&self, message: &str) {
         {
             *self.data.lock().await =
@@ -105,6 +178,12 @@ impl ChatPage {
         }
         self._notify.notify_waiters();
     }
+    async fn clear_input_buffer(&self) {
+        {
+            self.data.lock().await.chat_clear_input_buffer();
+        }
+        self._notify.notify_waiters();
+    }
 }
 
 impl ChatPageState {
@@ -116,6 +195,7 @@ impl ChatPageState {
             own_identity,
             presence: vec![],
             msg_history: vec![],
+            input_buffer: String::new(),
         }
     }
     fn chat_set_presence_list(
@@ -134,6 +214,11 @@ impl ChatPageState {
             msg_history.push(msg);
         }
     }
+    fn chat_clear_input_buffer(&mut self) {
+        if let Self::ChatLoaded { input_buffer, .. } = self {
+            *input_buffer = String::new();
+        }
+    }
 }
 
 async fn task_page_driver(page: ChatPage) -> anyhow::Result<()> {
@@ -142,6 +227,9 @@ async fn task_page_driver(page: ChatPage) -> anyhow::Result<()> {
     page.chat_set_loading("Connecting to server...").await;
 
     let global_mm = GlobalMatchmaker::new(Arc::new(id)).await?;
+    {
+        *page.mm.lock().await = Some(global_mm.clone());
+    }
 
     page.chat_set_loading("Connecting to chat...").await;
 
@@ -155,21 +243,23 @@ async fn chat_driver(
     global_mm: GlobalMatchmaker,
 ) -> anyhow::Result<()> {
     let controller = global_mm.global_chat_controller().await.context("F")?;
+    let presence = controller.chat_presence();
     let sender = controller.sender();
-
     sender
         .set_presence(&GlobalChatPresence {
             url: "".to_string(),
             platform: "Terminal UI".to_string(),
         })
         .await;
+    {
+        *page.sender.lock().await = Some(sender);
+    }
 
     page.chat_set_loading("Waiting for chat...").await;
     controller.wait_joined().await?;
 
     page.chat_set_empty(controller.node_identity()).await;
 
-    let presence = controller.chat_presence();
     let recv = controller.receiver().await;
 
     loop {

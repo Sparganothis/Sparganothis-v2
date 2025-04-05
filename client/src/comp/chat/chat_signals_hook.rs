@@ -38,34 +38,18 @@ impl<T: ChatMessageType> ChatHistory<T> {
 async fn chat_do_send_message<T: ChatMessageType>(
     chat: ReadOnlySignal<Option<ChatController<T>>>,
     message: T::M,
-) -> Option<()> {
+) -> Option<ReceivedMessage<T>> {
     let Some(controller) = chat.peek().clone() else {
         return None;
     };
     let sender = controller.sender();
     match sender.broadcast_message(message).await {
-        Ok(_r) => Some(()),
+        Ok(r) => Some(r),
         Err(e) => {
             warn!("Failed to send message: {}", e);
             None
         }
     }
-}
-
-pub fn chat_send_message_preview<T: ChatMessageType>(
-    mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
-    message: T::M,
-) -> Option<ReceivedMessage<T>> {
-    let Some(mm) = mm.peek().clone() else {
-        return None;
-    };
-    Some(ReceivedMessage {
-        _sender_timestamp: datetime_now(),
-        _received_timestamp: datetime_now(),
-        _message_id: uuid::Uuid::new_v4(),
-        from: mm.own_node_identity(),
-        message: message.clone(),
-    })
 }
 
 pub type ChatControllerSignal<T> = ReadOnlySignal<Option<ChatController<T>>>;
@@ -75,7 +59,7 @@ pub struct ChatSignals<T: ChatMessageType> {
     pub chat: ChatControllerSignal<T>,
     pub presence: ReadOnlySignal<PresenceList<T>>,
     pub history: Signal<ChatHistory<T>>,
-    pub send_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
+    pub send_user_message: Callback<T::M>,
 }
 
 fn use_chat_controller_signal<
@@ -169,26 +153,26 @@ fn use_chat_history_signal<T: ChatMessageType>(
 fn use_chat_send_message_callback<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
     mut history: Signal<ChatHistory<T>>,
-) -> Callback<T::M, Option<ReceivedMessage<T>>> {
+) -> Callback<T::M> {
     let mm = use_context::<NetworkState>().global_mm;
     let coro =
         use_coroutine(move |mut n: UnboundedReceiver<T::M>| async move {
             while let Some(message) = n.next().await {
-                chat_do_send_message(chat.into(), message).await;
+                match chat_do_send_message(chat.into(), message).await {
+                    Some(r) => {
+                        history.write().push(Ok(r));
+                    }
+                    None => {
+                        history
+                            .write()
+                            .push(Err("Failed to send message".to_string()));
+                    }
+                }
             }
         });
     let on_user_message =
         Callback::new(move |message: <T as IChatRoomType>::M| {
-            let m = chat_send_message_preview(mm.clone(), message);
-            if let Some(m) = &m {
-                history.write().push(Ok(m.clone()));
-                coro.send(m.message.clone());
-            } else {
-                history
-                    .write()
-                    .push(Err("Failed to send message".to_string()));
-            }
-            m
+            coro.send(message.clone());
         });
     on_user_message
 }

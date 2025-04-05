@@ -286,19 +286,40 @@ pub struct ChatSender<T: IChatRoomType> {
 
 #[async_trait::async_trait]
 impl<T: IChatRoomType> IChatSender<T> for ChatSender<T> {
-    async fn broadcast_message(&self, message: T::M) -> anyhow::Result<()> {
-        let message = ChatMessage::<T>::Message(message);
-        let message = self.message_signer.sign_and_encode(message)?;
-        self.inner.broadcast_message(message).await
+    async fn broadcast_message(
+        &self,
+        message: T::M,
+    ) -> anyhow::Result<ReceivedMessage<T>> {
+        let message2 = ChatMessage::<T>::Message(message.clone());
+        let (bytes, sent_preview) =
+            self.message_signer.sign_and_encode(message2)?;
+        self.inner.broadcast_message(bytes).await?;
+        let sent_preview = ReceivedMessage::<T> {
+            _sender_timestamp: sent_preview._timestamp,
+            _received_timestamp: datetime_now(),
+            _message_id: sent_preview._message_id,
+            from: sent_preview.from,
+            message,
+        };
+        Ok(sent_preview)
     }
     async fn direct_message(
         &self,
         to: NodeIdentity,
         message: T::M,
-    ) -> anyhow::Result<()> {
-        let message = ChatMessage::<T>::Message(message);
-        let message = self.message_signer.sign_and_encode(message)?;
-        self.inner.direct_message(to, message).await
+    ) -> anyhow::Result<ReceivedMessage<T>> {
+        let message2 = ChatMessage::<T>::Message(message.clone());
+        let (bytes, sent_preview) =
+            self.message_signer.sign_and_encode(message2)?;
+        self.inner.direct_message(to, bytes).await?;
+        let received_message = ReceivedMessage::<T> {
+            _sender_timestamp: sent_preview._timestamp,
+            _received_timestamp: datetime_now(),
+            _message_id: sent_preview._message_id,
+            from: sent_preview.from,
+            message,
+        };
+        Ok(received_message)
     }
     async fn join_peers(&self, peers: Vec<NodeId>) -> anyhow::Result<()> {
         self.inner.join_peers(peers).await
@@ -318,14 +339,13 @@ impl<T: IChatRoomType> ChatSender<T> {
             .add_presence(&self.message_signer.node_identity, &presence)
             .await;
         let presence = ChatMessage::<T>::Presence(presence);
-        let presence = self.message_signer.sign_and_encode(presence)?;
+        let (presence, _) = self.message_signer.sign_and_encode(presence)?;
         self.inner.broadcast_message(presence).await
     }
     async fn direct_presence(&self, to: NodeIdentity) -> anyhow::Result<()> {
         let presence = { self.current_presence.lock().await.clone() };
-
         let presence = ChatMessage::<T>::Presence(presence);
-        let presence = self.message_signer.sign_and_encode(presence)?;
+        let (presence, _) = self.message_signer.sign_and_encode(presence)?;
         self.inner.direct_message(to, presence).await
     }
     async fn direct_pong(
@@ -334,7 +354,7 @@ impl<T: IChatRoomType> ChatSender<T> {
         ping_sender_ts: DateTime<Utc>,
     ) -> anyhow::Result<()> {
         let pong = ChatMessage::<T>::Pong { ping_sender_ts };
-        let pong = self.message_signer.sign_and_encode(pong)?;
+        let (pong, _) = self.message_signer.sign_and_encode(pong)?;
         self.inner.direct_message(to, pong).await
     }
 }
@@ -343,12 +363,15 @@ impl<T: IChatRoomType> ChatSender<T> {
 pub trait IChatSender<T: IChatRoomType>:
     Send + Sync + 'static + std::fmt::Debug
 {
-    async fn broadcast_message(&self, message: T::M) -> anyhow::Result<()>;
+    async fn broadcast_message(
+        &self,
+        message: T::M,
+    ) -> anyhow::Result<ReceivedMessage<T>>;
     async fn direct_message(
         &self,
         to: NodeIdentity,
         message: T::M,
-    ) -> anyhow::Result<()>;
+    ) -> anyhow::Result<ReceivedMessage<T>>;
     async fn join_peers(&self, peers: Vec<NodeId>) -> anyhow::Result<()>;
     async fn set_presence(&self, presence: &T::P);
 }

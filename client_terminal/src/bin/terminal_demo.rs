@@ -93,7 +93,8 @@ impl App {
     /// This is the main event loop for the app.
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         while self.is_running() {
-            terminal.draw(|frame| frame.render_widget(&mut self, frame.area()))?;
+            terminal
+                .draw(|frame| frame.render_widget(&mut self, frame.area()))?;
             self.handle_events()?;
         }
         Ok(())
@@ -113,7 +114,9 @@ impl App {
         let timeout = Duration::from_secs_f32(1.0 / 60.0);
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
+                if key.kind == KeyEventKind::Press
+                    && key.code == KeyCode::Char('q')
+                {
                     self.state = AppState::Quit;
                 }
             }

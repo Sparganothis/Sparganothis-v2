@@ -7,7 +7,7 @@ use super::chat_traits::ChatMessageType;
 
 #[component]
 pub fn ChatInput<T: ChatMessageType>(
-    on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
+    on_user_message: Callback<T::M>,
 ) -> Element {
     let mut message_input = use_signal(String::new);
     let is_connected = use_context::<NetworkState>().is_connected;
@@ -16,12 +16,8 @@ pub fn ChatInput<T: ChatMessageType>(
         let mut _i = message_input.write();
         let message = _i.clone();
         let message = T::from_user_input(message);
-        let m = on_user_message.call(message.clone());
-        if let Some(_m) = m {
-            _i.clear();
-        } else {
-            warn!("Failed to send message");
-        }
+        on_user_message.call(message.clone());
+        _i.clear();
     });
     let disabled = use_memo(move || {
         let m = message_input.read().clone();

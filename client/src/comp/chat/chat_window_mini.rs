@@ -115,7 +115,7 @@ fn MiniChatImpl<T: ChatMessageType>(
     tabs_select: Signal<MiniChatTabSelection>,
     presence: ReadOnlySignal<PresenceList<T>>,
     history: ReadOnlySignal<ChatHistory<T>>,
-    on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
+    on_user_message: Callback<T::M>,
 ) -> Element {
     rsx! {
         div {
@@ -171,7 +171,7 @@ fn MiniChatImpl<T: ChatMessageType>(
 #[component]
 fn MiniChatFooter<T: ChatMessageType>(
     selected: Signal<MiniChatTabSelection>,
-    on_user_message: Callback<T::M, Option<ReceivedMessage<T>>>,
+    on_user_message: Callback<T::M>,
 ) -> Element {
     match *selected.read() {
         MiniChatTabSelection::Minified => rsx! {

@@ -30,7 +30,14 @@ pub fn draw_chat(frame: &mut Frame, data: &ChatPageState) {
             own_identity,
             presence,
             msg_history,
-        } => draw_chat_ui(frame, own_identity, presence, msg_history),
+            input_buffer,
+        } => draw_chat_ui(
+            frame,
+            own_identity,
+            presence,
+            msg_history,
+            input_buffer,
+        ),
     }
 }
 
@@ -39,10 +46,11 @@ fn draw_chat_ui(
     own_identity: &NodeIdentity,
     presence: &PresenceList<GlobalChatMessageType>,
     msg_history: &Vec<ReceivedMessage<GlobalChatMessageType>>,
+    input_buffer: &str,
 ) {
     use Constraint::{Fill, Length, Min};
-    let vertical = Layout::vertical([Length(3), Min(0)]);
-    let [title_area, main_area] = vertical.areas(frame.area());
+    let vertical = Layout::vertical([Length(3), Min(0), Length(3)]);
+    let [title_area, main_area, input_area] = vertical.areas(frame.area());
     let horizontal = Layout::horizontal([Fill(1), Fill(2)]);
     let [left_area, right_area] = horizontal.areas(main_area);
 
@@ -51,7 +59,11 @@ fn draw_chat_ui(
         .block(title_bar)
         .centered();
 
+    let input_bar = Block::bordered().title("Input");
+    let input_bar = Paragraph::new(input_buffer).block(input_bar);
+
     frame.render_widget(title_bar, title_area);
     presence::draw_presence_list(frame, left_area, presence);
     history::draw_chat_messages(frame, right_area, msg_history, own_identity);
+    frame.render_widget(input_bar, input_area);
 }
