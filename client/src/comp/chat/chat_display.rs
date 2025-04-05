@@ -75,7 +75,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
         own_node_id == Some(identity.node_id().clone())
     });
     let identity = identity.read().clone();
-    let own_color = identity.color();
+    let own_color = identity.html_color();
 
     let color = match presence_flag.read().clone() {
         PresenceFlag::ACTIVE => "darkgreen",
@@ -208,7 +208,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
     let from_nickname = from.nickname();
     // let from_user_id = from.user_id().fmt_short();
     // let from_node_id = from.node_id().fmt_short();
-    let from_color = from.color();
+    let from_color = from.html_color();
     let align = if from.user_id() != &my_user_id {
         "left"
     } else {

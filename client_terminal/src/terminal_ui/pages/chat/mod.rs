@@ -17,7 +17,6 @@ use protocol::{
     user_identity::{NodeIdentity, UserIdentitySecrets},
     ReceivedMessage,
 };
-use ratatui::widgets::Paragraph;
 use tokio::sync::{Mutex, Notify};
 
 #[derive(Debug)]

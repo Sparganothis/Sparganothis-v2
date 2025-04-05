@@ -1,17 +1,12 @@
 use protocol::chat_presence::{PresenceFlag, PresenceList};
 use protocol::global_matchmaker::GlobalChatMessageType;
-use protocol::ReceivedMessage;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
 use std::time::Duration;
-
-use ratatui::{
-    layout::{Constraint, Layout},
-    widgets::Block,
-};
+use ratatui::widgets::Block;
 
 fn truncate_string(s: &str, max_len: usize) -> String {
     s.split_whitespace()

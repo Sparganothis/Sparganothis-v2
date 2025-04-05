@@ -14,14 +14,18 @@ impl UserIdentity {
     pub fn user_id(&self) -> &PublicKey {
         &self.user_id
     }
-    pub fn color(&self) -> String {
+    pub fn html_color(&self) -> String {
+        let color = self.rgb_color();
+        format!("rgb({},{},{})", color.0, color.1, color.2)
+    }
+    pub fn rgb_color(&self) -> (u8, u8, u8) {
         let pubkey_bytes = self.user_id.as_bytes();
         let mut color = [0_u8; 3];
         for i in 0..32 {
             let k = i % 3 as usize;
             color[k] = color[k] ^ pubkey_bytes[i];
         }
-        format!("rgb({},{},{})", color[0], color[1], color[2])
+        (color[0], color[1], color[2])
     }
 }
 
@@ -78,8 +82,11 @@ impl NodeIdentity {
             self.user_identity.nickname().to_string()
         }
     }
-    pub fn color(&self) -> String {
-        self.user_identity.color()
+    pub fn html_color(&self) -> String {
+        self.user_identity.html_color()
+    }
+    pub fn rgb_color(&self) -> (u8, u8, u8) {
+        self.user_identity.rgb_color()
     }
     pub fn user_id(&self) -> &PublicKey {
         &self.user_identity.user_id()

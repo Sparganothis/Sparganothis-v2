@@ -27,6 +27,7 @@ line_drawing = "1"
 # game = { path = "../game" }
 tui-big-text = "0.7.1"
 async-trait = "0.1.88"
+palette = "0.7.6"
 
 [lints]
 workspace = true

@@ -1,18 +1,13 @@
-use protocol::chat_presence::PresenceList;
 use protocol::global_matchmaker::GlobalChatMessageType;
 use protocol::user_identity::NodeIdentity;
 use protocol::{datetime_now, ReceivedMessage};
-use ratatui::layout::Rect;
+use ratatui::layout::{Rect, Layout, Direction, Constraint};
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
-use std::time::Duration;
 
-use ratatui::{
-    layout::{Constraint, Layout},
-    widgets::Block,
-};
+use ratatui::widgets::Block;
 
 pub fn draw_chat_messages(
     frame: &mut Frame,
@@ -20,9 +15,9 @@ pub fn draw_chat_messages(
     data: &Vec<ReceivedMessage<GlobalChatMessageType>>,
     own_identity: &NodeIdentity,
 ) {
-    let block = Block::bordered().title("Chat Messages");
+    let mut current_y = area.y;
+    let mut current_height = 0;
 
-    let mut lines = Vec::new();
     for msg in data {
         let now = datetime_now();
         let elapsed = now
@@ -38,18 +33,20 @@ pub fn draw_chat_messages(
         };
 
         // Determine alignment and color based on sender
-        let (alignment, color) = if msg.from.user_id() == own_identity.user_id()
-        {
-            (ratatui::layout::Alignment::Right, Color::Green)
+        let alignment = if msg.from.user_id() == own_identity.user_id() {
+            ratatui::layout::Alignment::Right
         } else {
-            (ratatui::layout::Alignment::Left, Color::Cyan)
+            ratatui::layout::Alignment::Left
         };
+        let color = msg.from.rgb_color();
+        let color = Color::Rgb(color.0, color.1, color.2);
 
         // Create message box
         let box_style = Style::default().fg(color);
         let box_border = Block::default()
             .borders(ratatui::widgets::Borders::ALL)
-            .style(box_style);
+            .style(box_style)
+            .title_alignment(alignment);
 
         // Create header with nickname and timestamp
         let header = Line::from(vec![
@@ -65,15 +62,31 @@ pub fn draw_chat_messages(
             .map(|line| Line::from(vec![Span::raw(line)]))
             .collect();
 
-        // Add header and message lines
+        // Calculate message height (header + message lines + 2 for borders)
+        let message_height = 2 + message_lines.len() + 1; // +2 for borders, +1 for header
+
+        // Create message area
+        let message_area = Rect {
+            x: area.x,
+            y: current_y + current_height,
+            width: area.width,
+            height: message_height as u16,
+        };
+
+        // Create message text
+        let mut lines = Vec::new();
         lines.push(header);
         lines.extend(message_lines);
-        lines.push(Line::from("")); // Add empty line between messages
-    }
 
-    let text = Text::from(lines);
-    let messages = Paragraph::new(text)
-        .block(block)
-        .alignment(ratatui::layout::Alignment::Left);
-    frame.render_widget(messages, area);
+        let text = Text::from(lines);
+        let message = Paragraph::new(text)
+            .block(box_border)
+            .alignment(alignment)
+            .wrap(ratatui::widgets::Wrap { trim: true });
+
+        frame.render_widget(message, message_area);
+
+        // Update position for next message
+        current_height += message_height as u16;
+    }
 }
