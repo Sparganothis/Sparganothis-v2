@@ -4,8 +4,9 @@ async fn main() -> anyhow::Result<()> {
 
     let _r = n0_future::future::race(
         async move {
-            let _r = client_terminal::terminal_ui::terminal_loop(&mut terminal)
-                .await;
+            let _r =
+                client_terminal::terminal_ui::terminal_main_loop(&mut terminal)
+                    .await;
             println!("* cli_chat_window closed: {:?}", _r);
         },
         async move {
@@ -16,7 +17,6 @@ async fn main() -> anyhow::Result<()> {
     .await;
 
     ratatui::restore();
-    println!("* shutting down...");
 
     println!("* shutdown OK");
     // std::process::exit(0);

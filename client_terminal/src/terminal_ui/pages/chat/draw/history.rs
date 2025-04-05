@@ -1,12 +1,12 @@
 use protocol::chat_presence::PresenceList;
 use protocol::global_matchmaker::GlobalChatMessageType;
-use protocol::{datetime_now, ReceivedMessage};
 use protocol::user_identity::NodeIdentity;
+use protocol::{datetime_now, ReceivedMessage};
 use ratatui::layout::Rect;
+use ratatui::style::{Color, Style};
+use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
-use ratatui::style::{Color, Style};
-use ratatui::text::{Text, Line, Span};
 use std::time::Duration;
 
 use ratatui::{
@@ -21,11 +21,14 @@ pub fn draw_chat_messages(
     own_identity: &NodeIdentity,
 ) {
     let block = Block::bordered().title("Chat Messages");
-    
+
     let mut lines = Vec::new();
     for msg in data {
         let now = datetime_now();
-        let elapsed = now.signed_duration_since(msg._received_timestamp).abs().num_seconds();
+        let elapsed = now
+            .signed_duration_since(msg._received_timestamp)
+            .abs()
+            .num_seconds();
         let elapsed_txt = if elapsed < 60 {
             format!("{}s ago", elapsed)
         } else if elapsed < 3600 {
@@ -35,7 +38,8 @@ pub fn draw_chat_messages(
         };
 
         // Determine alignment and color based on sender
-        let (alignment, color) = if msg.from.user_id() == own_identity.user_id() {
+        let (alignment, color) = if msg.from.user_id() == own_identity.user_id()
+        {
             (ratatui::layout::Alignment::Right, Color::Green)
         } else {
             (ratatui::layout::Alignment::Left, Color::Cyan)
@@ -55,7 +59,8 @@ pub fn draw_chat_messages(
         ]);
 
         // Split message into lines if it's too long
-        let message_lines: Vec<Line> = msg.message
+        let message_lines: Vec<Line> = msg
+            .message
             .split('\n')
             .map(|line| Line::from(vec![Span::raw(line)]))
             .collect();

@@ -2,10 +2,10 @@ use protocol::chat_presence::{PresenceFlag, PresenceList};
 use protocol::global_matchmaker::GlobalChatMessageType;
 use protocol::ReceivedMessage;
 use ratatui::layout::Rect;
+use ratatui::style::{Color, Style};
+use ratatui::text::{Line, Span, Text};
 use ratatui::widgets::Paragraph;
 use ratatui::Frame;
-use ratatui::style::{Color, Style};
-use ratatui::text::{Text, Line, Span};
 use std::time::Duration;
 
 use ratatui::{
@@ -34,7 +34,7 @@ pub fn draw_presence_list(
     data: &PresenceList<GlobalChatMessageType>,
 ) {
     let block = Block::bordered().title("Presence List");
-    
+
     let mut lines = Vec::new();
     for item in data {
         let status_color = match item.presence_flag {
@@ -53,8 +53,11 @@ pub fn draw_presence_list(
             format!("{}h ago", elapsed.as_secs() / 3600)
         };
 
-        let rtt_txt = item.rtt.map(|rtt| format!(" ({}ms)", rtt)).unwrap_or_default();
-        
+        let rtt_txt = item
+            .rtt
+            .map(|rtt| format!(" ({}ms)", rtt))
+            .unwrap_or_default();
+
         let status = match item.presence_flag {
             PresenceFlag::ACTIVE => "Active",
             PresenceFlag::IDLE => "Idle",
@@ -64,9 +67,10 @@ pub fn draw_presence_list(
 
         // First line: truncated name
         let truncated_name = truncate_string(&item.identity.nickname(), 15);
-        let name_line = Line::from(vec![
-            Span::styled(truncated_name, Style::default().fg(status_color)),
-        ]);
+        let name_line = Line::from(vec![Span::styled(
+            truncated_name,
+            Style::default().fg(status_color),
+        )]);
         lines.push(name_line);
 
         // Second line: status info
