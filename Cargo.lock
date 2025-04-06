@@ -1203,6 +1203,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-channel",
+ "bincode",
  "chrono",
  "clap",
  "console_error_panic_hook",
