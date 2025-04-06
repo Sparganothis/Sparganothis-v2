@@ -28,13 +28,13 @@ fn default_keymap() -> HashMap<Code, GameInputEventKey> {
 
     map.insert(Code::ArrowLeft, GameInputEventKey::MoveLeft);
     map.insert(Code::ArrowRight, GameInputEventKey::MoveRight);
-    
+
     map.insert(Code::ArrowDown, GameInputEventKey::SoftDrop);
 
     map.insert(Code::KeyC, GameInputEventKey::Hold);
     map.insert(Code::ShiftLeft, GameInputEventKey::Hold);
     map.insert(Code::ShiftRight, GameInputEventKey::Hold);
-    
+
     map.insert(Code::Space, GameInputEventKey::HardDrop);
     map.insert(Code::Enter, GameInputEventKey::HardDrop);
     map.insert(Code::NumpadEnter, GameInputEventKey::HardDrop);

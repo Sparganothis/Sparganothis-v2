@@ -22,7 +22,6 @@ pub mod tests {
     }
 }
 
-
 pub use futures_channel;
 pub use futures_core;
 pub use futures_util;

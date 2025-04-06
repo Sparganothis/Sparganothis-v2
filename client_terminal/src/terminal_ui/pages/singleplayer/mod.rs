@@ -4,7 +4,15 @@ use crate::terminal_ui::router::{Drawable, DynamicPage, Page, PageFactory};
 use async_trait::async_trait;
 use crossterm::event::{Event, KeyCode, KeyEventKind, ModifierKeyCode};
 use futures::StreamExt;
-use game::{input::{callback_manager::CallbackManager, events::{GameInputEvent, GameInputEventKey, GameInputEventType}}, settings::GameSettings, tet::GameState, timestamp::get_timestamp_now_ms};
+use game::{
+    input::{
+        callback_manager::CallbackManager,
+        events::{GameInputEvent, GameInputEventKey, GameInputEventType},
+    },
+    settings::GameSettings,
+    tet::GameState,
+    timestamp::get_timestamp_now_ms,
+};
 use n0_future::task::AbortOnDropHandle;
 use protocol::datetime_now;
 use ratatui::widgets::Paragraph;
@@ -15,7 +23,8 @@ pub struct SingleplayerPageFactory;
 
 impl PageFactory for SingleplayerPageFactory {
     fn create_page(&self, notify: Arc<Notify>) -> DynamicPage {
-        let (event_tx, event_rx) = game::futures_channel::mpsc::unbounded::<GameInputEvent>();
+        let (event_tx, event_rx) =
+            game::futures_channel::mpsc::unbounded::<GameInputEvent>();
         let page = SingleplayerPage {
             _notify: notify,
             data: Arc::new(Mutex::new(SingleplayerPageState {
@@ -32,9 +41,8 @@ impl PageFactory for SingleplayerPageFactory {
             futures::pin_mut!(_s);
             while let Some(event) = _s.next().await {
                 let mut data = _page.data.lock().await;
-                if let Ok(next) = data
-                    .game_state
-                    .try_action(event, get_timestamp_now_ms())
+                if let Ok(next) =
+                    data.game_state.try_action(event, get_timestamp_now_ms())
                 {
                     data.game_state = next;
                 } else if data.game_state.game_over() {
@@ -70,28 +78,34 @@ impl Page for SingleplayerPage {
             return;
         };
         let key2 = match key.code {
-
             KeyCode::Char('z') => Some(GameInputEventKey::RotateLeft),
 
             KeyCode::Char('x') => Some(GameInputEventKey::RotateRight),
             KeyCode::Up => Some(GameInputEventKey::RotateRight),
-            KeyCode::Modifier(ModifierKeyCode::LeftControl) => Some(GameInputEventKey::RotateRight),
-            KeyCode::Modifier(ModifierKeyCode::RightControl) => Some(GameInputEventKey::RotateRight),
+            KeyCode::Modifier(ModifierKeyCode::LeftControl) => {
+                Some(GameInputEventKey::RotateRight)
+            }
+            KeyCode::Modifier(ModifierKeyCode::RightControl) => {
+                Some(GameInputEventKey::RotateRight)
+            }
 
             KeyCode::Left => Some(GameInputEventKey::MoveLeft),
             KeyCode::Right => Some(GameInputEventKey::MoveRight),
 
             KeyCode::Down => Some(GameInputEventKey::SoftDrop),
-            
+
             KeyCode::Char('c') => Some(GameInputEventKey::Hold),
-            KeyCode::Modifier(ModifierKeyCode::LeftShift) => Some(GameInputEventKey::Hold),
-            KeyCode::Modifier(ModifierKeyCode::RightShift) => Some(GameInputEventKey::Hold),
-            
+            KeyCode::Modifier(ModifierKeyCode::LeftShift) => {
+                Some(GameInputEventKey::Hold)
+            }
+            KeyCode::Modifier(ModifierKeyCode::RightShift) => {
+                Some(GameInputEventKey::Hold)
+            }
 
             KeyCode::Char(' ') => Some(GameInputEventKey::HardDrop),
             KeyCode::Enter => Some(GameInputEventKey::HardDrop),
             KeyCode::Char('0') => Some(GameInputEventKey::HardDrop),
-            
+
             KeyCode::Char('q') => Some(GameInputEventKey::MenuEscape),
             KeyCode::Char('p') => Some(GameInputEventKey::MenuPause),
             KeyCode::Char('m') => Some(GameInputEventKey::MenuMuteSound),
