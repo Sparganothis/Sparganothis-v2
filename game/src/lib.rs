@@ -21,3 +21,8 @@ pub mod tests {
         assert_eq!(2 + 2, 4)
     }
 }
+
+
+pub use futures_channel;
+pub use futures_core;
+pub use futures_util;

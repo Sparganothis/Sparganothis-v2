@@ -19,23 +19,26 @@ impl Default for ButtonSettings {
 fn default_keymap() -> HashMap<Code, GameInputEventKey> {
     let mut map: HashMap<Code, GameInputEventKey> = HashMap::new();
 
+    map.insert(Code::KeyZ, GameInputEventKey::RotateLeft);
+
     map.insert(Code::KeyX, GameInputEventKey::RotateRight);
     map.insert(Code::ControlLeft, GameInputEventKey::RotateRight);
     map.insert(Code::ControlRight, GameInputEventKey::RotateRight);
     map.insert(Code::ArrowUp, GameInputEventKey::RotateRight);
 
-    map.insert(Code::ArrowDown, GameInputEventKey::SoftDrop);
-    map.insert(Code::Space, GameInputEventKey::HardDrop);
-    map.insert(Code::Enter, GameInputEventKey::HardDrop);
-    map.insert(Code::NumpadEnter, GameInputEventKey::HardDrop);
-    map.insert(Code::Numpad0, GameInputEventKey::HardDrop);
-    map.insert(Code::KeyZ, GameInputEventKey::RotateLeft);
     map.insert(Code::ArrowLeft, GameInputEventKey::MoveLeft);
     map.insert(Code::ArrowRight, GameInputEventKey::MoveRight);
+    
+    map.insert(Code::ArrowDown, GameInputEventKey::SoftDrop);
 
     map.insert(Code::KeyC, GameInputEventKey::Hold);
     map.insert(Code::ShiftLeft, GameInputEventKey::Hold);
     map.insert(Code::ShiftRight, GameInputEventKey::Hold);
+    
+    map.insert(Code::Space, GameInputEventKey::HardDrop);
+    map.insert(Code::Enter, GameInputEventKey::HardDrop);
+    map.insert(Code::NumpadEnter, GameInputEventKey::HardDrop);
+    map.insert(Code::Numpad0, GameInputEventKey::HardDrop);
 
     map.insert(Code::Escape, GameInputEventKey::MenuEscape);
     map.insert(Code::KeyM, GameInputEventKey::MenuMuteSound);
