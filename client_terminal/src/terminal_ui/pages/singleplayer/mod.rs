@@ -40,14 +40,19 @@ impl PageFactory for SingleplayerPageFactory {
             let _s = callback_manager.main_loop(event_rx, s.clone()).await;
             futures::pin_mut!(_s);
             while let Some(event) = _s.next().await {
-                let mut data = _page.data.lock().await;
-                if let Ok(next) =
-                    data.game_state.try_action(event, get_timestamp_now_ms())
                 {
-                    data.game_state = next;
-                } else if data.game_state.game_over() {
-                    data.game_state = GameState::empty();
+                    let mut data = _page.data.lock().await;
+                    if let Ok(next) = data
+                        .game_state
+                        .try_action(event, get_timestamp_now_ms())
+                    {
+                        data.game_state = next;
+                    } else if data.game_state.game_over() {
+                        data.game_state = GameState::empty();
+                    }
                 }
+                _page._notify.notify_waiters();
+                _page._notify.notify_one();
             }
         };
         let task = AbortOnDropHandle::new(n0_future::task::spawn(task));
