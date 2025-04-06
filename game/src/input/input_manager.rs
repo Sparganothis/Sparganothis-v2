@@ -1,8 +1,6 @@
 use std::collections::BTreeSet;
 use std::time::Duration;
 
-use chrono::{DateTime, Utc};
-
 use crate::input::events::GameInputEvent;
 use crate::tet::TetAction;
 
@@ -10,25 +8,33 @@ use crate::tet::TetAction;
 pub struct GameInputManager {
     new_held: BTreeSet<TetAction>,
     old_held: BTreeSet<TetAction>,
-    repeat_ms: u16,
+    move_auto_repeat_first_ms: u16,
+    move_auto_repeat_after_ms: u16,
+    move_auto_soft_drop_ms: u16
 }
 
 impl GameInputManager {
     pub fn new() -> Self {
         Self {
-            repeat_ms: 250,
+            move_auto_repeat_first_ms: 350,
+            move_auto_repeat_after_ms: 125,
+            move_auto_soft_drop_ms: 1250,
             new_held: BTreeSet::new(),
             old_held: BTreeSet::new(),
         }
     }
 
-    pub fn on_user_event(
+    pub fn on_user_keyboard_event(
         &mut self,
-        user_event: GameInputEvent,
-    ) -> Option<(TetAction, Option<std::time::Duration>)> {
-        let GameInputEvent { key, event, ts } = user_event;
+        user_keyboard_event: GameInputEvent,
+    ) -> UserEvent {
+        let GameInputEvent {
+            key,
+            event,
+            ts: _ts,
+        } = user_keyboard_event;
         let Some(action) = key.to_game_action() else {
-            return None;
+            return UserEvent::empty();
         };
         match event {
             super::events::GameInputEventType::KeyDown => {
@@ -45,28 +51,114 @@ impl GameInputManager {
 
         self.old_held = self.new_held.clone();
 
-        let cb = action == TetAction::MoveLeft
-            || action == TetAction::MoveRight
-            || action == TetAction::SoftDrop;
-
-        let cb = if cb {
-            Some(Duration::from_millis(self.repeat_ms as u64))
-        } else {
-            None
-        };
-        new_down.first().cloned().map(|c| (c, cb))
-    }
-
-    pub fn after_wait(
-        &mut self,
-        action: TetAction,
-    ) -> Option<(TetAction, Option<std::time::Duration>)> {
-        let cb = action == TetAction::MoveLeft
-            || action == TetAction::MoveRight
-            || action == TetAction::SoftDrop;
-        if !cb {
-            return None;
+        let mut cb = vec![];
+        for key_up in _new_up {
+            let move_type = match key_up {
+                TetAction::MoveLeft => CallbackMoveType::AutoMoveLeft,
+                TetAction::MoveRight => CallbackMoveType::AutoMoveRight,
+                TetAction::SoftDrop => CallbackMoveType::AutoMoveDown,
+                _ => continue,
+            };
+            cb.push(CallbackTicket {
+                request_type: CallbackRequestType::DropCallback,
+                move_type,
+                cb_duration: None,
+            })
         }
-        Some((action, Some(Duration::from_millis(self.repeat_ms as u64))))
+        for key_down in new_down.iter().cloned() {
+            let move_type = match key_down {
+                TetAction::MoveLeft => CallbackMoveType::AutoMoveLeft,
+                TetAction::MoveRight => CallbackMoveType::AutoMoveRight,
+                TetAction::SoftDrop => CallbackMoveType::AutoMoveDown,
+                _ => continue,
+            };
+            cb.push(CallbackTicket {
+                request_type: CallbackRequestType::SetCallback,
+                move_type,
+                cb_duration: Some(Duration::from_millis(self.move_auto_repeat_first_ms as u64)),
+            })
+        }
+        cb.push(CallbackTicket {
+            request_type: CallbackRequestType::SetCallback,
+            move_type: CallbackMoveType::AutoSoftDrop,
+            cb_duration: Some(Duration::from_micros(self.move_auto_soft_drop_ms as u64))
+        });
+
+        let event = UserEvent {
+            callback_tickets: cb,
+            action: new_down.first().cloned(),
+        };
+
+        event
     }
+
+    pub fn callback_after_wait(
+        &mut self,
+        callback_ticket: CallbackTicket
+    ) -> UserEvent {
+        assert!(callback_ticket.cb_duration.is_some());
+        assert!(callback_ticket.request_type == CallbackRequestType::SetCallback);
+        let action = match callback_ticket.move_type {
+            CallbackMoveType::AutoMoveDown => TetAction::SoftDrop,
+            CallbackMoveType::AutoMoveLeft => TetAction::MoveLeft,
+            CallbackMoveType::AutoMoveRight => TetAction::MoveRight,
+            CallbackMoveType::AutoSoftDrop=> TetAction::SoftDrop,
+        };
+        let mut cb = vec![];
+
+        let cb_duration = match callback_ticket.move_type {
+            CallbackMoveType::AutoSoftDrop => self.move_auto_soft_drop_ms,
+            CallbackMoveType::AutoMoveDown => self.move_auto_repeat_after_ms,
+            CallbackMoveType::AutoMoveLeft => self.move_auto_repeat_after_ms,
+            CallbackMoveType::AutoMoveRight => self.move_auto_repeat_after_ms,  
+        };
+        cb.push(CallbackTicket {
+            request_type: CallbackRequestType::SetCallback,
+            move_type: callback_ticket.move_type,
+            cb_duration: Some(Duration::from_millis(cb_duration as u64)),
+        });
+
+        UserEvent {
+            callback_tickets: cb,
+            action: Some(action)
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct UserEvent {
+    // set if game should get action
+    pub action: Option<TetAction>,
+    // if set, call in future using this ticket
+    pub callback_tickets: Vec<CallbackTicket>,
+}
+
+impl UserEvent {
+    fn empty() -> Self {
+        Self {
+            action: None,
+            callback_tickets: vec![],
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct CallbackTicket {
+    request_type: CallbackRequestType,
+    move_type: CallbackMoveType,
+    cb_duration: Option<Duration>,
+}
+
+#[derive(Clone,  Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CallbackMoveType {
+    AutoSoftDrop,
+    AutoMoveLeft,
+    AutoMoveRight,
+    AutoMoveDown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum CallbackRequestType {
+    SetCallback,
+    DropCallback,
 }

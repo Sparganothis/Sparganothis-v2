@@ -4,7 +4,7 @@ mod presence;
 use protocol::chat_presence::PresenceList;
 use protocol::global_matchmaker::GlobalChatMessageType;
 use protocol::user_identity::NodeIdentity;
-use protocol::{datetime_now, timestamp_micros, ReceivedMessage};
+use protocol::{datetime_now, ReceivedMessage};
 use ratatui::layout::{Constraint, Layout};
 use ratatui::style::{Style, Stylize};
 use ratatui::widgets::{Block, Paragraph};

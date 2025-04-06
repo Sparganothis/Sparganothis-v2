@@ -34,7 +34,7 @@ pub struct RouterInner {
 impl Router {
     pub async fn shutdown(&self) {
         let mut inner = self.inner.lock().await;
-        if let Some(mut page) = inner.current_page.take() {
+        if let Some(page) = inner.current_page.take() {
             page.shutdown().await;
         }
     }

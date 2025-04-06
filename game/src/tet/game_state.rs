@@ -203,19 +203,26 @@ impl GameState {
     pub fn get_debug_matrix_txt(&self) -> String {
         let mut brows: Vec<Vec<bool>> = vec![];
         for row in self.main_board.rows().into_iter().take(20) {
-            brows.push(row.iter().map(|x| match x {
-                CellValue::Piece(_) => true,
-                CellValue::Garbage => true,
-                CellValue::Empty => false,
-                CellValue::Ghost => false,
-            }).collect());
+            brows.push(
+                row.iter()
+                    .map(|x| match x {
+                        CellValue::Piece(_) => true,
+                        CellValue::Garbage => true,
+                        CellValue::Empty => false,
+                        CellValue::Ghost => false,
+                    })
+                    .collect(),
+            );
         }
         brows.reverse();
         let mut matrix_rows = vec![];
 
         matrix_rows.push("\n--------------------------".to_string());
         for (i, row) in brows.into_iter().enumerate() {
-            let row_str: Vec<_> = row.iter().map(|x| if *x {"██"} else {"  "}.to_string()).collect();
+            let row_str: Vec<_> = row
+                .iter()
+                .map(|x| if *x { "██" } else { "  " }.to_string())
+                .collect();
             let row_str = row_str.join("");
             let row_extra = match i {
                 1 => format!("current_pcs = {:?}", self.current_pcs),
@@ -236,7 +243,7 @@ impl GameState {
                 // 16 => format!("bot_moves_raw('wordpress') = {:?}", self.bot_moves_raw("wordpress".to_string())?),
                 // 17 => format!("bot_moves_raw('random') = {:?}", self.bot_moves_raw("random".to_string())?),
                 // 18 => format!("get_valid_move_chains().len() = {:?} / {:?}", self.get_valid_move_chains()?.len(), get_all_move_chains().len()),
-                _ => "".to_string()
+                _ => "".to_string(),
             };
             matrix_rows.push(format!(" | {row_str} | {row_extra}"));
         }
