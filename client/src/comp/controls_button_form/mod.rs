@@ -6,9 +6,8 @@ use dioxus::prelude::*;
 
 use crate::comp::settings_form::GameSettingsInputPreview;
 #[component]
-pub fn 
-GameControlsButtonsForm () -> Element {
-    rsx! {       
+pub fn GameControlsButtonsForm() -> Element {
+    rsx! {
         article {
         style: "
             display: flex;
@@ -35,7 +34,7 @@ GameControlsButtonsForm () -> Element {
                 margin: 10px;
             ",
             GameSettingsInputPreview {}
-           
+
         }
     }
     }

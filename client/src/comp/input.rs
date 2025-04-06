@@ -71,9 +71,10 @@ pub fn GameInputCaptureParent(
     }
 }
 
-
-
-fn keyboard_data_to_game_key(key: &KeyboardData, btn_s: &ButtonSettings) -> Option<GameInputEventKey> {
+fn keyboard_data_to_game_key(
+    key: &KeyboardData,
+    btn_s: &ButtonSettings,
+) -> Option<GameInputEventKey> {
     if key.is_auto_repeating() {
         return None;
     }

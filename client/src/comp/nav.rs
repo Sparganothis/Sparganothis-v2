@@ -64,7 +64,6 @@ fn GithubIcon() -> Element {
     }
 }
 
-
 #[component]
 fn LinkDropdownProfile(my_nickname: ReadOnlySignal<String>) -> Element {
     rsx! {

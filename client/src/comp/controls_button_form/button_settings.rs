@@ -5,12 +5,14 @@ use game::input::events::GameInputEventKey;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
 pub struct ButtonSettings {
-    pub map:  HashMap<Code, GameInputEventKey>
+    pub map: HashMap<Code, GameInputEventKey>,
 }
 
 impl Default for ButtonSettings {
     fn default() -> Self {
-        Self { map: default_keymap() }
+        Self {
+            map: default_keymap(),
+        }
     }
 }
 

@@ -1,12 +1,12 @@
 pub mod bot_player;
 pub mod chat;
+pub mod controls_button_form;
+pub mod cosmetic;
 pub mod game_display;
 pub mod icon;
 pub mod input;
 pub mod modal;
 pub mod nav;
+pub mod settings_form;
 pub mod slider;
 pub mod user_info_display;
-pub mod settings_form;
-pub mod cosmetic;
-pub mod controls_button_form;

@@ -68,13 +68,17 @@ impl GameInputManager {
                 _ => continue,
             };
             cb.push(CallbackTicket {
-                request_type: CallbackRequestType::SetCallback(game_settings.input.autorepeat_delay_initial),
+                request_type: CallbackRequestType::SetCallback(
+                    game_settings.input.autorepeat_delay_initial,
+                ),
                 move_type,
             })
         }
         if action == TetAction::HardDrop || action == TetAction::SoftDrop {
             cb.push(CallbackTicket {
-                request_type: CallbackRequestType::SetCallback(game_settings.game.auto_softdrop_interval),
+                request_type: CallbackRequestType::SetCallback(
+                    game_settings.game.auto_softdrop_interval,
+                ),
                 move_type: CallbackMoveType::AutoSoftDrop,
             });
         }
@@ -90,7 +94,7 @@ impl GameInputManager {
     pub fn callback_after_wait(
         &mut self,
         callback_move_type: CallbackMoveType,
-        game_settings: GameSettings
+        game_settings: GameSettings,
     ) -> UserEvent {
         let action = match callback_move_type {
             CallbackMoveType::AutoMoveDown => TetAction::SoftDrop,
@@ -103,9 +107,15 @@ impl GameInputManager {
         let cb_duration = match callback_move_type {
             // TODO: if game's next soft drop will lock, put a longer timeout here
             CallbackMoveType::AutoSoftDrop => game_settings.game.auto_softdrop_interval,
-            CallbackMoveType::AutoMoveDown => game_settings.input.autorepeat_delay_after,
-            CallbackMoveType::AutoMoveLeft => game_settings.input.autorepeat_delay_after,
-            CallbackMoveType::AutoMoveRight => game_settings.input.autorepeat_delay_after,
+            CallbackMoveType::AutoMoveDown => {
+                game_settings.input.autorepeat_delay_after
+            }
+            CallbackMoveType::AutoMoveLeft => {
+                game_settings.input.autorepeat_delay_after
+            }
+            CallbackMoveType::AutoMoveRight => {
+                game_settings.input.autorepeat_delay_after
+            }
         };
         cb.push(CallbackTicket {
             request_type: CallbackRequestType::SetCallback(cb_duration),

@@ -1,4 +1,3 @@
-
 use crate::localstorage::use_button_settings;
 
 use dioxus::prelude::*;
@@ -20,14 +19,13 @@ pub fn ButtonsForm() -> Element {
 
             for (btn_code, btn_event) in btn_map.iter() {
                 Button {
-                    btn_code: *btn_code, 
+                    btn_code: *btn_code,
                     btn_event: *btn_event,
                 }
             }
         }
     }
 }
-
 
 #[component]
 fn Button(btn_code: Code, btn_event: GameInputEventKey) -> Element {
@@ -48,6 +46,6 @@ fn Button(btn_code: Code, btn_event: GameInputEventKey) -> Element {
 {btn_event:#?}",
                 }
             }  }
-        }   
+        }
     }
 }

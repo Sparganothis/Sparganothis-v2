@@ -12,13 +12,16 @@ use game::{
 use n0_future::StreamExt;
 use tracing::warn;
 
-use crate::{comp::{game_display::GameDisplay, input::GameInputCaptureParent}, localstorage::use_game_settings};
+use crate::{
+    comp::{game_display::GameDisplay, input::GameInputCaptureParent},
+    localstorage::use_game_settings,
+};
 
 /// Home page
 #[component]
 pub fn Singleplayer() -> Element {
     rsx! {
-        article { 
+        article {
             style: "height: 80dvh; display: flex;",
             SingleplayerGameBoard {}
         }
@@ -56,7 +59,9 @@ pub fn SingleplayerGameBoard() -> Element {
                 let (duration_ms, items) =
                     callback_manager.get_sleep_duration_ms().await;
                 for _move in items {
-                    let x = input_manager.write().callback_after_wait(_move, game_settings);
+                    let x = input_manager
+                        .write()
+                        .callback_after_wait(_move, game_settings);
                     let y = callback_manager.accept_user_event(x).await;
                     if let Some(action) = y {
                         on_tet_action.call(action);
@@ -91,7 +96,9 @@ pub fn SingleplayerGameBoard() -> Element {
 
     let on_user_event = Callback::new(move |event: GameInputEvent| {
         let settings = use_game_settings();
-        let event = input_manager.write().on_user_keyboard_event(event, settings);
+        let event = input_manager
+            .write()
+            .on_user_keyboard_event(event, settings);
         ticket_manager.send(event);
     });
     rsx! {
@@ -99,7 +106,7 @@ pub fn SingleplayerGameBoard() -> Element {
             on_user_event,
 
                 GameDisplay { game_state }
-            
+
         }
     }
 }

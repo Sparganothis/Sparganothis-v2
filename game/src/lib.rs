@@ -7,9 +7,9 @@ pub mod api;
 pub mod bot;
 pub mod git_version;
 pub mod input;
+pub mod settings;
 pub mod tet;
 pub mod timestamp;
-pub mod settings;
 
 #[cfg(test)]
 pub mod tests {

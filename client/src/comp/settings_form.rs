@@ -2,7 +2,11 @@ use std::time::Duration;
 
 use dioxus::prelude::*;
 
-use crate::{comp::slider::Slider, localstorage::{set_game_settings, use_game_settings}, pages::SingleplayerGameBoard};
+use crate::{
+    comp::slider::Slider,
+    localstorage::{set_game_settings, use_game_settings},
+    pages::SingleplayerGameBoard,
+};
 
 #[component]
 pub fn SettingsForm() -> Element {
@@ -33,7 +37,7 @@ pub fn SettingsForm() -> Element {
                     margin: 10px;
                 ",
                 GameSettingsInputPreview {}
-                
+
             }
         }
     }
@@ -64,7 +68,8 @@ pub fn GameInputSettings() -> Element {
 #[component]
 fn InitialRepeatDelaySlider() -> Element {
     let old_settings = use_game_settings();
-    let old_init = old_settings.input.autorepeat_delay_initial.as_millis() as u16;
+    let old_init =
+        old_settings.input.autorepeat_delay_initial.as_millis() as u16;
     let label_initial = use_signal(|| "Initial Repeat Delay (ms)".to_string());
     let slidr_delay_init = use_signal(|| old_init);
     use_effect(move || {
@@ -72,9 +77,8 @@ fn InitialRepeatDelaySlider() -> Element {
         let init = init.clamp(4, 666);
         if init != old_init {
             let mut new_settings = old_settings;
-            new_settings.input.autorepeat_delay_initial = Duration::from_millis(
-                init as u64
-            );
+            new_settings.input.autorepeat_delay_initial =
+                Duration::from_millis(init as u64);
             set_game_settings(new_settings);
         }
     });
@@ -95,18 +99,16 @@ fn InitialRepeatDelaySlider() -> Element {
 fn AfterRepeatDelaySlider() -> Element {
     let old_settings = use_game_settings();
     let old_init = old_settings.input.autorepeat_delay_after.as_millis() as u16;
-        
-    let label_initial = use_signal(|| 
-        "Repeat Delay (ms)".to_string());
+
+    let label_initial = use_signal(|| "Repeat Delay (ms)".to_string());
     let slidr_delay_after = use_signal(|| old_init);
     use_effect(move || {
         let init = slidr_delay_after.read().clone();
         let init = init.clamp(4, 666);
         if init != old_init {
             let mut new_settings = old_settings;
-            new_settings.input.autorepeat_delay_after = Duration::from_millis(
-                init as u64
-            );
+            new_settings.input.autorepeat_delay_after =
+                Duration::from_millis(init as u64);
             set_game_settings(new_settings);
         }
     });
@@ -124,7 +126,6 @@ fn AfterRepeatDelaySlider() -> Element {
     }
 }
 
-
 #[component]
 pub fn GameDifficultySettings() -> Element {
     rsx! {
@@ -132,23 +133,21 @@ pub fn GameDifficultySettings() -> Element {
     }
 }
 
-
 #[component]
 fn GameDifficultyAutoSoftdropSlider() -> Element {
     let old_settings = use_game_settings();
     let old_init = old_settings.game.auto_softdrop_interval.as_millis() as u16;
-        
-    let label_initial = use_signal(|| 
-        "Auto Soft Drop Interval (ms)".to_string());
+
+    let label_initial =
+        use_signal(|| "Auto Soft Drop Interval (ms)".to_string());
     let slider_softdrop = use_signal(|| old_init);
     use_effect(move || {
         let init = slider_softdrop.read().clone();
         let init = init.clamp(4, 1111);
         if init != old_init {
             let mut new_settings = old_settings;
-            new_settings.game.auto_softdrop_interval = Duration::from_millis(
-                init as u64
-            );
+            new_settings.game.auto_softdrop_interval =
+                Duration::from_millis(init as u64);
             set_game_settings(new_settings);
         }
     });
@@ -165,8 +164,6 @@ fn GameDifficultyAutoSoftdropSlider() -> Element {
         }
     }
 }
-
-
 
 #[component]
 pub fn GameSettingsInputPreview() -> Element {
