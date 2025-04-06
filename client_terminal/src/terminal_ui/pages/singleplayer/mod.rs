@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::terminal_ui::router::{Drawable, DynamicPage, Page, PageFactory};
 use async_trait::async_trait;
 use crossterm::event::{Event, KeyCode};
+use game::tet::GameState;
 use n0_future::task::AbortOnDropHandle;
 use ratatui::widgets::Paragraph;
 use tokio::sync::{Mutex, Notify};
@@ -14,13 +15,21 @@ impl PageFactory for SingleplayerPageFactory {
     fn create_page(&self, notify: Arc<Notify>) -> DynamicPage {
         let page = SingleplayerPage {
             _notify: notify,
-            data: Arc::new(Mutex::new(SingleplayerPageState { x: 0 })),
+            data: Arc::new(Mutex::new(SingleplayerPageState  { game_state: GameState::empty() })),
         };
         let _page = page.clone();
         let task = async move {
             loop {
                 n0_future::time::sleep(std::time::Duration::from_secs(1)).await;
-                _page.increment().await;
+                
+                {
+                    let mut data = _page.data.lock().await;
+                    if let Ok(next) = data.game_state.try_action(game::tet::TetAction::SoftDrop, 0) {
+                        data.game_state = next;
+                    } else {
+                        data.game_state = GameState::empty();
+                    }
+                }
             }
         };
         let task = AbortOnDropHandle::new(n0_future::task::spawn(task));
@@ -36,7 +45,7 @@ pub struct SingleplayerPage {
 
 #[derive(Debug, Clone)]
 pub struct SingleplayerPageState {
-    x: i32,
+    game_state: GameState,
 }
 
 #[async_trait]
@@ -53,33 +62,17 @@ impl Page for SingleplayerPage {
             return;
         }
         match key.code {
-            KeyCode::Right => self.increment().await,
-            KeyCode::Left => self.decrement().await,
             _ => {}
         }
     }
 }
 
 impl SingleplayerPage {
-    async fn increment(&self) {
-        {
-            let mut data = self.data.lock().await;
-            data.x += 1;
-        }
-        self._notify.notify_waiters();
-    }
-    async fn decrement(&self) {
-        {
-            let mut data = self.data.lock().await;
-            data.x -= 1;
-        }
-        self._notify.notify_waiters();
-    }
 }
 
 impl Drawable for SingleplayerPageState {
     fn draw(&self, frame: &mut ratatui::Frame) {
-        let string = format!("SingleplayerPage: {}", self.x);
+        let string = format!("SingleplayerPage: {}", self.game_state.get_debug_matrix_txt());
         frame.render_widget(Paragraph::new(string), frame.area());
     }
 }

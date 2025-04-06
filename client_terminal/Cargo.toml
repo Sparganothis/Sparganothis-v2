@@ -5,6 +5,7 @@ authors.workspace = true
 edition.workspace = true
 
 [dependencies]
+game = { path = "../game" }
 anyhow = "1.0.95"
 clap = { version = "4.5.29", features = ["derive"] }
 iroh = { workspace = true, default-features = false }

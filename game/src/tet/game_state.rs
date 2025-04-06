@@ -200,6 +200,49 @@ impl GameState {
             self.total_lines, self.total_garbage_sent, self.garbage_applied, self.garbage_recv
         )
     }
+    pub fn get_debug_matrix_txt(&self) -> String {
+        let mut brows: Vec<Vec<bool>> = vec![];
+        for row in self.main_board.rows().into_iter().take(20) {
+            brows.push(row.iter().map(|x| match x {
+                CellValue::Piece(_) => true,
+                CellValue::Garbage => true,
+                CellValue::Empty => false,
+                CellValue::Ghost => false,
+            }).collect());
+        }
+        brows.reverse();
+        let mut matrix_rows = vec![];
+
+        matrix_rows.push("\n--------------------------".to_string());
+        for (i, row) in brows.into_iter().enumerate() {
+            let row_str: Vec<_> = row.iter().map(|x| if *x {"██"} else {"  "}.to_string()).collect();
+            let row_str = row_str.join("");
+            let row_extra = match i {
+                1 => format!("current_pcs = {:?}", self.current_pcs),
+                2 => format!("game_over            = {:?}", self.game_over()),
+                3 => format!("hold                 = {:?}", self.hold_pcs),
+                4 => format!("next_pcs             = {:?}", self.next_pcs_idx),
+                5 => format!("total_lines          = {:?}", self.total_lines),
+                6 => format!("is_t_spin            = {}", self.is_t_spin),
+                7 => format!("is_t_mini_spin       = {}", self.is_t_mini_spin),
+                8 => format!("is_b2b               = {}", self.is_b2b),
+                9 => format!("combo_counter        = {}", self.combo_counter),
+                10 => format!("total_garbage_sent  = {}", self.total_garbage_sent),
+                11 => format!("garbage_recv        = {}", self.garbage_recv),
+                // 12 => format!("total_move_count    = {}", self.total_move_count),
+                // 13 => format!("bumpi               = {}", self.bumpi),
+                // 14 => format!("holes               = {}", self.holes()?),
+                // 15 => format!("height               = {}", self.height()?),
+                // 16 => format!("bot_moves_raw('wordpress') = {:?}", self.bot_moves_raw("wordpress".to_string())?),
+                // 17 => format!("bot_moves_raw('random') = {:?}", self.bot_moves_raw("random".to_string())?),
+                // 18 => format!("get_valid_move_chains().len() = {:?} / {:?}", self.get_valid_move_chains()?.len(), get_all_move_chains().len()),
+                _ => "".to_string()
+            };
+            matrix_rows.push(format!(" | {row_str} | {row_extra}"));
+        }
+        matrix_rows.push("--------------------------\n".to_string());
+        matrix_rows.join("\n")
+    }
 
     fn clear_line(&mut self) {
         let mut lines = 0;
