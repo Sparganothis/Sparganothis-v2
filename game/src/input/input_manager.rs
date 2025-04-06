@@ -50,9 +50,9 @@ impl GameInputManager {
         let mut cb = vec![];
         for key_up in _new_up {
             let move_type = match key_up {
-                TetAction::MoveLeft => CallbackMoveType::AutoMoveLeft,
-                TetAction::MoveRight => CallbackMoveType::AutoMoveRight,
-                TetAction::SoftDrop => CallbackMoveType::AutoMoveDown,
+                TetAction::MoveLeft => CallbackMoveType::RepeatMoveLeft,
+                TetAction::MoveRight => CallbackMoveType::RepeatMoveRight,
+                TetAction::UserSoftDrop => CallbackMoveType::RepeatMoveDown,
                 _ => continue,
             };
             cb.push(CallbackTicket {
@@ -62,9 +62,9 @@ impl GameInputManager {
         }
         for key_down in new_down.iter().cloned() {
             let move_type = match key_down {
-                TetAction::MoveLeft => CallbackMoveType::AutoMoveLeft,
-                TetAction::MoveRight => CallbackMoveType::AutoMoveRight,
-                TetAction::SoftDrop => CallbackMoveType::AutoMoveDown,
+                TetAction::MoveLeft => CallbackMoveType::RepeatMoveLeft,
+                TetAction::MoveRight => CallbackMoveType::RepeatMoveRight,
+                TetAction::UserSoftDrop => CallbackMoveType::RepeatMoveDown,
                 _ => continue,
             };
             cb.push(CallbackTicket {
@@ -74,7 +74,7 @@ impl GameInputManager {
                 move_type,
             })
         }
-        if action == TetAction::HardDrop || action == TetAction::SoftDrop {
+        if action == TetAction::HardDrop {
             cb.push(CallbackTicket {
                 request_type: CallbackRequestType::SetCallback(
                     game_settings.game.auto_softdrop_interval,
@@ -97,23 +97,23 @@ impl GameInputManager {
         game_settings: GameSettings,
     ) -> UserEvent {
         let action = match callback_move_type {
-            CallbackMoveType::AutoMoveDown => TetAction::SoftDrop,
-            CallbackMoveType::AutoMoveLeft => TetAction::MoveLeft,
-            CallbackMoveType::AutoMoveRight => TetAction::MoveRight,
-            CallbackMoveType::AutoSoftDrop => TetAction::SoftDrop,
+            CallbackMoveType::RepeatMoveDown => TetAction::UserSoftDrop,
+            CallbackMoveType::RepeatMoveLeft => TetAction::MoveLeft,
+            CallbackMoveType::RepeatMoveRight => TetAction::MoveRight,
+            CallbackMoveType::AutoSoftDrop => TetAction::AutoSoftDrop,
         };
         let mut cb = vec![];
 
         let cb_duration = match callback_move_type {
             // TODO: if game's next soft drop will lock, put a longer timeout here
             CallbackMoveType::AutoSoftDrop => game_settings.game.auto_softdrop_interval,
-            CallbackMoveType::AutoMoveDown => {
+            CallbackMoveType::RepeatMoveDown => {
                 game_settings.input.autorepeat_delay_after
             }
-            CallbackMoveType::AutoMoveLeft => {
+            CallbackMoveType::RepeatMoveLeft => {
                 game_settings.input.autorepeat_delay_after
             }
-            CallbackMoveType::AutoMoveRight => {
+            CallbackMoveType::RepeatMoveRight => {
                 game_settings.input.autorepeat_delay_after
             }
         };
@@ -155,9 +155,9 @@ pub struct CallbackTicket {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CallbackMoveType {
     AutoSoftDrop,
-    AutoMoveLeft,
-    AutoMoveRight,
-    AutoMoveDown,
+    RepeatMoveLeft,
+    RepeatMoveRight,
+    RepeatMoveDown,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]

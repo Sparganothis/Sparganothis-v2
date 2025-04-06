@@ -147,12 +147,13 @@ impl Tet {
 pub enum TetAction {
     // 3bit (8 acctions)
     HardDrop,
-    SoftDrop,
+    UserSoftDrop,
     MoveLeft,
     MoveRight,
     Hold,
     RotateLeft,
     RotateRight,
+    AutoSoftDrop,
     Nothing,
 }
 
@@ -163,7 +164,7 @@ impl TetAction {
     pub fn all() -> Vec<TetAction> {
         vec![
             Self::HardDrop,
-            Self::SoftDrop,
+            Self::UserSoftDrop,
             Self::MoveLeft,
             Self::MoveRight,
             Self::Hold,
@@ -173,18 +174,18 @@ impl TetAction {
     }
     pub fn is_repeating(&self) -> bool {
         match self {
-            TetAction::MoveLeft | TetAction::MoveRight | TetAction::SoftDrop => true,
+            TetAction::MoveLeft | TetAction::MoveRight | TetAction::UserSoftDrop => true,
             _ => false,
         }
     }
     pub fn random() -> Self {
         use rand::rng;
         if rng().random_bool(0.5) {
-            Self::SoftDrop
+            Self::UserSoftDrop
         } else {
             let choices = [
                 Self::HardDrop,
-                Self::SoftDrop,
+                Self::UserSoftDrop,
                 Self::MoveLeft,
                 Self::MoveRight,
                 Self::Hold,

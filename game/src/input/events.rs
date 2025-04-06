@@ -75,7 +75,7 @@ impl GameInputEventKey {
     pub fn to_game_action(&self) -> Option<TetAction> {
         match self {
             GameInputEventKey::HardDrop => Some(TetAction::HardDrop),
-            GameInputEventKey::SoftDrop => Some(TetAction::SoftDrop),
+            GameInputEventKey::SoftDrop => Some(TetAction::UserSoftDrop),
             GameInputEventKey::MoveLeft => Some(TetAction::MoveLeft),
             GameInputEventKey::MoveRight => Some(TetAction::MoveRight),
             GameInputEventKey::Hold => Some(TetAction::Hold),

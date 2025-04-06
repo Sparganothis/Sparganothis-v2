@@ -124,7 +124,7 @@ where
     all_action_chains.shuffle(&mut rng);
     all_action_chains.sort_by_key(|k| k.len());
 
-    let mut best_action_chain = vec![TetAction::SoftDrop];
+    let mut best_action_chain = vec![TetAction::UserSoftDrop];
     let mut best_acction_score = f64::MIN;
     let mut action_result_cache =
         collections::HashMap::<Vec<TetAction>, anyhow::Result<GameState>>::new();

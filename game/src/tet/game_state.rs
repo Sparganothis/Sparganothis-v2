@@ -561,9 +561,9 @@ impl GameState {
     fn try_harddrop(&mut self, event_time: i64) -> anyhow::Result<()> {
         let mut soft_drops: i16 = 0;
         let current_pcs = self.current_pcs.context("no current pcs")?;
-        let mut r = self.try_softdrop(event_time);
+        let mut r = self.try_auto_softdrop(event_time);
         while r.is_ok() && current_pcs.id == self.current_pcs.unwrap().id {
-            r = self.try_softdrop(event_time);
+            r = self.try_auto_softdrop(event_time);
             soft_drops += 1;
         }
         self.score += 10;
@@ -571,7 +571,19 @@ impl GameState {
         Ok(())
     }
 
-    fn try_softdrop(&mut self, event_time: i64) -> anyhow::Result<()> {
+    fn try_user_softdrop(&mut self, event_time: i64) -> anyhow::Result<()> {
+        let mut z = self.clone();
+        z.try_auto_softdrop(event_time)?;
+        // user soft drop does not work if it would lock pcs, so if
+        // z.nextpcs != self.nextpcs
+        if z.next_pcs_idx != self.next_pcs_idx {
+            anyhow::bail!("user soft drop would lock pcs");
+        }
+        *self = z;
+        Ok(())
+    }
+
+    fn try_auto_softdrop(&mut self, event_time: i64) -> anyhow::Result<()> {
         let current_pcs = self.current_pcs.context("no current pcs")?;
 
         if let Err(e) = self.main_board.delete_piece(&current_pcs) {
@@ -689,8 +701,11 @@ impl GameState {
             TetAction::HardDrop => {
                 new.try_harddrop(event_time)?;
             }
-            TetAction::SoftDrop => {
-                new.try_softdrop(event_time)?;
+            TetAction::UserSoftDrop => {
+                new.try_user_softdrop(event_time)?;
+            }
+            TetAction::AutoSoftDrop => {
+                new.try_auto_softdrop(event_time)?;
             }
             TetAction::MoveLeft => {
                 new.try_moveleft()?;

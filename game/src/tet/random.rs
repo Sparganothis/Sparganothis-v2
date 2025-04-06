@@ -86,7 +86,7 @@ pub mod tests {
     #[test]
     #[wasm_bindgen_test]
     pub fn random_have_pinned_results() {
-        let encoded_str1 = bincode::serialize(&TetAction::SoftDrop).unwrap();
+        let encoded_str1 = bincode::serialize(&TetAction::UserSoftDrop).unwrap();
         let encoded_str2 = bincode::serialize(&TetAction::MoveLeft).unwrap();
         let expected_str1: Vec<u8> = vec![1, 0, 0, 0];
         let expected_str2: Vec<u8> = vec![2, 0, 0, 0];
@@ -94,7 +94,7 @@ pub mod tests {
         assert_eq!(encoded_str2, expected_str2);
 
         let evt1 = GameReplayEvent {
-            action: TetAction::SoftDrop,
+            action: TetAction::UserSoftDrop,
             // game_over: false,
         };
 
