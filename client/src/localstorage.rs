@@ -102,9 +102,10 @@ pub fn use_button_settings() -> ButtonSettings {
     x
 }
 
-pub fn set_button_settings(s: ButtonSettings) {
-    let mut z = use_context::<LocalStorageContext>()
-        .persistent
-        .__button_settings_w;
-    z.set(s);
-}
+// TODO !
+// pub fn set_button_settings(s: ButtonSettings) {
+//     let mut z = use_context::<LocalStorageContext>()
+//         .persistent
+//         .__button_settings_w;
+//     z.set(s);
+// }
