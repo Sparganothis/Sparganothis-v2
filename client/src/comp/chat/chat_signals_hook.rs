@@ -7,7 +7,6 @@ use n0_future::StreamExt;
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
-    datetime_now,
     global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker},
     IChatRoomType, ReceivedMessage,
 };

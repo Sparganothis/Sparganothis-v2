@@ -5,7 +5,6 @@ use dioxus::prelude::*;
 use game::input::events::{
     GameInputEvent, GameInputEventKey, GameInputEventType,
 };
-use tracing::info;
 
 #[component]
 pub fn GameInputCaptureParent(

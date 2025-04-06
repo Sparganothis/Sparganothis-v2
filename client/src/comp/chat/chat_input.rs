@@ -1,7 +1,5 @@
 use crate::network::NetworkState;
 use dioxus::prelude::*;
-use protocol::ReceivedMessage;
-use tracing::warn;
 
 use super::chat_traits::ChatMessageType;
 

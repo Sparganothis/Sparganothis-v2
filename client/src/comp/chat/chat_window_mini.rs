@@ -14,7 +14,7 @@ use crate::{
 };
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::bs_icons::BsMessenger;
-use protocol::{chat_presence::PresenceList, ReceivedMessage};
+use protocol::chat_presence::PresenceList;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
