@@ -140,10 +140,8 @@ impl<T: AcceptableType> MessageDispatchers<T> {
             return dispatcher.clone();
         }
 
-        let dispatcher = Arc::new(MessageDispatcher::new(
-            target,
-            self.endpoint.clone(),
-        ));
+        let dispatcher =
+            Arc::new(MessageDispatcher::new(target, self.endpoint.clone()));
         dispatchers.insert(target, dispatcher.clone());
         dispatcher
     }
@@ -168,10 +166,7 @@ struct MessageDispatcher<T> {
 }
 
 impl<T: AcceptableType> MessageDispatcher<T> {
-    pub fn new(
-        target: PublicKey,
-        endpoint: Endpoint,
-    ) -> Self {
+    pub fn new(target: PublicKey, endpoint: Endpoint) -> Self {
         // info!("creating message dispatcher for {}", target);
         let (sender, mut receiver) = tokio::sync::mpsc::channel(16);
         let _task = async move {
