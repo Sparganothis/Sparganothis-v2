@@ -5,12 +5,12 @@ use super::input_manager::{CallbackMoveType, CallbackTicket, UserEvent};
 use crate::input::input_manager::GameInputManager;
 use crate::settings::GameSettings;
 use crate::{tet::TetAction, timestamp::get_timestamp_now_ms};
-use futures_channel::mpsc::UnboundedReceiver;
-use tokio::sync::{futures::Notified, Mutex, Notify};
 use async_stream::stream;
+use futures_channel::mpsc::UnboundedReceiver;
 use futures_core::stream::Stream;
-use futures_util::{pin_mut, FutureExt};
 use futures_util::stream::StreamExt;
+use futures_util::{pin_mut, FutureExt};
+use tokio::sync::{futures::Notified, Mutex, Notify};
 
 #[derive(Debug, Clone)]
 pub struct CallbackManager {
@@ -71,11 +71,10 @@ impl CallbackManager {
     }
 
     pub async fn main_loop(
-        &self, 
+        &self,
         mut _r: UnboundedReceiver<GameInputEvent>,
-        settings: Arc<Mutex<GameSettings>>
+        settings: Arc<Mutex<GameSettings>>,
     ) -> impl Stream<Item = TetAction> {
-
         let input_manager = Arc::new(Mutex::new(GameInputManager::new()));
         let callback_manager = self.clone();
         stream! {
@@ -102,7 +101,7 @@ impl CallbackManager {
                             tracing::warn!("ticket manger loop end: coro end");
                             break;
                         };
-                        
+
                         let settings =  {settings.lock().await.clone()};
                         let event = {input_manager
                             .lock().await
@@ -122,7 +121,8 @@ impl CallbackManager {
                     }
                 }
             }
-        }.boxed()
+        }
+        .boxed()
     }
 }
 

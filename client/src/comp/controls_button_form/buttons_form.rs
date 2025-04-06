@@ -14,7 +14,7 @@ pub fn ButtonsForm() -> Element {
         let entry = btn2.entry(btn_event).or_insert(vec![]);
         entry.push(btn_code);
     }
-    let keys =  btn2.keys().cloned().collect::<Vec<_>>();
+    let keys = btn2.keys().cloned().collect::<Vec<_>>();
     let mut btn2 = btn2;
     for btn_event in keys {
         let entry = btn2.entry(btn_event).or_insert(vec![]);
@@ -45,7 +45,10 @@ pub fn ButtonsForm() -> Element {
 }
 
 #[component]
-fn ButtonSelector( btn_event: GameInputEventKey, btn_codes: Vec<Code>) -> Element {
+fn ButtonSelector(
+    btn_event: GameInputEventKey,
+    btn_codes: Vec<Code>,
+) -> Element {
     rsx! {
         div {
             style: "

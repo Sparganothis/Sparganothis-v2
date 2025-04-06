@@ -3,10 +3,7 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use futures_util::pin_mut;
 use game::{
-    input::{
-        callback_manager::CallbackManager,
-        events::GameInputEvent,
-    },
+    input::{callback_manager::CallbackManager, events::GameInputEvent},
     tet::{GameState, TetAction},
     timestamp::get_timestamp_now_ms,
 };
@@ -48,8 +45,8 @@ pub fn SingleplayerGameBoard() -> Element {
             game_state_w.set(next_state);
         }
     });
-    let ticket_manager =
-        use_coroutine(move |mut _r: UnboundedReceiver<GameInputEvent>| async move {
+    let ticket_manager = use_coroutine(
+        move |mut _r: UnboundedReceiver<GameInputEvent>| async move {
             let callback_manager = CallbackManager::new2();
             let mut s = use_game_settings();
             let arc_s = Arc::new(Mutex::new(s));
@@ -64,7 +61,7 @@ pub fn SingleplayerGameBoard() -> Element {
                 }
             }
             warn!("ZZZ ====???+++++????+?+?+?+?+ EVENT STRREAM FINISH");
-        }
+        },
     );
 
     let on_user_event = Callback::new(move |event: GameInputEvent| {

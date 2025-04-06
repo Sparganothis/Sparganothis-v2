@@ -1,7 +1,9 @@
 use dioxus::prelude::*;
 use protocol::user_identity::{NodeIdentity, UserIdentity};
 
-use crate::{localstorage::LocalStorageContext, network::NetworkState, route::Route};
+use crate::{
+    localstorage::LocalStorageContext, network::NetworkState, route::Route,
+};
 
 #[component]
 pub fn CurrentUserInfoDisplay() -> Element {
