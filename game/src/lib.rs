@@ -9,6 +9,7 @@ pub mod git_version;
 pub mod input;
 pub mod tet;
 pub mod timestamp;
+pub mod settings;
 
 #[cfg(test)]
 pub mod tests {

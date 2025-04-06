@@ -2,23 +2,18 @@ use std::collections::BTreeSet;
 use std::time::Duration;
 
 use crate::input::events::GameInputEvent;
+use crate::settings::GameSettings;
 use crate::tet::TetAction;
 
 #[derive(Clone, Debug)]
 pub struct GameInputManager {
     new_held: BTreeSet<TetAction>,
     old_held: BTreeSet<TetAction>,
-    move_auto_repeat_first_ms: u16,
-    move_auto_repeat_after_ms: u16,
-    move_auto_soft_drop_ms: u16,
 }
 
 impl GameInputManager {
     pub fn new() -> Self {
         Self {
-            move_auto_repeat_first_ms: 150,
-            move_auto_repeat_after_ms: 33,
-            move_auto_soft_drop_ms: 666,
             new_held: BTreeSet::new(),
             old_held: BTreeSet::new(),
         }
@@ -27,6 +22,7 @@ impl GameInputManager {
     pub fn on_user_keyboard_event(
         &mut self,
         user_keyboard_event: GameInputEvent,
+        game_settings: GameSettings,
     ) -> UserEvent {
         let GameInputEvent {
             key,
@@ -72,16 +68,12 @@ impl GameInputManager {
                 _ => continue,
             };
             cb.push(CallbackTicket {
-                request_type: CallbackRequestType::SetCallback(Duration::from_millis(
-                    self.move_auto_repeat_first_ms as u64,
-                )),
+                request_type: CallbackRequestType::SetCallback(game_settings.input.autorepeat_delay_initial),
                 move_type,
             })
         }
         cb.push(CallbackTicket {
-            request_type: CallbackRequestType::SetCallback(Duration::from_millis(
-                self.move_auto_soft_drop_ms as u64,
-            )),
+            request_type: CallbackRequestType::SetCallback(game_settings.game.auto_softdrop_interval),
             move_type: CallbackMoveType::AutoSoftDrop,
         });
 
@@ -96,6 +88,7 @@ impl GameInputManager {
     pub fn callback_after_wait(
         &mut self,
         callback_move_type: CallbackMoveType,
+        game_settings: GameSettings
     ) -> UserEvent {
         let action = match callback_move_type {
             CallbackMoveType::AutoMoveDown => TetAction::SoftDrop,
@@ -107,15 +100,13 @@ impl GameInputManager {
 
         let cb_duration = match callback_move_type {
             // TODO: if game's next soft drop will lock, put a longer timeout here
-            CallbackMoveType::AutoSoftDrop => self.move_auto_soft_drop_ms,
-            CallbackMoveType::AutoMoveDown => self.move_auto_repeat_after_ms,
-            CallbackMoveType::AutoMoveLeft => self.move_auto_repeat_after_ms,
-            CallbackMoveType::AutoMoveRight => self.move_auto_repeat_after_ms,
+            CallbackMoveType::AutoSoftDrop => game_settings.game.auto_softdrop_interval,
+            CallbackMoveType::AutoMoveDown => game_settings.input.autorepeat_delay_after,
+            CallbackMoveType::AutoMoveLeft => game_settings.input.autorepeat_delay_after,
+            CallbackMoveType::AutoMoveRight => game_settings.input.autorepeat_delay_after,
         };
         cb.push(CallbackTicket {
-            request_type: CallbackRequestType::SetCallback(Duration::from_millis(
-                cb_duration as u64,
-            )),
+            request_type: CallbackRequestType::SetCallback(cb_duration),
             move_type: callback_move_type,
         });
 

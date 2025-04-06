@@ -12,7 +12,7 @@ pub struct CallbackManager {
 
 impl CallbackManager {
     // pub fn
-    pub fn new() -> Self {
+    pub fn new2() -> Self {
         let notify = Arc::new(Notify::new());
         let _notify = notify.clone();
         let mut inner = CallbackManagerInner {
