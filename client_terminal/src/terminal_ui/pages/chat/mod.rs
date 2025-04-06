@@ -57,6 +57,7 @@ pub enum ChatPageState {
         presence: PresenceList<GlobalChatMessageType>,
         msg_history: Vec<ReceivedMessage<GlobalChatMessageType>>,
         input_buffer: String,
+        scroll_position: usize,
     },
     ChatLoading {
         message: String,
@@ -90,7 +91,24 @@ impl Page for ChatPage {
                     crossterm::event::KeyCode::Enter => {
                         self.send_message().await;
                     }
+                    crossterm::event::KeyCode::PageUp => {
+                        self.scroll_messages(-1).await;
+                    }
+                    crossterm::event::KeyCode::PageDown => {
+                        self.scroll_messages(1).await;
+                    }
                     _ => {}
+                }
+            }
+            Event::Mouse(mouse_event) => {
+                if let crossterm::event::MouseEventKind::ScrollUp =
+                    mouse_event.kind
+                {
+                    self.scroll_messages(-1).await;
+                } else if let crossterm::event::MouseEventKind::ScrollDown =
+                    mouse_event.kind
+                {
+                    self.scroll_messages(1).await;
                 }
             }
             _ => {}
@@ -110,8 +128,8 @@ impl ChatPage {
             let mut state = self.data.lock().await;
             if let ChatPageState::ChatLoaded { input_buffer, .. } = &mut *state
             {
-                if !input_buffer.is_empty() {
-                    let msg = input_buffer.clone();
+                if !input_buffer.trim().is_empty() {
+                    let msg = input_buffer.trim().to_string();
                     *input_buffer = String::new();
                     drop(state); // Release lock before async operation
 
@@ -184,6 +202,18 @@ impl ChatPage {
         }
         self._notify.notify_waiters();
     }
+
+    async fn scroll_messages(&self, delta: i32) {
+        let mut state = self.data.lock().await;
+        if let ChatPageState::ChatLoaded {
+            scroll_position, ..
+        } = &mut *state
+        {
+            *scroll_position =
+                (*scroll_position as i32 + delta).max(0) as usize;
+            self._notify.notify_waiters();
+        }
+    }
 }
 
 impl ChatPageState {
@@ -196,6 +226,7 @@ impl ChatPageState {
             presence: vec![],
             msg_history: vec![],
             input_buffer: String::new(),
+            scroll_position: 0,
         }
     }
     fn chat_set_presence_list(
@@ -210,8 +241,14 @@ impl ChatPageState {
         &mut self,
         msg: ReceivedMessage<GlobalChatMessageType>,
     ) {
-        if let Self::ChatLoaded { msg_history, .. } = self {
+        if let Self::ChatLoaded {
+            msg_history,
+            scroll_position,
+            ..
+        } = self
+        {
             msg_history.push(msg);
+            *scroll_position = msg_history.len() - 1;
         }
     }
     fn chat_clear_input_buffer(&mut self) {

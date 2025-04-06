@@ -1255,6 +1255,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tui-big-text",
+ "tui-widget-list",
 ]
 
 [[package]]
@@ -9500,6 +9501,15 @@ dependencies = [
  "derive_builder",
  "font8x8",
  "itertools 0.14.0",
+ "ratatui",
+]
+
+[[package]]
+name = "tui-widget-list"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a417c8ac65119a0e5b8627d0ce492731b95affb29ec8602d9e72646bda5ecf6"
+dependencies = [
  "ratatui",
 ]
 

@@ -55,7 +55,7 @@ async fn terminal_inner_loop(
             _ = router.notified().fuse() => {
                 // nothing special
             }
-            _ = n0_future::time::sleep(std::time::Duration::from_secs(10)).fuse() => {
+            _ = n0_future::time::sleep(std::time::Duration::from_secs(1)).fuse() => {
                 // nothing special
             }
             _ = &mut app_driver_task => {

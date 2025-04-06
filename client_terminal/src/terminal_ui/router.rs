@@ -58,7 +58,7 @@ impl Router {
                 return Ok(());
             }
 
-            if let Some(mut prev_page) = inner.current_page.take() {
+            if let Some(prev_page) = inner.current_page.take() {
                 n0_future::task::spawn(async move {
                     prev_page.shutdown().await;
                 });
@@ -160,6 +160,7 @@ impl Page for DynamicPage {
         self.0.get_drawable().await
     }
     async fn shutdown(&self) {
+        self.1.abort();
         self.0.shutdown().await
     }
     async fn handle_event(&self, event: Event) {

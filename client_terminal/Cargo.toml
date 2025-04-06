@@ -28,6 +28,7 @@ line_drawing = "1"
 tui-big-text = "0.7.1"
 async-trait = "0.1.88"
 palette = "0.7.6"
+tui-widget-list = "0.13.2"
 
 [lints]
 workspace = true
