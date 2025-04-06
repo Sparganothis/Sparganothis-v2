@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use game::input::events::{
     GameInputEvent, GameInputEventKey, GameInputEventType,
 };
+use tracing::info;
 
 use crate::localstorage::use_button_settings;
 
@@ -62,8 +63,21 @@ pub fn GameInputCaptureParent(
             onclick: move |_e| {
                 // info!("cliek: {:#?}", _e);
             },
-            onmounted: move |_e| {
-                // info!("mounted! {:#?}", _e);
+            onfocus: move |_e| {
+                info!("onfocus: {:#?}", _e);
+            },
+            onblur: move |_e| {
+                info!("onblur: {:#?}", _e);
+            },
+            onfocusin: move |_e| {
+                info!("onfocusin: {:#?}", _e);
+            },
+            onfocusout: move |_e| {
+                info!("onfocusout: {:#?}", _e);
+            },
+            onmounted: move |_e| async move {
+                info!("mounted! {:#?}", _e);
+                let _r = _e.set_focus(true).await;
             },
 
             {children}

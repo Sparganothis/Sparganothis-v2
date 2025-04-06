@@ -1,8 +1,16 @@
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
+use super::events::GameInputEvent;
 use super::input_manager::{CallbackMoveType, CallbackTicket, UserEvent};
+use crate::input::input_manager::GameInputManager;
+use crate::settings::GameSettings;
 use crate::{tet::TetAction, timestamp::get_timestamp_now_ms};
+use futures_channel::mpsc::UnboundedReceiver;
 use tokio::sync::{futures::Notified, Mutex, Notify};
+use async_stream::stream;
+use futures_core::stream::Stream;
+use futures_util::{pin_mut, FutureExt};
+use futures_util::stream::StreamExt;
 
 #[derive(Debug, Clone)]
 pub struct CallbackManager {
@@ -60,6 +68,61 @@ impl CallbackManager {
             }
         }
         (min_delay, v)
+    }
+
+    pub async fn main_loop(
+        &self, 
+        mut _r: UnboundedReceiver<GameInputEvent>,
+        settings: Arc<Mutex<GameSettings>>
+    ) -> impl Stream<Item = TetAction> {
+
+        let input_manager = Arc::new(Mutex::new(GameInputManager::new()));
+        let callback_manager = self.clone();
+        stream! {
+            pin_mut!(_r);
+            loop {
+                let game_settings = {settings.lock().await.clone()};
+                let (duration_ms, items) =
+                    callback_manager.get_sleep_duration_ms().await;
+                for _move in items {
+                    let x = {input_manager
+                        .lock().await
+                        .callback_after_wait(_move, game_settings)};
+                    let y = callback_manager.accept_user_event(x).await;
+                    if let Some(action) = y {
+                        yield action;
+                    }
+                }
+                let duration =
+                    std::time::Duration::from_millis(duration_ms as u64);
+
+                tokio::select! {
+                    kbd_event = _r.next().fuse() => {
+                        let Some(kbd_event) = kbd_event else {
+                            tracing::warn!("ticket manger loop end: coro end");
+                            break;
+                        };
+                        
+                        let settings =  {settings.lock().await.clone()};
+                        let event = {input_manager
+                            .lock().await
+                            .on_user_keyboard_event(kbd_event, settings)};
+                        let y = callback_manager.accept_user_event(event).await;
+                        if let Some(action) = y {
+                            yield action;
+                        }
+                        continue;
+                    }
+                    _not = callback_manager.notified().fuse() => {
+                        continue;
+                    }
+
+                    _sl = n0_future::time::sleep(duration).fuse() => {
+                        continue;
+                    }
+                }
+            }
+        }.boxed()
     }
 }
 

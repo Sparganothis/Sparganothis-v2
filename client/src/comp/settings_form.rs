@@ -14,7 +14,7 @@ pub fn SettingsForm() -> Element {
         article {
             style: "
                 display: flex;
-                height: 55dvh;
+                height: 100%;
                 width: 100%;
                 flex-direction: row;
             ",

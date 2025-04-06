@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use protocol::user_identity::{NodeIdentity, UserIdentity};
 
-use crate::{localstorage::LocalStorageContext, network::NetworkState};
+use crate::{localstorage::LocalStorageContext, network::NetworkState, route::Route};
 
 #[component]
 pub fn CurrentUserInfoDisplay() -> Element {
@@ -20,10 +20,22 @@ pub fn CurrentUserInfoDisplay() -> Element {
     rsx! {
         article {
             style: "
-                height: 200px;
+                height: 400px;
                 overflow: auto;
             ",
             UserInfoDisplay { info: user_id.read().clone(), node_id }
+            h1 {
+                Link {
+                    to: Route::MyMainSettings {  },
+                    "Game Settings"
+                }
+            }
+            h1 {
+                Link {
+                    to: Route::MyButtonSettings {   },
+                    "Button Settings"
+                }
+            }
         }
     }
 }

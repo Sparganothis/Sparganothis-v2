@@ -6,6 +6,9 @@ use crate::comp::settings_form::SettingsForm;
 pub fn MyMainSettings() -> Element {
     rsx! {
         article {
+            style: "
+                height: 100%;
+            ",
             SettingsForm {  }
         }
     }

@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_debounce;
+use futures_util::pin_mut;
 use game::{
     input::{
         callback_manager::CallbackManager,
@@ -10,6 +13,7 @@ use game::{
     timestamp::get_timestamp_now_ms,
 };
 use n0_future::StreamExt;
+use tokio::sync::Mutex;
 use tracing::warn;
 
 use crate::{
@@ -32,9 +36,7 @@ pub fn Singleplayer() -> Element {
 #[component]
 pub fn SingleplayerGameBoard() -> Element {
     let mut game_state_w = use_signal(GameState::empty);
-    let mut input_manager = use_signal(|| GameInputManager::new());
     let game_state = use_memo(move || game_state_w.read().clone());
-    // let mut game_event = use_signal(|| None);
 
     let on_tet_action = Callback::new(move |action: TetAction| {
         let old_state = game_state.read().clone();
@@ -49,64 +51,32 @@ pub fn SingleplayerGameBoard() -> Element {
         }
     });
     let ticket_manager =
-        use_coroutine(move |mut _r: UnboundedReceiver<UserEvent>| async move {
-            use futures_util::FutureExt;
+        use_coroutine(move |mut _r: UnboundedReceiver<GameInputEvent>| async move {
             let callback_manager = CallbackManager::new2();
-            let mut zzz = 0;
-            loop {
-                zzz += 1;
-                let game_settings = use_game_settings();
-                let (duration_ms, items) =
-                    callback_manager.get_sleep_duration_ms().await;
-                for _move in items {
-                    let x = input_manager
-                        .write()
-                        .callback_after_wait(_move, game_settings);
-                    let y = callback_manager.accept_user_event(x).await;
-                    if let Some(action) = y {
-                        on_tet_action.call(action);
-                    }
-                }
-                let duration =
-                    std::time::Duration::from_millis(duration_ms as u64);
-
-                tokio::select! {
-                    event = _r.next().fuse() => {
-                        let Some(event) = event else {
-                            tracing::warn!("ticket manger loop end: coro end");
-                            break;
-                        };
-                        let y = callback_manager.accept_user_event(event).await;
-                        if let Some(action) = y {
-                            on_tet_action.call(action);
-                        }
-                        continue;
-                    }
-                    _not = callback_manager.notified().fuse() => {
-                        continue;
-                    }
-
-                    _sl = n0_future::time::sleep(duration).fuse() => {
-                        continue;
-                    }
+            let mut s = use_game_settings();
+            let arc_s = Arc::new(Mutex::new(s));
+            let _s = callback_manager.main_loop(_r, arc_s.clone()).await;
+            pin_mut!(_s);
+            while let Some(action) = _s.next().await {
+                on_tet_action.call(action);
+                let s2 = use_game_settings();
+                if s2 != s {
+                    s = s2;
+                    *arc_s.lock().await = s;
                 }
             }
-            warn!("ZZZ {zzz} ====???+++++????+?+?+?+?+ EVENT STRREAM FINISH");
-        });
+            warn!("ZZZ ====???+++++????+?+?+?+?+ EVENT STRREAM FINISH");
+        }
+    );
 
     let on_user_event = Callback::new(move |event: GameInputEvent| {
-        let settings = use_game_settings();
-        let event = input_manager
-            .write()
-            .on_user_keyboard_event(event, settings);
         ticket_manager.send(event);
     });
     rsx! {
         GameInputCaptureParent {
             on_user_event,
 
-                GameDisplay { game_state }
-
+            GameDisplay { game_state }
         }
     }
 }
