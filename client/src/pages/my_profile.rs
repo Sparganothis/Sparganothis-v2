@@ -1,10 +1,16 @@
 use dioxus::prelude::*;
 
-use crate::comp::user_info_display::CurrentUserInfoDisplay;
+use crate::comp::{settings_form::SettingsForm, user_info_display::CurrentUserInfoDisplay, cosmetic::Hline};
 
 #[component]
 pub fn MyProfilePage() -> Element {
     rsx! {
-        CurrentUserInfoDisplay {}
+        article {
+            Hline {}
+            CurrentUserInfoDisplay {}
+            Hline {}
+            SettingsForm {  }
+            Hline {}
+        }
     }
 }

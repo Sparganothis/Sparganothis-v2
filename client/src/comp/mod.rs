@@ -7,3 +7,5 @@ pub mod modal;
 pub mod nav;
 pub mod slider;
 pub mod user_info_display;
+pub mod settings_form;
+pub mod cosmetic;

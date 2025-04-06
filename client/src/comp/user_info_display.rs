@@ -18,7 +18,13 @@ pub fn CurrentUserInfoDisplay() -> Element {
     });
     let node_id: ReadOnlySignal<Option<NodeIdentity>> = node_id.into();
     rsx! {
-        UserInfoDisplay { info: user_id.read().clone(), node_id }
+        article {
+            style: "
+                height: 200px;
+                overflow: auto;
+            ",
+            UserInfoDisplay { info: user_id.read().clone(), node_id }
+        }
     }
 }
 

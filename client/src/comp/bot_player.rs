@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, time::Duration};
+use std::collections::VecDeque;
 
 use dioxus::prelude::*;
 use dioxus_sdk::utils::timing::use_interval;
@@ -7,11 +7,15 @@ use game::{
     tet::{GameState, TetAction},
 };
 
+use crate::localstorage::use_game_settings;
+
 #[component]
 pub fn BotPlayer(game_state: Signal<GameState>) -> Element {
     let mut pending_actions = use_signal(VecDeque::<TetAction>::new);
 
-    use_interval(Duration::from_secs_f32(0.1), move || {
+    let settings = use_game_settings();
+    let _interv = settings.game.auto_softdrop_interval;
+    use_interval(_interv, move || {
         let mut g = game_state.write();
         let mut p = pending_actions.write();
 
