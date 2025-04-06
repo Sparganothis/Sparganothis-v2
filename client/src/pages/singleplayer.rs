@@ -28,8 +28,8 @@ pub fn Singleplayer() -> Element {
             game_state_w.set(next_state);
         }
     });
-    let ticket_manager =
-        use_coroutine(move |mut _r: UnboundedReceiver<UserEvent>| async move {
+    let ticket_manager = use_coroutine(
+        move |mut _r: UnboundedReceiver<UserEvent>| async move {
             use futures_util::FutureExt;
             let callback_manager = CallbackManager::new();
             let mut zzz = 0;
@@ -75,7 +75,8 @@ pub fn Singleplayer() -> Element {
                 }
             }
             warn!("ZZZ {zzz} ====???+++++????+?+?+?+?+ EVENT STRREAM FINISH");
-        });
+        },
+    );
 
     let on_user_event = Callback::new(move |event: GameInputEvent| {
         let event = input_manager.write().on_user_keyboard_event(event);

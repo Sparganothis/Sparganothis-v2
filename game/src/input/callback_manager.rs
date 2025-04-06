@@ -1,9 +1,9 @@
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
+use super::input_manager::{CallbackMoveType, CallbackTicket, UserEvent};
 use crate::{tet::TetAction, timestamp::get_timestamp_now_ms};
 use tokio::sync::{futures::Notified, Mutex, Notify};
 use tracing::info;
-use super::input_manager::{CallbackMoveType, CallbackTicket, UserEvent};
 
 #[derive(Debug, Clone)]
 pub struct CallbackManager {
@@ -15,7 +15,7 @@ impl CallbackManager {
     // pub fn
     pub fn new() -> Self {
         info!("CallbackManager::new()");
-        let notify=  Arc::new(Notify::new());
+        let notify = Arc::new(Notify::new());
         let _notify = notify.clone();
         let mut inner = CallbackManagerInner {
             events: BTreeMap::new(),
@@ -39,8 +39,10 @@ impl CallbackManager {
     // private fn
 
     async fn get_events(&self) -> BTreeMap<CallbackMoveType, i64> {
-        let e = {let g = self.inner.lock().await;
-        g.events.clone()};
+        let e = {
+            let g = self.inner.lock().await;
+            g.events.clone()
+        };
         info!("CallbackManager::get_events() =  {:#?}", e);
         e
     }
@@ -61,7 +63,10 @@ impl CallbackManager {
                 }
             }
         }
-        info!("\nCallbackManager::get_sleep_duration_ms() -> \n(\n  {}, \n  {:#?}\n)", min_delay, v);
+        info!(
+            "\nCallbackManager::get_sleep_duration_ms() -> \n(\n  {}, \n  {:#?}\n)",
+            min_delay, v
+        );
         (min_delay, v)
     }
 }
@@ -104,7 +109,10 @@ impl CallbackManagerInner {
         self.notify.notify_waiters();
     }
     fn set_cb(&mut self, move_type: CallbackMoveType, duration: Duration) {
-        info!("CallbackManagerInner::set_cb({:?}, {:?})", move_type , duration);
+        info!(
+            "CallbackManagerInner::set_cb({:?}, {:?})",
+            move_type, duration
+        );
         let now = get_timestamp_now_ms();
         self.events
             .insert(move_type, now + duration.as_millis() as i64);
