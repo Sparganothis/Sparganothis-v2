@@ -6,6 +6,10 @@ use game::input::events::{
     GameInputEvent, GameInputEventKey, GameInputEventType,
 };
 
+use crate::localstorage::use_button_settings;
+
+use super::controls_button_form::ButtonSettings;
+
 #[component]
 pub fn GameInputCaptureParent(
     on_user_event: Callback<GameInputEvent, ()>,
@@ -36,7 +40,9 @@ pub fn GameInputCaptureParent(
             // },
             onkeyup: move |_e| {
                 // info!("onkeyup: {:#?}", _e);
-                if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
+                let s = use_button_settings();
+
+                if let Some(key) = keyboard_data_to_game_key(&_e.data(), &s) {
                     _e.prevent_default();
                     _e.stop_propagation();
 
@@ -45,10 +51,11 @@ pub fn GameInputCaptureParent(
             },
             onkeydown: move |_e| {
                 // info!("onkeydown: {:#?}", _e);
-                if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
+                let s = use_button_settings();
+                if let Some(key) = keyboard_data_to_game_key(&_e.data(), &s) {
                     _e.prevent_default();
                     _e.stop_propagation();
-                    
+
                     on_key_cb.call((key, GameInputEventType::KeyDown));
                 }
             },
@@ -64,41 +71,12 @@ pub fn GameInputCaptureParent(
     }
 }
 
-fn default_keymap() -> HashMap<Code, GameInputEventKey> {
-    let mut map = HashMap::new();
 
-    map.insert(Code::KeyX, GameInputEventKey::RotateRight);
-    map.insert(Code::ControlLeft, GameInputEventKey::RotateRight);
-    map.insert(Code::ControlRight, GameInputEventKey::RotateRight);
-    map.insert(Code::ArrowUp, GameInputEventKey::RotateRight);
 
-    map.insert(Code::ArrowDown, GameInputEventKey::SoftDrop);
-    map.insert(Code::Space, GameInputEventKey::HardDrop);
-    map.insert(Code::Enter, GameInputEventKey::HardDrop);
-    map.insert(Code::NumpadEnter, GameInputEventKey::HardDrop);
-    map.insert(Code::Numpad0, GameInputEventKey::HardDrop);
-    map.insert(Code::KeyZ, GameInputEventKey::RotateLeft);
-    map.insert(Code::ArrowLeft, GameInputEventKey::MoveLeft);
-    map.insert(Code::ArrowRight, GameInputEventKey::MoveRight);
-
-    map.insert(Code::KeyC, GameInputEventKey::Hold);
-    map.insert(Code::ShiftLeft, GameInputEventKey::Hold);
-    map.insert(Code::ShiftRight, GameInputEventKey::Hold);
-
-    map.insert(Code::Escape, GameInputEventKey::MenuEscape);
-    map.insert(Code::KeyM, GameInputEventKey::MenuMuteSound);
-    map.insert(Code::KeyP, GameInputEventKey::MenuPause);
-    map.insert(Code::Minus, GameInputEventKey::MenuZoomIn);
-    map.insert(Code::Equal, GameInputEventKey::MenuZoomOut);
-
-    map
-}
-
-fn keyboard_data_to_game_key(key: &KeyboardData) -> Option<GameInputEventKey> {
+fn keyboard_data_to_game_key(key: &KeyboardData, btn_s: &ButtonSettings) -> Option<GameInputEventKey> {
     if key.is_auto_repeating() {
         return None;
     }
     // https://github.com/Sparganothis/Sparganothis.github.io/blob/ba55b9523b4be3db6959d957965828d81a1ca83c/client/src/comp/hotkey_reader.rs#L94
-    let map = default_keymap();
-    map.get(&key.code()).copied()
+    btn_s.map.get(&key.code()).copied()
 }

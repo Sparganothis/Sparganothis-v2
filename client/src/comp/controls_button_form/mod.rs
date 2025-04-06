@@ -1,3 +1,6 @@
+mod button_settings;
+mod buttons_form;
+pub use button_settings::*;
 
 use dioxus::prelude::*;
 
@@ -9,7 +12,7 @@ GameControlsButtonsForm () -> Element {
         article {
         style: "
             display: flex;
-            height: 55dvh;
+            height: 75dvh;
             width: 100%;
             flex-direction: row;
         ",
@@ -21,7 +24,7 @@ GameControlsButtonsForm () -> Element {
                 padding: 10px;
                 margin: 10px;
             ",
-            ButtonsForm {}
+            buttons_form::ButtonsForm {}
         }
         div {
             style: "
@@ -35,12 +38,5 @@ GameControlsButtonsForm () -> Element {
            
         }
     }
-    }
-}
-
-#[component]
-fn ButtonsForm() -> Element {
-    rsx! {
-        "Buttons Form"
     }
 }

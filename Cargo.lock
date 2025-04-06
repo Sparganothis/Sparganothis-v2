@@ -1214,6 +1214,7 @@ dependencies = [
  "game",
  "getrandom 0.2.15",
  "iroh",
+ "keyboard-types",
  "n0-future",
  "pretty-duration",
  "protocol",

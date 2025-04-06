@@ -80,10 +80,10 @@ fn LinkDropdownProfile(my_nickname: ReadOnlySignal<String>) -> Element {
                     Link { to: Route::MyProfilePage {}, "My Profile"}
                 }
                 li {
-                    Link { to: Route::MyMainSettings {}, "My Settings" }
+                    Link { to: Route::MyMainSettings {}, "Game Settings" }
                 }
                 li {
-                    Link { to: Route::MyButtonSettings {}, "My Button Settings" }
+                    Link { to: Route::MyButtonSettings {}, "Button Settings" }
                 }
             }
         }
