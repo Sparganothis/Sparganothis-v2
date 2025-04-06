@@ -48,10 +48,10 @@ pub fn GameInputCaptureParent(
                 }
             },
             onclick: move |_e| {
-                info!("cliek: {:#?}", _e);
+                // info!("cliek: {:#?}", _e);
             },
             onmounted: move |_e| {
-                info!("mounted! {:#?}", _e);
+                // info!("mounted! {:#?}", _e);
             },
 
             {children}

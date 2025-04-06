@@ -389,19 +389,19 @@ impl GameState {
             new_garbage_applied: self.garbage_applied,
         };
         self.seed = new_slice.new_seed;
-        // log::info!("put  replay event {new_slice:?}");
+        // tracing::info!("put  replay event {new_slice:?}");
         self.last_segment = GameReplaySegment::Update(new_slice);
         self.last_segment_idx += 1;
     }
 
     fn refill_nextpcs(&mut self, event_time: i64) {
-        log::info!("XXXX refill next pcs: {}", self.next_pcs_idx);
+        tracing::info!("XXXX refill next pcs: {}", self.next_pcs_idx);
         if self.next_pcs_idx >= 7 {
             for i in 0..7 {
                 self.next_pcs_bags[i] = self.next_pcs_bags[i + 7];
             }
             self.next_pcs_idx -= 7;
-            // log::info!("next refill");
+            // tracing::info!("next refill");
             let (new_pcs2, new_seed) = shuffle_tets(&self.seed, event_time);
             for (i, n) in new_pcs2.iter().enumerate() {
                 self.next_pcs_bags[i + 7] = *n;
@@ -412,7 +412,7 @@ impl GameState {
     fn pop_next_pcs(&mut self, event_time: i64) -> Tet {
         self.refill_nextpcs(event_time);
         let v = self.next_pcs_bags[self.next_pcs_idx as usize];
-        log::info!("XXXX pop next pcs += 1");
+        tracing::info!("XXXX pop next pcs += 1");
         self.next_pcs_idx += 1;
         v
     }
@@ -422,18 +422,18 @@ impl GameState {
         maybe_next_pcs: Option<Tet>,
     ) -> anyhow::Result<()> {
         if self.current_pcs.is_some() {
-            log::warn!("cannont put next pcs because we already have one");
+            tracing::warn!("cannont put next pcs because we already have one");
             anyhow::bail!("already have next pcs");
         }
 
         if self.game_over() {
-            log::warn!("game over but you called put_next_cs");
+            tracing::warn!("game over but you called put_next_cs");
             anyhow::bail!("game already over");
         }
 
         self.clear_line();
         self.add_pending_garbage();
-        log::info!("XXXXX  caller next pcs: {:?}", maybe_next_pcs);
+        tracing::info!("XXXXX  caller next pcs: {:?}", maybe_next_pcs);
         let next_tet = match maybe_next_pcs {
             None => self.pop_next_pcs(_event_time),
             Some(x) => x,
@@ -448,7 +448,7 @@ impl GameState {
         self.current_id += 1;
 
         if let Err(_) = self.main_board.spawn_piece(&self.current_pcs.unwrap()) {
-            log::info!("tet game over");
+            tracing::info!("tet game over");
             self.game_over_reason = Some(GameOverReason::Knockout);
             self.last_segment = GameReplaySegment::GameOver(GameOverReason::Knockout);
         } else if let Some(ref mut h) = self.hold_pcs {
@@ -461,7 +461,7 @@ impl GameState {
         &mut self,
         slice: &GameReplaySlice,
     ) -> anyhow::Result<()> {
-        // log::info!("over={} acccept replay slice: {:?}", self.game_over, slice);
+        // tracing::info!("over={} acccept replay slice: {:?}", self.game_over, slice);
         if let GameReplaySegment::Update(prev_slice) = &self.last_segment {
             if slice.idx != prev_slice.idx + 1 {
                 anyhow::bail!("duplicate slice mismatch");
@@ -480,7 +480,7 @@ impl GameState {
         *self = self.try_action(slice.event.action, slice.event_timestamp)?;
         if let GameReplaySegment::Update(self_slice) = &self.last_segment {
             if slice != self_slice {
-                log::warn!(
+                tracing::warn!(
                     "no  match in last slicec:  recieved == {:?},  rebuildt locally == ={:?}",
                     slice,
                     self_slice
@@ -521,7 +521,7 @@ impl GameState {
                 id: 0,
             };
             if let Err(e) = b.spawn_piece(&info) {
-                log::warn!("hold board cannot spawn piece WTF: {:?}", e);
+                tracing::warn!("hold board cannot spawn piece WTF: {:?}", e);
             }
         }
         b
@@ -543,7 +543,7 @@ impl GameState {
         });
 
         if let Err(e) = self.main_board.delete_piece(&current_pcs) {
-            log::warn!("ccannot delete picei from main board plz: {:?}", e)
+            tracing::warn!("ccannot delete picei from main board plz: {:?}", e)
         }
         self.current_pcs = None;
 
@@ -578,7 +578,7 @@ impl GameState {
         let current_pcs = self.current_pcs.context("no current pcs")?;
 
         if let Err(e) = self.main_board.delete_piece(&current_pcs) {
-            log::warn!("ccannot delete picei from main board plz: {:?}", e)
+            tracing::warn!("ccannot delete picei from main board plz: {:?}", e)
         }
         let mut new_current_pcs = current_pcs;
         new_current_pcs.pos.0 -= 1;
@@ -599,7 +599,7 @@ impl GameState {
         let current_pcs = self.current_pcs.context("no current pcs")?;
 
         if let Err(e) = self.main_board.delete_piece(&current_pcs) {
-            log::warn!("ccannot delete picei from main board plz: {:?}", e)
+            tracing::warn!("ccannot delete picei from main board plz: {:?}", e)
         }
 
         let mut new_current_pcs = current_pcs;
@@ -614,7 +614,7 @@ impl GameState {
         let current_pcs = self.current_pcs.context("no current pcs")?;
 
         if let Err(e) = self.main_board.delete_piece(&current_pcs) {
-            log::warn!("ccannot delete picei from main board plz: {:?}", e)
+            tracing::warn!("ccannot delete picei from main board plz: {:?}", e)
         }
 
         let mut new_current_pcs = current_pcs;
@@ -628,7 +628,7 @@ impl GameState {
     fn try_rotate(&mut self, rot: RotDirection) -> anyhow::Result<()> {
         let current_pcs = self.current_pcs.context("no current pcs")?;
         if let Err(e) = self.main_board.delete_piece(&current_pcs) {
-            log::warn!("ccannot delete picei from main board plz: {:?}", e)
+            tracing::warn!("ccannot delete picei from main board plz: {:?}", e)
         }
 
         let before = &current_pcs.rs;
@@ -682,7 +682,7 @@ impl GameState {
         event_time: i64,
     ) -> anyhow::Result<Self> {
         if self.game_over() {
-            // log::warn!("gamem over cannot try_action");
+            // tracing::warn!("gamem over cannot try_action");
             anyhow::bail!("game over");
         }
         let mut new = self.clone();
@@ -743,7 +743,7 @@ impl GameState {
                 break;
             } else {
                 if ghost_board.delete_piece(&ghost_info).is_err() {
-                    log::warn!("cannot delete temporary ghost");
+                    tracing::warn!("cannot delete temporary ghost");
                 }
             }
         }
@@ -788,7 +788,7 @@ impl GameState {
             Ok(())
         } else {
             let e = r.unwrap_err();
-            // log::warn!("user action {:?} failed: {:?}", action, e);
+            // tracing::warn!("user action {:?} failed: {:?}", action, e);
             Err(e)
         }
     }
@@ -800,7 +800,7 @@ pub fn segments_to_states(all_segments: &Vec<GameReplaySegment>) -> Vec<GameStat
             GameState::new(&_replay.init_seed, _replay.start_time)
         }
         _ => {
-            log::info!("got no init segment");
+            tracing::info!("got no init segment");
             return vec![];
         }
     };
@@ -809,12 +809,12 @@ pub fn segments_to_states(all_segments: &Vec<GameReplaySegment>) -> Vec<GameStat
     for segment in &all_segments[1..] {
         match segment {
             GameReplaySegment::Init(_) => {
-                log::error!("got two init segments");
+                tracing::error!("got two init segments");
                 return vec![];
             }
             GameReplaySegment::Update(_slice) => {
                 if let Err(e) = current_state.accept_replay_slice(_slice) {
-                    log::error!("failed to accept replay slice: {:#?}", e);
+                    tracing::error!("failed to accept replay slice: {:#?}", e);
                     return vec![];
                 }
             }

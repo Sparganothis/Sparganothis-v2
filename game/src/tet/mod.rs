@@ -102,7 +102,7 @@ pub mod tests {
             }
 
             for slice in _slices {
-                log::info!("accept replay slice: {slice:?}");
+                tracing::info!("accept replay slice: {slice:?}");
                 passive_game.accept_replay_slice(&slice).unwrap();
             }
 

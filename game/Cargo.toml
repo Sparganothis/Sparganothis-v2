@@ -12,7 +12,8 @@ edition = "2021"
 
 [dependencies]
 serde_with = "3.8"
-log = "0.4"
+# log = "0.4"
+tracing = "0.1.41"
 hex = "0.4"
 # simple_logger = "4.0"
 serde = { version = "1", features = ["derive"] }
@@ -22,6 +23,9 @@ chrono = {version="0.4.38", features=["serde", "wasmbind"] }
 time = {version="0.3.36", features=["serde"]}
 # seahash = "4"
 getrandom = { workspace = true }
+tokio = { version = "1.43.0", default-features = false, features = ["sync"] }
+# tokio-stream = { version = "0.1.17", default-features = false, features = ["sync"] }
+
 
 
 # thiserror = "1.0"

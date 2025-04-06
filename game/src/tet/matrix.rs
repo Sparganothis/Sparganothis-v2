@@ -327,7 +327,7 @@ impl<const R: usize, const C: usize> BoardMatrix<R, C> {
             let r = self.spawn_piece(&info);
             row -= 3;
             if r.is_err() {
-                log::info!("{r:?}");
+                tracing::info!("{r:?}");
             }
         }
     }

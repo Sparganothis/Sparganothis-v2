@@ -10,7 +10,7 @@ pub struct GameInputManager {
     old_held: BTreeSet<TetAction>,
     move_auto_repeat_first_ms: u16,
     move_auto_repeat_after_ms: u16,
-    move_auto_soft_drop_ms: u16
+    move_auto_soft_drop_ms: u16,
 }
 
 impl GameInputManager {
@@ -62,7 +62,6 @@ impl GameInputManager {
             cb.push(CallbackTicket {
                 request_type: CallbackRequestType::DropCallback,
                 move_type,
-                cb_duration: None,
             })
         }
         for key_down in new_down.iter().cloned() {
@@ -73,15 +72,17 @@ impl GameInputManager {
                 _ => continue,
             };
             cb.push(CallbackTicket {
-                request_type: CallbackRequestType::SetCallback,
+                request_type: CallbackRequestType::SetCallback(Duration::from_millis(
+                    self.move_auto_repeat_first_ms as u64,
+                )),
                 move_type,
-                cb_duration: Some(Duration::from_millis(self.move_auto_repeat_first_ms as u64)),
             })
         }
         cb.push(CallbackTicket {
-            request_type: CallbackRequestType::SetCallback,
+            request_type: CallbackRequestType::SetCallback(Duration::from_millis(
+                self.move_auto_soft_drop_ms as u64,
+            )),
             move_type: CallbackMoveType::AutoSoftDrop,
-            cb_duration: Some(Duration::from_micros(self.move_auto_soft_drop_ms as u64))
         });
 
         let event = UserEvent {
@@ -94,33 +95,33 @@ impl GameInputManager {
 
     pub fn callback_after_wait(
         &mut self,
-        callback_ticket: CallbackTicket
+        callback_move_type: CallbackMoveType,
     ) -> UserEvent {
-        assert!(callback_ticket.cb_duration.is_some());
-        assert!(callback_ticket.request_type == CallbackRequestType::SetCallback);
-        let action = match callback_ticket.move_type {
+        let action = match callback_move_type {
             CallbackMoveType::AutoMoveDown => TetAction::SoftDrop,
             CallbackMoveType::AutoMoveLeft => TetAction::MoveLeft,
             CallbackMoveType::AutoMoveRight => TetAction::MoveRight,
-            CallbackMoveType::AutoSoftDrop=> TetAction::SoftDrop,
+            CallbackMoveType::AutoSoftDrop => TetAction::SoftDrop,
         };
         let mut cb = vec![];
 
-        let cb_duration = match callback_ticket.move_type {
+        let cb_duration = match callback_move_type {
+            // TODO: if game's next soft drop will lock, put a longer timeout here
             CallbackMoveType::AutoSoftDrop => self.move_auto_soft_drop_ms,
             CallbackMoveType::AutoMoveDown => self.move_auto_repeat_after_ms,
             CallbackMoveType::AutoMoveLeft => self.move_auto_repeat_after_ms,
-            CallbackMoveType::AutoMoveRight => self.move_auto_repeat_after_ms,  
+            CallbackMoveType::AutoMoveRight => self.move_auto_repeat_after_ms,
         };
         cb.push(CallbackTicket {
-            request_type: CallbackRequestType::SetCallback,
-            move_type: callback_ticket.move_type,
-            cb_duration: Some(Duration::from_millis(cb_duration as u64)),
+            request_type: CallbackRequestType::SetCallback(Duration::from_millis(
+                cb_duration as u64,
+            )),
+            move_type: callback_move_type,
         });
 
         UserEvent {
             callback_tickets: cb,
-            action: Some(action)
+            action: Some(action),
         }
     }
 }
@@ -144,12 +145,11 @@ impl UserEvent {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CallbackTicket {
-    request_type: CallbackRequestType,
-    move_type: CallbackMoveType,
-    cb_duration: Option<Duration>,
+    pub request_type: CallbackRequestType,
+    pub move_type: CallbackMoveType,
 }
 
-#[derive(Clone,  Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CallbackMoveType {
     AutoSoftDrop,
     AutoMoveLeft,
@@ -159,6 +159,6 @@ pub enum CallbackMoveType {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CallbackRequestType {
-    SetCallback,
+    SetCallback(Duration),
     DropCallback,
 }

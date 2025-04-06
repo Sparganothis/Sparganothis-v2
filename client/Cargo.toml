@@ -37,6 +37,7 @@ chrono = "0.4.40"
 pretty-duration = "0.1.1"
 dioxus-free-icons = { version = "0.9", features = ["bootstrap"] }
 dioxus-native = { version = "0.1.0-alpha.1", optional = true }
+futures-util = "0.3.31"
 
 
 [features]
