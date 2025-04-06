@@ -85,7 +85,7 @@ fn InitialRepeatDelaySlider() -> Element {
         Slider {
             label: label_initial,
             m: slidr_delay_init,
-            default_value: 33,
+            default_value: 155,
             min: 4,
             max: 666
         }
@@ -112,7 +112,7 @@ fn AfterRepeatDelaySlider() -> Element {
     });
     rsx! {
         h5 {
-            "Initial Repeat Delay"
+            "Repeat Delay"
         }
         Slider {
             label: label_initial,
@@ -143,7 +143,7 @@ fn GameDifficultyAutoSoftdropSlider() -> Element {
     let slider_softdrop = use_signal(|| old_init);
     use_effect(move || {
         let init = slider_softdrop.read().clone();
-        let init = init.clamp(4, 6666);
+        let init = init.clamp(4, 1111);
         if init != old_init {
             let mut new_settings = old_settings;
             new_settings.game.auto_softdrop_interval = Duration::from_millis(
@@ -159,9 +159,9 @@ fn GameDifficultyAutoSoftdropSlider() -> Element {
         Slider {
             label: label_initial,
             m: slider_softdrop,
-            default_value: 33,
+            default_value: 250,
             min: 4,
-            max: 6666
+            max: 1111
         }
     }
 }

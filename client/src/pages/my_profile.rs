@@ -6,11 +6,7 @@ use crate::comp::{settings_form::SettingsForm, user_info_display::CurrentUserInf
 pub fn MyProfilePage() -> Element {
     rsx! {
         article {
-            Hline {}
             CurrentUserInfoDisplay {}
-            Hline {}
-            SettingsForm {  }
-            Hline {}
         }
     }
 }

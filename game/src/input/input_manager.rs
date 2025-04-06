@@ -72,10 +72,12 @@ impl GameInputManager {
                 move_type,
             })
         }
-        cb.push(CallbackTicket {
-            request_type: CallbackRequestType::SetCallback(game_settings.game.auto_softdrop_interval),
-            move_type: CallbackMoveType::AutoSoftDrop,
-        });
+        if action == TetAction::HardDrop || action == TetAction::SoftDrop {
+            cb.push(CallbackTicket {
+                request_type: CallbackRequestType::SetCallback(game_settings.game.auto_softdrop_interval),
+                move_type: CallbackMoveType::AutoSoftDrop,
+            });
+        }
 
         let event = UserEvent {
             callback_tickets: cb,

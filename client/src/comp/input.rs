@@ -37,12 +37,18 @@ pub fn GameInputCaptureParent(
             onkeyup: move |_e| {
                 // info!("onkeyup: {:#?}", _e);
                 if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
+                    _e.prevent_default();
+                    _e.stop_propagation();
+
                     on_key_cb.call((key, GameInputEventType::KeyUp));
                 }
             },
             onkeydown: move |_e| {
                 // info!("onkeydown: {:#?}", _e);
                 if let Some(key) = keyboard_data_to_game_key(&_e.data()) {
+                    _e.prevent_default();
+                    _e.stop_propagation();
+                    
                     on_key_cb.call((key, GameInputEventType::KeyDown));
                 }
             },

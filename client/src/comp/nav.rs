@@ -29,7 +29,7 @@ pub fn Nav() -> Element {
             }
             ul {
                 li {
-                    Link { to: Route::MyProfilePage {}, b {"{my_nickname}"} }
+                    LinkDropdownProfile{my_nickname}
                 }
                 li {
                     Link { to: Route::GlobalChatPage { }, "Chat" }
@@ -60,6 +60,32 @@ fn GithubIcon() -> Element {
         div {
             style: "width: 1rem; height: 1rem; padding-right: 0.2rem; margin-right: 0.2rem; margin-top: -0.7rem;",
             dangerous_inner_html: sstr,
+        }
+    }
+}
+
+
+#[component]
+fn LinkDropdownProfile(my_nickname: ReadOnlySignal<String>) -> Element {
+    rsx! {
+        details {
+            class: "dropdown",
+            summary {
+                b {
+                    "{my_nickname}"
+                }
+            }
+            ul {
+                li {
+                    Link { to: Route::MyProfilePage {}, "My Profile"}
+                }
+                li {
+                    Link { to: Route::MyMainSettings {}, "My Settings" }
+                }
+                li {
+                    Link { to: Route::MyButtonSettings {}, "My Button Settings" }
+                }
+            }
         }
     }
 }

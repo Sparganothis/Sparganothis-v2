@@ -9,3 +9,4 @@ pub mod slider;
 pub mod user_info_display;
 pub mod settings_form;
 pub mod cosmetic;
+pub mod controls_button_form;

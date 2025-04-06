@@ -17,6 +17,12 @@ pub enum Route {
     #[route("/my-profile")]
     MyProfilePage {},
 
+    #[route("/my-main-settings")]
+    MyMainSettings {},
+    
+    #[route("/my-button-settings")]
+    MyButtonSettings {},
+
     #[route("/chat")]
     GlobalChatPage {},
 
