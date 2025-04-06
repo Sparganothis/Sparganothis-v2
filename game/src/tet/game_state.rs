@@ -395,7 +395,6 @@ impl GameState {
     }
 
     fn refill_nextpcs(&mut self, event_time: i64) {
-        tracing::info!("XXXX refill next pcs: {}", self.next_pcs_idx);
         if self.next_pcs_idx >= 7 {
             for i in 0..7 {
                 self.next_pcs_bags[i] = self.next_pcs_bags[i + 7];
@@ -412,7 +411,6 @@ impl GameState {
     fn pop_next_pcs(&mut self, event_time: i64) -> Tet {
         self.refill_nextpcs(event_time);
         let v = self.next_pcs_bags[self.next_pcs_idx as usize];
-        tracing::info!("XXXX pop next pcs += 1");
         self.next_pcs_idx += 1;
         v
     }
@@ -433,7 +431,6 @@ impl GameState {
 
         self.clear_line();
         self.add_pending_garbage();
-        tracing::info!("XXXXX  caller next pcs: {:?}", maybe_next_pcs);
         let next_tet = match maybe_next_pcs {
             None => self.pop_next_pcs(_event_time),
             Some(x) => x,

@@ -3,7 +3,6 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use super::input_manager::{CallbackMoveType, CallbackTicket, UserEvent};
 use crate::{tet::TetAction, timestamp::get_timestamp_now_ms};
 use tokio::sync::{futures::Notified, Mutex, Notify};
-use tracing::info;
 
 #[derive(Debug, Clone)]
 pub struct CallbackManager {
@@ -14,7 +13,6 @@ pub struct CallbackManager {
 impl CallbackManager {
     // pub fn
     pub fn new() -> Self {
-        info!("CallbackManager::new()");
         let notify = Arc::new(Notify::new());
         let _notify = notify.clone();
         let mut inner = CallbackManagerInner {
@@ -31,7 +29,6 @@ impl CallbackManager {
         self._notify.notified()
     }
     pub async fn accept_user_event(&self, user_event: UserEvent) -> Option<TetAction> {
-        info!("CallbackManager::accept_user_event(vvv)");
         let mut g = self.inner.lock().await;
         g.accept_user_event(user_event)
     }
@@ -43,7 +40,6 @@ impl CallbackManager {
             let g = self.inner.lock().await;
             g.events.clone()
         };
-        info!("CallbackManager::get_events() =  {:#?}", e);
         e
     }
 
@@ -63,10 +59,6 @@ impl CallbackManager {
                 }
             }
         }
-        info!(
-            "\nCallbackManager::get_sleep_duration_ms() -> \n(\n  {}, \n  {:#?}\n)",
-            min_delay, v
-        );
         (min_delay, v)
     }
 }
@@ -79,7 +71,6 @@ struct CallbackManagerInner {
 
 impl CallbackManagerInner {
     fn accept_user_event(&mut self, user_event: UserEvent) -> Option<TetAction> {
-        info!("CallbackManagerInner::accept_user_event({:#?})", user_event);
         let action = user_event.action;
 
         for ticket in user_event.callback_tickets {
@@ -92,7 +83,6 @@ impl CallbackManagerInner {
     }
 
     fn accept_ticket(&mut self, ticket: CallbackTicket) {
-        info!("CallbackManagerInner::accept_ticket({:#?})", ticket);
         match ticket.request_type {
             super::input_manager::CallbackRequestType::SetCallback(duration) => {
                 self.set_cb(ticket.move_type, duration);
@@ -104,15 +94,10 @@ impl CallbackManagerInner {
     }
 
     fn drop_cb(&mut self, move_type: CallbackMoveType) {
-        info!("CallbackManagerInner::drop_cb({:?})", move_type);
         self.events.remove(&move_type);
         self.notify.notify_waiters();
     }
     fn set_cb(&mut self, move_type: CallbackMoveType, duration: Duration) {
-        info!(
-            "CallbackManagerInner::set_cb({:?}, {:?})",
-            move_type, duration
-        );
         let now = get_timestamp_now_ms();
         self.events
             .insert(move_type, now + duration.as_millis() as i64);

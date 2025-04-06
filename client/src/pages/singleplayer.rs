@@ -21,7 +21,6 @@ pub fn Singleplayer() -> Element {
     let game_state = use_memo(move || game_state_w.read().clone());
     // let mut game_event = use_signal(|| None);
     let on_tet_action = Callback::new(move |action: TetAction| {
-        warn!("ZZZ ===> TETACTION {:?}", action);
         if let Ok(next_state) =
             game_state.read().try_action(action, get_timestamp_now_ms())
         {
@@ -35,10 +34,8 @@ pub fn Singleplayer() -> Element {
             let mut zzz = 0;
             loop {
                 zzz += 1;
-                warn!("\n\n ZZZ {zzz} ============== INIT ===============");
                 let (duration_ms, items) =
                     callback_manager.get_sleep_duration_ms().await;
-                warn!("INIT {} items", items.len());
                 for _move in items {
                     let x = input_manager.write().callback_after_wait(_move);
                     let y = callback_manager.accept_user_event(x).await;
@@ -49,11 +46,9 @@ pub fn Singleplayer() -> Element {
                 let duration =
                     std::time::Duration::from_millis(duration_ms as u64);
 
-                warn!("\n ZZZ {zzz} ============== SELECT {duration:?} ===============");
                 tokio::select! {
                     event = _r.next().fuse() => {
-                        warn!("ZZZ event! {:#?}", event);
-                         let Some(event) = event else {
+                        let Some(event) = event else {
                             tracing::warn!("ticket manger loop end: coro end");
                             break;
                         };
@@ -64,12 +59,10 @@ pub fn Singleplayer() -> Element {
                         continue;
                     }
                     _not = callback_manager.notified().fuse() => {
-                        warn!("ZZZ {zzz} notified!!!");
                         continue;
                     }
 
                     _sl = n0_future::time::sleep(duration).fuse() => {
-                        warn!("ZZZ {zzz} slept for {:?}!!!", duration);
                         continue;
                     }
                 }

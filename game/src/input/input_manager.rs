@@ -16,9 +16,9 @@ pub struct GameInputManager {
 impl GameInputManager {
     pub fn new() -> Self {
         Self {
-            move_auto_repeat_first_ms: 350,
-            move_auto_repeat_after_ms: 125,
-            move_auto_soft_drop_ms: 1250,
+            move_auto_repeat_first_ms: 150,
+            move_auto_repeat_after_ms: 33,
+            move_auto_soft_drop_ms: 666,
             new_held: BTreeSet::new(),
             old_held: BTreeSet::new(),
         }

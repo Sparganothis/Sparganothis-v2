@@ -153,7 +153,6 @@ fn use_chat_send_message_callback<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
     mut history: Signal<ChatHistory<T>>,
 ) -> Callback<T::M> {
-    let mm = use_context::<NetworkState>().global_mm;
     let coro =
         use_coroutine(move |mut n: UnboundedReceiver<T::M>| async move {
             while let Some(message) = n.next().await {
