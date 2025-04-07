@@ -1,6 +1,8 @@
 use dioxus::prelude::*;
 use protocol::{
-    global_chat::{GlobalChatMessageContent, GlobalChatMessageType, GlobalChatPresence},
+    global_chat::{
+        GlobalChatMessageContent, GlobalChatMessageType, GlobalChatPresence,
+    },
     IChatRoomType as ChatMessageType2,
 };
 
@@ -31,9 +33,9 @@ impl RenderElement for GlobalChatMessageType {
     fn render_message(message: <Self as ChatMessageType2>::M) -> Element {
         let message = match message {
             GlobalChatMessageContent::TextMessage { text } => text,
-           _x => {
-            format!("{:#?}", _x)
-           },
+            _x => {
+                format!("{:#?}", _x)
+            }
         };
         rsx! {
                 "{message}"

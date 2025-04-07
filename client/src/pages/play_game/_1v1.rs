@@ -12,7 +12,7 @@ pub fn Play1v1Page() -> Element {
             ",
 
             Play1v1FullscreenWindow {
-                
+
             }
         }
     }

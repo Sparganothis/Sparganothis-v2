@@ -11,9 +11,8 @@ use n0_future::task::AbortOnDropHandle;
 use protocol::{
     chat::{ChatSender, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
+    global_chat::{GlobalChatMessageType, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
-    global_chat::{
-        GlobalChatMessageType, GlobalChatPresence, },
     user_identity::{NodeIdentity, UserIdentitySecrets},
     ReceivedMessage,
 };

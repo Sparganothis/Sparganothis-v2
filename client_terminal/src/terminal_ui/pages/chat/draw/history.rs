@@ -101,9 +101,9 @@ impl ChatMessage {
                 .into_left_aligned_line();
         let header_right = Span::raw(elapsed_txt).into_right_aligned_line();
 
-        let msg_txt: String =match   &msg.message {
+        let msg_txt: String = match &msg.message {
             GlobalChatMessageContent::TextMessage { text } => text.to_string(),
-            _x => format!{"{_x:#?}"},
+            _x => format! {"{_x:#?}"},
         };
         let msg_reflow = word_wrap(&msg_txt, width);
         // Split message into lines if it's too long

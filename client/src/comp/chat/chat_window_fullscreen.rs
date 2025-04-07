@@ -11,7 +11,7 @@ pub fn FullscreenChatRoom<T: ChatMessageType>(chat: ChatSignals<T>) -> Element {
     info!("FullscreenChatRoom");
     let presence = chat.presence;
     let history = chat.history;
-    let on_user_message = chat.send_user_message;
+    let on_user_message = chat.send_broadcast_user_message;
 
     rsx! {
         div {

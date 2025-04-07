@@ -4,7 +4,9 @@ pub use iroh::NodeId;
 pub use iroh_gossip::proto::TopicId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(
+    Serialize, Deserialize, Clone, Debug, PartialEq, Eq, PartialOrd, Ord,
+)]
 pub struct ChatTicket {
     pub topic_id: TopicId,
     pub bootstrap: BTreeSet<NodeId>,

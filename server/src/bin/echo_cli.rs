@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use protocol::{
-    chat::{IChatController, IChatReceiver, IChatSender}, global_chat::{GlobalChatMessageContent, GlobalChatPresence}, global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets
+    chat::{IChatController, IChatReceiver, IChatSender},
+    global_chat::{GlobalChatMessageContent, GlobalChatPresence},
+    global_matchmaker::GlobalMatchmaker,
+    user_identity::UserIdentitySecrets,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
@@ -69,15 +72,13 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
             match message.message {
                 GlobalChatMessageContent::TextMessage { text } => {
                     println!("<{user_id}@{node_id}> {nickname}: {text}");
-                },
-                GlobalChatMessageContent::MatchmakingMessage { 
-                    _1v1_options 
-                } => {
+                }
+                GlobalChatMessageContent::MatchmakingMessage { .. } => {
                     println!("{nickname} matchmaking: 1v1 message!");
-                },
+                }
                 _ => {
                     println!("<{user_id}@{node_id}> {nickname}: other message: {:#?}", message.message)
-                },
+                }
             }
         }
         println!("* recv closed");

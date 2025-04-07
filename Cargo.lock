@@ -7069,6 +7069,7 @@ dependencies = [
  "async-trait",
  "chrono",
  "futures",
+ "game",
  "hex",
  "iroh",
  "iroh-base",

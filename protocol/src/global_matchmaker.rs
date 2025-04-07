@@ -12,13 +12,18 @@ use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
 use crate::{
-    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _const::{
+    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
+    _const::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
-    }, chat::{ChatController, IChatController, IChatSender}, 
-    chat_ticket::ChatTicket, datetime_now, echo::Echo,
-     global_chat::{GlobalChatMessageType, GlobalChatPresence},
-      main_node::MainNode, sleep::SleepManager,
-       user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets}
+    },
+    chat::{ChatController, IChatController, IChatSender},
+    chat_ticket::ChatTicket,
+    datetime_now,
+    echo::Echo,
+    global_chat::{GlobalChatMessageType, GlobalChatPresence},
+    main_node::MainNode,
+    sleep::SleepManager,
+    user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
 };
 
 #[derive(Clone)]

@@ -16,7 +16,6 @@ use crate::{
     localstorage::use_game_settings,
 };
 
-
 /// User Game board without fullscreen parent
 #[component]
 pub fn SingleplayerGameBoard() -> Element {

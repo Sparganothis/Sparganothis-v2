@@ -39,7 +39,7 @@ pub fn MiniChatRoomOverlay<T: ChatMessageType>(
 
     let presence = chat.presence;
     let history = chat.history;
-    let on_user_message = chat.send_user_message;
+    let on_user_message = chat.send_broadcast_user_message;
 
     rsx! {
         if *hide.read() {

@@ -15,7 +15,7 @@ pub fn MatchmakingPage() -> Element {
                 "Matchmaking"
             }
             MatchmakingWindow {
-
+                user_match_type: game::api::game_match::GameMatchType::_1v1
             }
         }
     }

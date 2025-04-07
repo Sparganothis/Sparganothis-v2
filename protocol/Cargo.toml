@@ -5,6 +5,7 @@ authors.workspace = true
 edition.workspace = true
 
 [dependencies]
+game = {path = "../game"}
 iroh.workspace = true
 random_word = { version = "0.5.0", features = ["de"] }
 anyhow = "1"

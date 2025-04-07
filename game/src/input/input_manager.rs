@@ -106,9 +106,7 @@ impl GameInputManager {
 
         let cb_duration = match callback_move_type {
             // TODO: if game's next soft drop will lock, put a longer timeout here
-            CallbackMoveType::AutoSoftDrop => {
-                game_settings.game.auto_softdrop_interval
-            },
+            CallbackMoveType::AutoSoftDrop => game_settings.game.auto_softdrop_interval,
             CallbackMoveType::RepeatMoveDown => {
                 game_settings.input.autorepeat_delay_after
             }

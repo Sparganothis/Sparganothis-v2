@@ -36,10 +36,10 @@ pub fn IAmARobotSingleplayer() -> Element {
             let url = format!("http://localhost:8080/Sparganothis-v2{}", url);
             url_sig.set(url.clone());
             warn!("Sending url: {url}");
-            global_chat.send_user_message.call(url.into());
+            global_chat.send_broadcast_user_message.call(url.into());
         }
     });
-    let game_chat = use_chat_signals(Callback::new(
+    let game_chat = use_chat_signals(true, Callback::new(
         move |mm: GlobalMatchmaker| async move {
             let chat_ticket =
                 ChatTicket::new_str_bs("play", BTreeSet::from([]));
@@ -53,7 +53,7 @@ pub fn IAmARobotSingleplayer() -> Element {
         let game = game_state.read().clone();
         async move {
             game_chat
-                .send_user_message
+                .send_broadcast_user_message
                 .call(GameMessage::GameState(game));
         }
     });

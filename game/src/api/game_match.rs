@@ -48,7 +48,7 @@ pub struct UserAndMatchResult {
 }
 
 #[derive(
-    Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
+    Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, Ord, Hash, Eq,
 )]
 pub enum GameMatchType {
     _1v1,

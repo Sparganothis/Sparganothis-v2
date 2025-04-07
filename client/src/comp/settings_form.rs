@@ -3,9 +3,9 @@ use std::time::Duration;
 use dioxus::prelude::*;
 
 use crate::{
+    comp::singleplayer::SingleplayerGameBoard,
     comp::slider::Slider,
     localstorage::{set_game_settings, use_game_settings},
-    comp::singleplayer::SingleplayerGameBoard,
 };
 
 #[component]
