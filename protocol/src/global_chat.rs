@@ -85,4 +85,11 @@ impl GlobalChatMessageContent {
             },
         }
     }
+    pub fn matchmake_lfg(match_type: GameMatchType) -> Self {
+        Self::MatchmakingMessage {
+            msg: MatchmakingMessage::LFG {
+                match_type,
+            },
+        }
+    }
 }

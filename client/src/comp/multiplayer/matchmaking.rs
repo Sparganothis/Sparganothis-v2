@@ -134,6 +134,13 @@ pub fn MatchmakingWindow(
         }
     });
 
+    let btn_disabled = use_memo( move || {
+        let have_chat = chat.chat.read().clone().is_some();
+        !have_chat
+    });
+
+    // todo: on confirm send message from button
+
     rsx! {
 
         h1 {"old msg"}
@@ -154,10 +161,13 @@ pub fn MatchmakingWindow(
         button {
             onclick: move |_| {
                 info!("send LFG");
-                chat.send_broadcast_user_message.call(GlobalChatMessageContent::MatchmakingMessage {
-                    msg: MatchmakingMessage::LFG { match_type: game::api::game_match::GameMatchType::_1v1 }
+                chat.send_broadcast_user_message.call(
+                        GlobalChatMessageContent::MatchmakingMessage {
+                    msg: MatchmakingMessage::LFG {
+                         match_type: game::api::game_match::GameMatchType::_1v1 }
                 });
             },
+            disabled: *btn_disabled.read(),
             "Send msg. LFG 1v1"
         }
     }
