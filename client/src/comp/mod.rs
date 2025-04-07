@@ -10,3 +10,5 @@ pub mod nav;
 pub mod settings_form;
 pub mod slider;
 pub mod user_info_display;
+pub mod multiplayer;
+pub mod singleplayer;

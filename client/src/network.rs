@@ -5,9 +5,9 @@ use n0_future::StreamExt;
 use protocol::{
     _const::PRESENCE_INTERVAL,
     chat::{IChatController, IChatSender},
-    global_matchmaker::{
-        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
-    },
+    global_matchmaker::GlobalMatchmaker,
+    global_chat::{
+        GlobalChatMessageType, GlobalChatPresence,},
     user_identity::UserIdentitySecrets,
 };
 use tracing::{info, warn};

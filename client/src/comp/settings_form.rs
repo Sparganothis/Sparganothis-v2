@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 use crate::{
     comp::slider::Slider,
     localstorage::{set_game_settings, use_game_settings},
-    pages::SingleplayerGameBoard,
+    comp::singleplayer::SingleplayerGameBoard,
 };
 
 #[component]

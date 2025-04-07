@@ -7,7 +7,8 @@ use n0_future::StreamExt;
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
-    global_matchmaker::{GlobalChatMessageType, GlobalMatchmaker},
+    global_matchmaker::GlobalMatchmaker,
+    global_chat::GlobalChatMessageType,
     IChatRoomType, ReceivedMessage,
 };
 use tracing::{info, warn};

@@ -8,23 +8,17 @@ use anyhow::{Context, Result};
 use iroh::{endpoint::VarInt, Endpoint, NodeId, PublicKey, SecretKey};
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
-use serde::{Deserialize, Serialize};
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
 use crate::{
-    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
-    _const::{
+    _bootstrap_keys::BOOTSTRAP_SECRET_KEYS, _const::{
         CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
-    },
-    chat::{ChatController, IChatController, IChatSender},
-    chat_ticket::ChatTicket,
-    datetime_now,
-    echo::Echo,
-    main_node::MainNode,
-    signed_message::IChatRoomType,
-    sleep::SleepManager,
-    user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
+    }, chat::{ChatController, IChatController, IChatSender}, 
+    chat_ticket::ChatTicket, datetime_now, echo::Echo,
+     global_chat::{GlobalChatMessageType, GlobalChatPresence},
+      main_node::MainNode, sleep::SleepManager,
+       user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets}
 };
 
 #[derive(Clone)]
@@ -34,24 +28,6 @@ pub struct GlobalMatchmaker {
     own_private_key: Arc<SecretKey>,
     inner: Arc<RwLock<GlobalMatchmakerInner>>,
     sleep_manager: SleepManager,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct GlobalChatMessageType;
-
-impl IChatRoomType for GlobalChatMessageType {
-    type M = String;
-    type P = GlobalChatPresence;
-    fn default_presence() -> Self::P {
-        GlobalChatPresence::default()
-    }
-}
-#[derive(
-    Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize, Default,
-)]
-pub struct GlobalChatPresence {
-    pub url: String,
-    pub platform: String,
 }
 
 struct GlobalMatchmakerInner {

@@ -2,7 +2,7 @@ mod history;
 mod presence;
 
 use protocol::chat_presence::PresenceList;
-use protocol::global_matchmaker::GlobalChatMessageType;
+use protocol::global_chat::GlobalChatMessageType;
 use protocol::user_identity::NodeIdentity;
 use protocol::{datetime_now, ReceivedMessage};
 use ratatui::layout::{Constraint, Layout};

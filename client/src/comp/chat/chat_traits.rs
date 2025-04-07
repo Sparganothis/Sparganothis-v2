@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use protocol::{
-    global_matchmaker::{GlobalChatMessageType, GlobalChatPresence},
+    global_chat::{GlobalChatMessageContent, GlobalChatMessageType, GlobalChatPresence},
     IChatRoomType as ChatMessageType2,
 };
 
@@ -24,11 +24,17 @@ pub trait FromUserInput: ChatMessageType2 {
 
 impl FromUserInput for GlobalChatMessageType {
     fn from_user_input(input: String) -> <Self as ChatMessageType2>::M {
-        input
+        GlobalChatMessageContent::TextMessage { text: input }
     }
 }
 impl RenderElement for GlobalChatMessageType {
     fn render_message(message: <Self as ChatMessageType2>::M) -> Element {
+        let message = match message {
+            GlobalChatMessageContent::TextMessage { text } => text,
+           _x => {
+            format!("{:#?}", _x)
+           },
+        };
         rsx! {
                 "{message}"
         }

@@ -36,7 +36,7 @@ pub fn IAmARobotSingleplayer() -> Element {
             let url = format!("http://localhost:8080/Sparganothis-v2{}", url);
             url_sig.set(url.clone());
             warn!("Sending url: {url}");
-            global_chat.send_user_message.call(url);
+            global_chat.send_user_message.call(url.into());
         }
     });
     let game_chat = use_chat_signals(Callback::new(

@@ -14,34 +14,52 @@ pub enum Route {
     #[route("/")]
     Home {},
 
-    #[route("/my-profile")]
-    MyProfilePage {},
+    #[nest("/my")]
+        #[route("/my-profile")]
+        MyProfilePage {},
 
-    #[route("/my-main-settings")]
-    MyMainSettings {},
-    
-    #[route("/my-button-settings")]
-    MyButtonSettings {},
+        #[route("/my-main-settings")]
+        MyMainSettings {},
+        
+        #[route("/my-button-settings")]
+        MyButtonSettings {},
+    #[end_nest]
 
-    #[route("/chat")]
-    GlobalChatPage {},
+    #[nest("/chat")]
+        #[route("/")]
+        GlobalChatPage {},
+    #[end_nest]
 
     #[route("/spectate-homepage/:node_id")]
     SpectateGamePage { node_id: NodeId },
 
-    #[route("/singleplayer")]
-    Singleplayer {},
 
     #[route("/i_am_a_robot_singleplayer")]
     IAmARobotSingleplayer {},
 
+    #[nest("/play")]
+
+        #[route("/")]
+        PlayGameRootPage {},
+
+        #[route("/singleplayer")]
+        PlaySingleplayerPage {},
+
+        #[route("/1v1")]
+        Play1v1Page {},
+
+        #[route("/matchmaking")]
+        MatchmakingPage {},
+        
+    #[end_nest]
+
     #[route("/:..x")]
-    NotFound { x: Vec<String> },
+    NotFoundPage { x: Vec<String> },
 
 }
 
 #[component]
-fn NotFound(x: Vec<String>) -> Element {
+fn NotFoundPage(x: Vec<String>) -> Element {
     let url = x.join("/");
     rsx! {
         h1 { "Not Found: /{url}" }

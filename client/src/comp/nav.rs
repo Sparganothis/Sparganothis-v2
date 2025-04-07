@@ -18,8 +18,21 @@ pub fn Nav() -> Element {
             ul {
                 li {
                     Link { to: Route::Home {},   strong { "{APP_TITLE}" } }
-                    Link { to: Route::Singleplayer { }, small { "singleplayer" } }
+                }
+            }
+            ul {
+                li {
+                    Link { to: Route::PlaySingleplayerPage { }, small { "singleplayer" } }
+                }
+            }
+            ul {
+                li {
                     Link { to: Route::IAmARobotSingleplayer { }, small { "robot" } }
+                }
+            }
+            ul {
+                li {
+                    Link { to: Route::MatchmakingPage { }, small { "1v1 matchmaking" } }
                 }
             }
             ul {

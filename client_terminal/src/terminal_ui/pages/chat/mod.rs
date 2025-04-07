@@ -11,9 +11,9 @@ use n0_future::task::AbortOnDropHandle;
 use protocol::{
     chat::{ChatSender, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
-    global_matchmaker::{
-        GlobalChatMessageType, GlobalChatPresence, GlobalMatchmaker,
-    },
+    global_matchmaker::GlobalMatchmaker,
+    global_chat::{
+        GlobalChatMessageType, GlobalChatPresence, },
     user_identity::{NodeIdentity, UserIdentitySecrets},
     ReceivedMessage,
 };
@@ -133,6 +133,7 @@ impl ChatPage {
                     *input_buffer = String::new();
                     drop(state); // Release lock before async operation
 
+                    let msg = msg.into();
                     let _r = sender.broadcast_message(msg).await;
                     match _r {
                         Ok(_r) => {

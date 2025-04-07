@@ -1,4 +1,4 @@
-use protocol::global_matchmaker::GlobalChatMessageType;
+use protocol::global_chat::{GlobalChatMessageContent, GlobalChatMessageType};
 use protocol::user_identity::NodeIdentity;
 use protocol::{datetime_now, ReceivedMessage};
 use ratatui::prelude::*;
@@ -101,7 +101,11 @@ impl ChatMessage {
                 .into_left_aligned_line();
         let header_right = Span::raw(elapsed_txt).into_right_aligned_line();
 
-        let msg_reflow = word_wrap(&msg.message, width);
+        let msg_txt: String =match   &msg.message {
+            GlobalChatMessageContent::TextMessage { text } => text.to_string(),
+            _x => format!{"{_x:#?}"},
+        };
+        let msg_reflow = word_wrap(&msg_txt, width);
         // Split message into lines if it's too long
         let message_lines: Vec<Line> = msg_reflow
             .split('\n')

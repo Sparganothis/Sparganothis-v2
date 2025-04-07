@@ -1,5 +1,5 @@
 use protocol::chat_presence::{PresenceFlag, PresenceList};
-use protocol::global_matchmaker::GlobalChatMessageType;
+use protocol::global_chat::GlobalChatMessageType;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};

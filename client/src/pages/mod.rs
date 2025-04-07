@@ -21,3 +21,6 @@ pub use main_settings::*;
 
 mod button_settings;
 pub use button_settings::*;
+
+mod play_game;
+pub use play_game::*;
