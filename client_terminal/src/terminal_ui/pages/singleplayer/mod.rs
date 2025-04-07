@@ -16,7 +16,7 @@ use game::{
 use n0_future::task::AbortOnDropHandle;
 use protocol::datetime_now;
 use ratatui::widgets::Paragraph;
-use tokio::sync::{Mutex, Notify};
+use tokio::sync::{Notify, RwLock};
 
 #[derive(Debug)]
 pub struct SingleplayerPageFactory;
@@ -27,7 +27,7 @@ impl PageFactory for SingleplayerPageFactory {
             game::futures_channel::mpsc::unbounded::<GameInputEvent>();
         let page = SingleplayerPage {
             _notify: notify,
-            data: Arc::new(Mutex::new(SingleplayerPageState {
+            data: Arc::new(RwLock::new(SingleplayerPageState {
                 game_state: GameState::empty(),
             })),
             event_tx,
@@ -36,12 +36,12 @@ impl PageFactory for SingleplayerPageFactory {
         let task = async move {
             let callback_manager = CallbackManager::new2();
             let s = GameSettings::default();
-            let s = Arc::new(Mutex::new(s));
+            let s = Arc::new(RwLock::new(s));
             let _s = callback_manager.main_loop(event_rx, s.clone()).await;
             futures::pin_mut!(_s);
             while let Some(event) = _s.next().await {
                 {
-                    let mut data = _page.data.lock().await;
+                    let mut data = _page.data.write().await;
                     if let Ok(next) = data
                         .game_state
                         .try_action(event, get_timestamp_now_ms())
@@ -63,7 +63,7 @@ impl PageFactory for SingleplayerPageFactory {
 #[derive(Debug, Clone)]
 pub struct SingleplayerPage {
     _notify: Arc<Notify>,
-    data: Arc<Mutex<SingleplayerPageState>>,
+    data: Arc<RwLock<SingleplayerPageState>>,
     event_tx: game::futures_channel::mpsc::UnboundedSender<GameInputEvent>,
 }
 
@@ -75,7 +75,7 @@ pub struct SingleplayerPageState {
 #[async_trait]
 impl Page for SingleplayerPage {
     async fn get_drawable(&self) -> Box<dyn Drawable> {
-        Box::new(self.data.lock().await.clone())
+        Box::new(self.data.read().await.clone())
     }
     async fn shutdown(&self) {}
     async fn handle_event(&self, _event: Event) {

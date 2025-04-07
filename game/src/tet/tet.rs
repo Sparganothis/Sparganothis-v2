@@ -174,7 +174,9 @@ impl TetAction {
     }
     pub fn is_repeating(&self) -> bool {
         match self {
-            TetAction::MoveLeft | TetAction::MoveRight | TetAction::UserSoftDrop => true,
+            TetAction::MoveLeft | TetAction::MoveRight | TetAction::UserSoftDrop => {
+                true
+            }
             _ => false,
         }
     }

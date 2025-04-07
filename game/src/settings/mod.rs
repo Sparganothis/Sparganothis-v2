@@ -39,7 +39,7 @@ impl Default for GameInputSettings {
     fn default() -> Self {
         Self {
             autorepeat_delay_initial: Duration::from_millis(167),
-            autorepeat_delay_after: Duration::from_millis(50),
+            autorepeat_delay_after: Duration::from_millis(33),
         }
     }
 }
@@ -63,7 +63,7 @@ pub struct GameModeSettings {
 impl Default for GameModeSettings {
     fn default() -> Self {
         Self {
-            auto_softdrop_interval: Duration::from_millis(500),
+            auto_softdrop_interval: Duration::from_millis(410),
         }
     }
 }

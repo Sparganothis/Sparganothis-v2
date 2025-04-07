@@ -9,7 +9,7 @@ use iroh::{endpoint::VarInt, Endpoint, NodeId, PublicKey, SecretKey};
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
 use crate::{
@@ -32,7 +32,7 @@ pub struct GlobalMatchmaker {
     user_secrets: Arc<UserIdentitySecrets>,
     own_public_key: Arc<PublicKey>,
     own_private_key: Arc<SecretKey>,
-    inner: Arc<Mutex<GlobalMatchmakerInner>>,
+    inner: Arc<RwLock<GlobalMatchmakerInner>>,
     sleep_manager: SleepManager,
 }
 
@@ -110,7 +110,7 @@ impl GlobalMatchmaker {
         let sleep = self.sleep_manager.clone();
         {
             sleep.sleep(Duration::from_secs_f32(0.1)).await;
-            let mut inner = self.inner.lock().await;
+            let mut inner = self.inner.write().await;
             inner.shutdown().await?;
         }
         info!("GlobalMatchmaker shutdown complete");
@@ -134,12 +134,12 @@ impl GlobalMatchmaker {
     pub async fn global_chat_controller(
         &self,
     ) -> Option<ChatController<GlobalChatMessageType>> {
-        self.inner.lock().await.global_chat_controller.clone()
+        self.inner.read().await.global_chat_controller.clone()
     }
     pub async fn bs_global_chat_controller(
         &self,
     ) -> Option<ChatController<GlobalChatMessageType>> {
-        self.inner.lock().await.bs_global_chat_controller.clone()
+        self.inner.read().await.bs_global_chat_controller.clone()
     }
     pub async fn display_debug_info(&self) -> Result<String> {
         let user_nickname =
@@ -188,7 +188,7 @@ impl GlobalMatchmaker {
             user_secrets: user.clone(),
             own_public_key: Arc::new(own_private_key.public()),
             own_private_key: own_private_key.clone(),
-            inner: Arc::new(Mutex::new(GlobalMatchmakerInner {
+            inner: Arc::new(RwLock::new(GlobalMatchmakerInner {
                 own_main_node: None,
                 bootstrap_main_node: None,
                 known_bootstrap_nodes: BTreeMap::new(),
@@ -217,7 +217,7 @@ impl GlobalMatchmaker {
         )
         .await?;
         {
-            mm.inner.lock().await.own_main_node = Some(own_endpoint)
+            mm.inner.write().await.own_main_node = Some(own_endpoint)
         };
         Ok(mm)
     }
@@ -226,7 +226,7 @@ impl GlobalMatchmaker {
     }
     pub async fn bootstrap_nodes_set(&self) -> BTreeSet<NodeId> {
         self.inner
-            .lock()
+            .read()
             .await
             .known_bootstrap_nodes
             .values()
@@ -239,7 +239,7 @@ impl GlobalMatchmaker {
     }
     pub async fn own_endpoint(&self) -> Option<Endpoint> {
         self.inner
-            .lock()
+            .read()
             .await
             .own_main_node
             .as_ref()
@@ -247,7 +247,7 @@ impl GlobalMatchmaker {
     }
     pub async fn own_node(&self) -> Option<MainNode> {
         self.inner
-            .lock()
+            .read()
             .await
             .own_main_node
             .as_ref()
@@ -255,7 +255,7 @@ impl GlobalMatchmaker {
     }
     pub async fn bs_node(&self) -> Option<MainNode> {
         self.inner
-            .lock()
+            .read()
             .await
             .bootstrap_main_node
             .as_ref()
@@ -263,7 +263,7 @@ impl GlobalMatchmaker {
     }
     pub async fn bs_endpoint(&self) -> Option<Endpoint> {
         self.inner
-            .lock()
+            .read()
             .await
             .bootstrap_main_node
             .as_ref()
@@ -321,7 +321,7 @@ impl GlobalMatchmaker {
             global_periodic_task(mm.clone()),
         ));
         {
-            mm.inner.lock().await._periodic_task = Some(periodic_task);
+            mm.inner.write().await._periodic_task = Some(periodic_task);
         }
 
         Ok(mm)
@@ -339,7 +339,7 @@ impl GlobalMatchmaker {
             .await?;
 
         {
-            let mut i = self.inner.lock().await;
+            let mut i = self.inner.write().await;
             i.global_chat_controller = Some(c1);
         }
 
@@ -361,7 +361,7 @@ impl GlobalMatchmaker {
                         platform: "Bootstrap".to_string(),
                     })
                     .await;
-                let mut i = mm.inner.lock().await;
+                let mut i = mm.inner.write().await;
                 i.bs_global_chat_controller = Some(c1);
 
                 Ok(())
@@ -382,7 +382,7 @@ impl GlobalMatchmaker {
     pub async fn known_bootstrap_nodes(
         &self,
     ) -> BTreeMap<usize, BootstrapNodeInfo> {
-        self.inner.lock().await.known_bootstrap_nodes.clone()
+        self.inner.read().await.known_bootstrap_nodes.clone()
     }
 
     pub async fn spawn_bootstrap_endpoint(&self) -> Result<bool> {
@@ -399,7 +399,7 @@ impl GlobalMatchmaker {
                 .collect::<HashSet<_>>();
             let present_bs_idx = {
                 self.inner
-                    .lock()
+                    .read()
                     .await
                     .known_bootstrap_nodes
                     .keys()
@@ -433,7 +433,7 @@ impl GlobalMatchmaker {
         )
         .await?;
         {
-            let mut inner = self.inner.lock().await;
+            let mut inner = self.inner.write().await;
             inner.bootstrap_main_node = Some(bootstrap_endpoint);
         }
 
@@ -470,7 +470,7 @@ impl GlobalMatchmaker {
                     .node_id()
             );
             let old_endpoint =
-                { self.inner.lock().await.bootstrap_main_node.take() };
+                { self.inner.write().await.bootstrap_main_node.take() };
             if let Some(old_endpoint) = old_endpoint {
                 old_endpoint.shutdown().await?;
             }
@@ -530,7 +530,7 @@ impl GlobalMatchmaker {
         while let Some((i, res)) = fut.next().await {
             match res {
                 Ok(info) => {
-                    let mut inner = self.inner.lock().await;
+                    let mut inner = self.inner.write().await;
                     let _r =
                         inner.known_bootstrap_nodes.insert(info.bs_idx, info);
                     if _r.is_none() {
@@ -543,7 +543,7 @@ impl GlobalMatchmaker {
                     }
                 }
                 Err(_e) => {
-                    let mut inner = self.inner.lock().await;
+                    let mut inner = self.inner.write().await;
                     let _r = inner.known_bootstrap_nodes.remove(&i);
                     if _r.is_some() {
                         warn!("removed bootstrap node #{i} from known bootstrap nodes: {_e}");
@@ -553,7 +553,7 @@ impl GlobalMatchmaker {
             }
         }
         {
-            let inner = self.inner.lock().await;
+            let inner = self.inner.read().await;
             if inner.known_bootstrap_nodes.is_empty() {
                 anyhow::bail!("failed to connect to any bootstrap node");
             }

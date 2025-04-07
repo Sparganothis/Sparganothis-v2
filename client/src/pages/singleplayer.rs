@@ -8,7 +8,7 @@ use game::{
     timestamp::get_timestamp_now_ms,
 };
 use n0_future::StreamExt;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tracing::warn;
 
 use crate::{
@@ -49,7 +49,7 @@ pub fn SingleplayerGameBoard() -> Element {
         move |mut _r: UnboundedReceiver<GameInputEvent>| async move {
             let callback_manager = CallbackManager::new2();
             let mut s = use_game_settings();
-            let arc_s = Arc::new(Mutex::new(s));
+            let arc_s = Arc::new(RwLock::new(s));
             let _s = callback_manager.main_loop(_r, arc_s.clone()).await;
             pin_mut!(_s);
             while let Some(action) = _s.next().await {
@@ -57,7 +57,7 @@ pub fn SingleplayerGameBoard() -> Element {
                 let s2 = use_game_settings();
                 if s2 != s {
                     s = s2;
-                    *arc_s.lock().await = s;
+                    *arc_s.write().await = s;
                 }
             }
             warn!("ZZZ ====???+++++????+?+?+?+?+ EVENT STRREAM FINISH");

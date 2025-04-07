@@ -31,7 +31,9 @@ pub mod tests {
         // let expected_seed = [0;32];
         // assert_eq!(expected_seed, state.seed);
 
-        state.apply_action_if_works(TetAction::UserSoftDrop, 0).unwrap();
+        state
+            .apply_action_if_works(TetAction::UserSoftDrop, 0)
+            .unwrap();
 
         let expected_seed = [
             112, 108, 244, 165, 170, 133, 13, 105, 29, 155, 63, 142, 88, 10, 124, 69,

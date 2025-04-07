@@ -14,7 +14,7 @@ use iroh_gossip::{
 };
 use n0_future::task::spawn;
 use n0_future::task::AbortOnDropHandle;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
 #[derive(Debug)]
@@ -22,9 +22,9 @@ pub struct GossipChatRoom {
     own_node_id: NodeId,
     direct_message: DirectMessageProtocol<ChatDirectMessage>,
     topic_id: TopicId,
-    gossip_send: Arc<Mutex<Option<GossipSender>>>,
-    task: Arc<Mutex<Option<AbortOnDropHandle<()>>>>,
-    msg_recv: Arc<Mutex<Option<tokio::sync::mpsc::Receiver<Arc<Vec<u8>>>>>>,
+    gossip_send: Arc<RwLock<Option<GossipSender>>>,
+    task: Arc<RwLock<Option<AbortOnDropHandle<()>>>>,
+    msg_recv: Arc<RwLock<Option<tokio::sync::mpsc::Receiver<Arc<Vec<u8>>>>>>,
 }
 
 impl GossipChatRoom {
@@ -47,7 +47,7 @@ impl GossipChatRoom {
             .await;
         }
         let (gossip_send, gossip_recv) = gossip_topic.split();
-        let gossip_send = Arc::new(Mutex::new(Some(gossip_send)));
+        let gossip_send = Arc::new(RwLock::new(Some(gossip_send)));
         let (msg_send, msg_recv) =
             tokio::sync::mpsc::channel::<Arc<Vec<u8>>>(2048);
         let room = Self {
@@ -55,8 +55,8 @@ impl GossipChatRoom {
             direct_message: node.chat_direct_message.clone(),
             topic_id: ticket.topic_id.clone(),
             gossip_send,
-            task: Arc::new(Mutex::new(None)),
-            msg_recv: Arc::new(Mutex::new(Some(msg_recv))),
+            task: Arc::new(RwLock::new(None)),
+            msg_recv: Arc::new(RwLock::new(Some(msg_recv))),
         };
         {
             let task = Some(AbortOnDropHandle::new(spawn(async move {
@@ -69,7 +69,7 @@ impl GossipChatRoom {
                 .await;
                 warn!("ZZZ: chat room task loop closed: {:?}", _r);
             })));
-            *room.task.lock().await = task;
+            *room.task.write().await = task;
         }
         Ok(room)
     }
@@ -131,19 +131,19 @@ impl IChatRoomRaw for GossipChatRoom {
             self.topic_id
         );
         {
-            drop(self.task.lock().await.take());
+            drop(self.task.write().await.take());
         }
         {
-            self.gossip_send.lock().await.take();
+            self.gossip_send.write().await.take();
         }
         {
-            self.msg_recv.lock().await.take();
+            self.msg_recv.write().await.take();
         }
         Ok(())
     }
 
     async fn broadcast_message(&self, message: Vec<u8>) -> anyhow::Result<()> {
-        let mut gossip_send = self.gossip_send.lock().await;
+        let mut gossip_send = self.gossip_send.write().await;
         let gossip_send = gossip_send.as_mut().context("room was shut down")?;
         gossip_send.broadcast(message.into()).await?;
         Ok(())
@@ -162,7 +162,7 @@ impl IChatRoomRaw for GossipChatRoom {
     }
 
     async fn next_message(&self) -> anyhow::Result<Option<Arc<Vec<u8>>>> {
-        let mut msg_recv = self.msg_recv.lock().await;
+        let mut msg_recv = self.msg_recv.write().await;
         let msg_recv = msg_recv.as_mut().context("room was shut down")?;
         Ok(msg_recv.recv().await)
     }
@@ -175,7 +175,7 @@ impl IChatRoomRaw for GossipChatRoom {
         if peers.is_empty() {
             return Ok(());
         }
-        let mut gossip_send = self.gossip_send.lock().await;
+        let mut gossip_send = self.gossip_send.write().await;
         let gossip_send = gossip_send.as_mut().context("room was shut down")?;
         gossip_send.join_peers(peers).await?;
         Ok(())

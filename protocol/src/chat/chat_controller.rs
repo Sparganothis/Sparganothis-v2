@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use futures::{FutureExt, StreamExt};
 use iroh::NodeId;
 use n0_future::task::{spawn, AbortOnDropHandle};
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tracing::{info, warn};
 
 use crate::{
@@ -91,7 +91,7 @@ impl<T: IChatRoomType> ChatController<T> {
         let sender = ChatSender {
             inner: inner.clone(),
             message_signer: message_signer.clone(),
-            current_presence: Arc::new(Mutex::new(None)),
+            current_presence: Arc::new(RwLock::new(None)),
             chatroom_presence: presence.clone(),
             _p: PhantomData,
         };
@@ -99,7 +99,7 @@ impl<T: IChatRoomType> ChatController<T> {
         msg_sender.set_overflow(true);
         msg_receiver.set_overflow(true);
 
-        let msg_receiver = Arc::new(Mutex::new(msg_receiver));
+        let msg_receiver = Arc::new(RwLock::new(msg_receiver));
         let receiver = ChatReceiver {
             msg_receiver: msg_receiver.clone(),
             _p: PhantomData,
@@ -199,14 +199,14 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
     }
     async fn receiver(&self) -> ChatReceiver<T> {
         let new_receiver = {
-            let mut m = self.receiver.msg_receiver.lock().await;
+            let mut m = self.receiver.msg_receiver.write().await;
             let mut new_receiver = m.clone();
             let m2 = &mut *m;
             std::mem::swap(m2, &mut new_receiver);
             new_receiver
         };
         ChatReceiver {
-            msg_receiver: Arc::new(Mutex::new(new_receiver)),
+            msg_receiver: Arc::new(RwLock::new(new_receiver)),
             _p: PhantomData,
         }
     }
@@ -279,7 +279,7 @@ pub trait IChatController<T: IChatRoomType>:
 pub struct ChatSender<T: IChatRoomType> {
     inner: Arc<dyn IChatRoomRaw>,
     message_signer: MessageSigner,
-    current_presence: Arc<Mutex<Option<T::P>>>,
+    current_presence: Arc<RwLock<Option<T::P>>>,
     chatroom_presence: ChatPresence<T>,
     _p: PhantomData<T>,
 }
@@ -325,7 +325,10 @@ impl<T: IChatRoomType> IChatSender<T> for ChatSender<T> {
         self.inner.join_peers(peers).await
     }
     async fn set_presence(&self, presence: &T::P) {
-        self.current_presence.lock().await.replace(presence.clone());
+        self.current_presence
+            .write()
+            .await
+            .replace(presence.clone());
         if let Err(e) = self.broadcast_presence().await {
             warn!("Error broadcasting presence: {:?}", e);
         }
@@ -334,7 +337,7 @@ impl<T: IChatRoomType> IChatSender<T> for ChatSender<T> {
 
 impl<T: IChatRoomType> ChatSender<T> {
     async fn broadcast_presence(&self) -> anyhow::Result<()> {
-        let presence = { self.current_presence.lock().await.clone() };
+        let presence = { self.current_presence.read().await.clone() };
         self.chatroom_presence
             .add_presence(&self.message_signer.node_identity, &presence)
             .await;
@@ -343,7 +346,7 @@ impl<T: IChatRoomType> ChatSender<T> {
         self.inner.broadcast_message(presence).await
     }
     async fn direct_presence(&self, to: NodeIdentity) -> anyhow::Result<()> {
-        let presence = { self.current_presence.lock().await.clone() };
+        let presence = { self.current_presence.read().await.clone() };
         let presence = ChatMessage::<T>::Presence(presence);
         let (presence, _) = self.message_signer.sign_and_encode(presence)?;
         self.inner.direct_message(to, presence).await
@@ -378,14 +381,14 @@ pub trait IChatSender<T: IChatRoomType>:
 
 #[derive(Clone, Debug)]
 pub struct ChatReceiver<T: IChatRoomType> {
-    msg_receiver: Arc<Mutex<async_broadcast::Receiver<ReceivedMessage<T>>>>,
+    msg_receiver: Arc<RwLock<async_broadcast::Receiver<ReceivedMessage<T>>>>,
     _p: PhantomData<T>,
 }
 
 #[async_trait::async_trait]
 impl<T: IChatRoomType> IChatReceiver<T> for ChatReceiver<T> {
     async fn next_message(&self) -> Option<ReceivedMessage<T>> {
-        Some(self.msg_receiver.lock().await.next().fuse().await?)
+        Some(self.msg_receiver.write().await.next().fuse().await?)
     }
 }
 

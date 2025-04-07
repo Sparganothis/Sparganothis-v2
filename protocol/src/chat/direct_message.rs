@@ -13,7 +13,7 @@ use iroh::{
 use iroh_gossip::proto::TopicId;
 use n0_future::task::spawn;
 use n0_future::task::AbortOnDropHandle;
-use tokio::sync::Mutex;
+use tokio::sync::RwLock;
 use tracing::info;
 use tracing::warn;
 
@@ -26,7 +26,7 @@ pub struct ChatDirectMessage(pub TopicId, pub Arc<Vec<u8>>);
 pub struct DirectMessageProtocol<T> {
     received_message_broadcaster: async_broadcast::Sender<(PublicKey, T)>,
     sleep_manager: SleepManager,
-    _task: Arc<Mutex<Option<AbortOnDropHandle<anyhow::Result<()>>>>>,
+    _task: Arc<RwLock<Option<AbortOnDropHandle<anyhow::Result<()>>>>>,
     sender_tx: tokio::sync::mpsc::Sender<(PublicKey, T)>,
     message_dispatchers: MessageDispatchers<T>,
 }
@@ -34,7 +34,7 @@ pub struct DirectMessageProtocol<T> {
 impl<T: AcceptableType> DirectMessageProtocol<T> {
     pub async fn shutdown(&self) {
         self.message_dispatchers.shutdown().await;
-        let mut task = self._task.lock().await;
+        let mut task = self._task.write().await;
         if let Some(_task) = task.take() {
             info!("shutting down direct message sender");
             drop(_task);
@@ -63,7 +63,7 @@ impl<T: AcceptableType> DirectMessageProtocol<T> {
             Ok(())
         };
         let task = AbortOnDropHandle::new(spawn(task));
-        let task = Arc::new(Mutex::new(Some(task)));
+        let task = Arc::new(RwLock::new(Some(task)));
         Self {
             received_message_broadcaster,
             sleep_manager,
@@ -115,7 +115,7 @@ impl<T: AcceptableType> ProtocolHandler for DirectMessageProtocol<T> {
 #[derive(Debug, Clone)]
 struct MessageDispatchers<T> {
     endpoint: Endpoint,
-    dispatchers: Arc<Mutex<HashMap<PublicKey, Arc<MessageDispatcher<T>>>>>,
+    dispatchers: Arc<RwLock<HashMap<PublicKey, Arc<MessageDispatcher<T>>>>>,
 }
 
 impl<T: AcceptableType> MessageDispatchers<T> {
@@ -123,19 +123,19 @@ impl<T: AcceptableType> MessageDispatchers<T> {
         info!("creating message dispatchers dict");
         Self {
             endpoint,
-            dispatchers: Arc::new(Mutex::new(HashMap::new())),
+            dispatchers: Arc::new(RwLock::new(HashMap::new())),
         }
     }
     pub async fn shutdown(&self) {
         info!("shutting down message dispatchers dict");
-        let mut dispatchers = self.dispatchers.lock().await;
+        let mut dispatchers = self.dispatchers.write().await;
         dispatchers.clear();
     }
     async fn ensure_dispatcher(
         &self,
         target: PublicKey,
     ) -> Arc<MessageDispatcher<T>> {
-        let mut dispatchers = self.dispatchers.lock().await;
+        let mut dispatchers = self.dispatchers.write().await;
         if let Some(dispatcher) = dispatchers.get_mut(&target) {
             return dispatcher.clone();
         }
@@ -146,7 +146,7 @@ impl<T: AcceptableType> MessageDispatchers<T> {
         dispatcher
     }
     pub async fn drop_dispatcher(&self, target: PublicKey) {
-        let mut dispatchers = self.dispatchers.lock().await;
+        let mut dispatchers = self.dispatchers.write().await;
         dispatchers.remove(&target);
     }
     pub async fn send_message(
