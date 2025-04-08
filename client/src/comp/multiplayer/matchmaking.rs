@@ -46,15 +46,26 @@ pub fn MatchmakingWindow(
         }
     });
 
+    
+    let mm = use_context::<NetworkState>().is_connected;
+
+
     rsx! {
-        button {
-            onclick: move |_| {
-                coro.send(());
-            },
-            "Matchmakeing!!"
-        }
-        pre {
-            "{msg}"
+        if *mm.read() {
+            button {
+                onclick: move |_| {
+                    coro.send(());
+                },
+                "Matchmakeing!!"
+            }
+            pre {
+                "{msg}"
+            }
+
+        } else {
+            h1 {
+                "Connectiong...."
+            }
         }
 
     }

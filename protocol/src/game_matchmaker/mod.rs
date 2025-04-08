@@ -3,10 +3,21 @@ use std::{collections::HashSet, sync::Arc};
 use anyhow::Context;
 use game::api::game_match::{GameMatch, GameMatchType};
 use n0_future::task::AbortOnDropHandle;
+use rand::Rng;
 use tokio::sync::{mpsc::channel, Mutex};
 use tracing::{info, warn};
 
 use crate::{chat::{ChatController, IChatController, IChatReceiver, IChatSender}, global_chat::{GlobalChatMessageContent, GlobalChatMessageType, MatchHandshakeType, MatchmakingMessage}, global_matchmaker::GlobalMatchmaker, user_identity::NodeIdentity};
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
+pub struct MatchmakeRandomId ( u16);
+
+impl MatchmakeRandomId {
+    pub fn random() -> Self {
+        MatchmakeRandomId ( rand::thread_rng().gen())
+    }
+}
+
 
 pub async fn find_game(
     match_type: GameMatchType,
@@ -42,6 +53,7 @@ struct GameMatchmaker {
     global_chat: ChatController<GlobalChatMessageType>,
     sender: tokio::sync::mpsc::Sender<NodeIdentity>,
     state: GameMatchmakerState,
+    rando: MatchmakeRandomId,
 }
 
 impl GameMatchmaker {
@@ -49,7 +61,9 @@ impl GameMatchmaker {
     async fn broadcast_lfg(&self) -> anyhow::Result<()> {
         let m = GlobalChatMessageContent::MatchmakingMessage {
             msg: MatchmakingMessage::LFG {
-                 match_type: self.match_type.clone() }
+                 match_type: self.match_type.clone() ,
+                 rando: self.rando
+                }
         };
         let _ = self.global_chat.sender().broadcast_message(m).await?;
         Ok(())
@@ -65,12 +79,14 @@ impl GameMatchmaker {
             result: None,
             blacklist: HashSet::new(),
         };
+        let rando = MatchmakeRandomId::random();
         Self {
             match_type,
             global_chat,
             sender,
             state,
-            own_node_id: node_id
+            own_node_id: node_id,
+            rando
         }
     }
 
@@ -84,20 +100,23 @@ impl GameMatchmaker {
                     ref msg,
                 } => {
                     match &msg {
-                        MatchmakingMessage::LFG { match_type } => {
+                        MatchmakingMessage::LFG { match_type, rando: lfg_rando } => {
                             self.on_lfg_message(
                                 match_type.clone(),
                                 received_message.from,
+                                *lfg_rando
                             ).await;
                         }
                         MatchmakingMessage::Handshake {
                             match_type,
                             handshake_type,
+                            rando
                         } => {
                             self.on_handshake_message(
                                 match_type.clone(),
                                 received_message.from,
                                 handshake_type.clone(),
+                                *rando
                             ).await;
                         }
                     }
@@ -113,6 +132,7 @@ impl GameMatchmaker {
         &mut self,
         lfg_match_type: GameMatchType, 
         message_from: NodeIdentity, 
+        lfg_rando: MatchmakeRandomId,
     ) {
         if self.own_node_id == message_from {
             return;
@@ -128,7 +148,7 @@ impl GameMatchmaker {
             return;
         }
         let reply =
-            GlobalChatMessageContent::handshake_request(self.match_type.clone());
+            GlobalChatMessageContent::handshake_request(self.match_type.clone(), lfg_rando);
         self.send_direct_message(message_from, reply).await;
         info!("send request");
     }
@@ -137,6 +157,7 @@ impl GameMatchmaker {
         match_type: GameMatchType, 
         from: NodeIdentity, 
         hand_type: MatchHandshakeType,
+        hs_rando: MatchmakeRandomId,
     ) {
         if self.own_node_id == from {
             return;
@@ -149,15 +170,20 @@ impl GameMatchmaker {
         }
         match hand_type {
             MatchHandshakeType::HandshakeRequest => {
+                if self.rando != hs_rando {
+                    warn!("WRONG RANDO FROM MatchHandshakeType::HandshakeRequest ==> IGNORE");
+                    self.state.blacklist.insert(from);
+                    return;
+                }
                 info!("get request");
                 if self.state.result.is_some() {
                     // answer NO
-                    let no = GlobalChatMessageContent::handshake_no(match_type);
+                    let no = GlobalChatMessageContent::handshake_no(match_type, hs_rando);
                     self.send_direct_message(from, no).await;
                     info!("send no");
                     return;
                 }
-                let yes = GlobalChatMessageContent::handshake_yes(match_type);
+                let yes = GlobalChatMessageContent::handshake_yes(match_type, hs_rando);
                 self.send_direct_message(from, yes).await;
                 info!("send yes");
                 self.on_result(from).await;

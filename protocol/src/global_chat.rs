@@ -1,7 +1,7 @@
 use game::api::game_match::GameMatchType;
 use serde::{Deserialize, Serialize};
 
-use crate::{chat_ticket::ChatTicket, IChatRoomType};
+use crate::{chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, IChatRoomType};
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct GlobalChatMessageType;
@@ -40,10 +40,12 @@ pub enum GlobalChatMessageContent {
 pub enum MatchmakingMessage {
     LFG {
         match_type: GameMatchType,
+        rando: MatchmakeRandomId,
     },
     Handshake {
         match_type: GameMatchType,
         handshake_type: MatchHandshakeType,
+        rando: MatchmakeRandomId,
     },
 }
 
@@ -61,34 +63,38 @@ impl From<String> for GlobalChatMessageContent {
 }
 
 impl GlobalChatMessageContent {
-    pub fn handshake_request(match_type: GameMatchType) -> Self {
+    pub fn handshake_request(match_type: GameMatchType, rando: MatchmakeRandomId) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
                 match_type,
                 handshake_type: MatchHandshakeType::HandshakeRequest,
+                rando
             },
         }
     }
-    pub fn handshake_yes(match_type: GameMatchType) -> Self {
+    pub fn handshake_yes(match_type: GameMatchType, rando: MatchmakeRandomId) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
                 match_type,
                 handshake_type: MatchHandshakeType::AnswerYes,
+                rando
             },
         }
     }
-    pub fn handshake_no(match_type: GameMatchType) -> Self {
+    pub fn handshake_no(match_type: GameMatchType, rando: MatchmakeRandomId) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
                 match_type,
                 handshake_type: MatchHandshakeType::AnswerNo,
+                rando
             },
         }
     }
-    pub fn matchmake_lfg(match_type: GameMatchType) -> Self {
+    pub fn matchmake_lfg(match_type: GameMatchType, rando: MatchmakeRandomId) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::LFG {
                 match_type,
+                rando
             },
         }
     }
