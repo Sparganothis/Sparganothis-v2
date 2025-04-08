@@ -39,16 +39,17 @@ pub fn IAmARobotSingleplayer() -> Element {
             global_chat.send_broadcast_user_message.call(url.into());
         }
     });
-    let game_chat = use_chat_signals(true, Callback::new(
-        move |mm: GlobalMatchmaker| async move {
+    let game_chat = use_chat_signals(
+        true,
+        Callback::new(move |mm: GlobalMatchmaker| async move {
             let chat_ticket =
                 ChatTicket::new_str_bs("play", BTreeSet::from([]));
             let node = mm.own_node().await?;
             let chat =
                 node.join_chat::<GameMessageSpam>(&chat_ticket).await.ok()?;
             Some(chat)
-        },
-    ));
+        }),
+    );
     let _on_game_change_send_to_chat = use_resource(move || {
         let game = game_state.read().clone();
         async move {

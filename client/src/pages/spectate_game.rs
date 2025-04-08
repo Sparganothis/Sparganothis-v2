@@ -71,8 +71,9 @@ impl RenderElement for GameMessageSpam {
 
 #[component]
 pub fn SpectateGamePage(node_id: NodeId) -> Element {
-    let chat = use_chat_signals(true, Callback::new(
-        move |mm: GlobalMatchmaker| async move {
+    let chat = use_chat_signals(
+        true,
+        Callback::new(move |mm: GlobalMatchmaker| async move {
             let Some(nn) = mm.own_node().await else {
                 return None;
             };
@@ -84,8 +85,8 @@ pub fn SpectateGamePage(node_id: NodeId) -> Element {
                 return None;
             };
             Some(chat)
-        },
-    ));
+        }),
+    );
 
     rsx! {
         FullscreenChatRoom<GameMessageSpam> { chat }

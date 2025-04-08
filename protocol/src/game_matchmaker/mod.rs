@@ -7,17 +7,35 @@ use rand::Rng;
 use tokio::sync::{mpsc::channel, Mutex};
 use tracing::{info, warn};
 
-use crate::{chat::{ChatController, IChatController, IChatReceiver, IChatSender}, global_chat::{GlobalChatMessageContent, GlobalChatMessageType, MatchHandshakeType, MatchmakingMessage}, global_matchmaker::GlobalMatchmaker, user_identity::NodeIdentity};
+use crate::{
+    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
+    global_chat::{
+        GlobalChatMessageContent, GlobalChatMessageType, MatchHandshakeType,
+        MatchmakingMessage,
+    },
+    global_matchmaker::GlobalMatchmaker,
+    user_identity::NodeIdentity,
+};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize)]
-pub struct MatchmakeRandomId ( u16);
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Hash,
+    serde::Serialize,
+    serde::Deserialize,
+)]
+pub struct MatchmakeRandomId(u16);
 
 impl MatchmakeRandomId {
     pub fn random() -> Self {
-        MatchmakeRandomId ( rand::thread_rng().gen())
+        MatchmakeRandomId(rand::thread_rng().gen())
     }
 }
-
 
 pub async fn find_game(
     match_type: GameMatchType,
@@ -27,24 +45,26 @@ pub async fn find_game(
     let own_node_id = global_chat.node_identity();
     warn!(">>> find game: {:?}", &match_type);
     let (tx, mut rx) = channel(1);
-    let m = GameMatchmaker::new(match_type.clone(), global_chat, tx, own_node_id);
+    let m =
+        GameMatchmaker::new(match_type.clone(), global_chat, tx, own_node_id);
     let mut m2 = m.clone();
     let _task = n0_future::task::spawn(async move {
-        warn!(">>> start loop: {:?}",& match_type);
+        warn!(">>> start loop: {:?}", &match_type);
         let _r = m2.run_loop().await;
         warn!(">>> stop loop: {:?}", &match_type);
     });
     let _task = AbortOnDropHandle::new(_task);
-    
+
     warn!(">>> broadcast lfg lfg");
     m.broadcast_lfg().await?;
-    let m = n0_future::time::timeout(timeout, rx.recv()).await?.context("matchmaker tx dropped")?;
+    let m = n0_future::time::timeout(timeout, rx.recv())
+        .await?
+        .context("matchmaker tx dropped")?;
     // _task.abort();
-    
+
     warn!(">>> RESULT RECV!!!!!");
     Ok(m)
 }
-
 
 #[derive(Clone, Debug)]
 struct GameMatchmaker {
@@ -57,24 +77,23 @@ struct GameMatchmaker {
 }
 
 impl GameMatchmaker {
-
     async fn broadcast_lfg(&self) -> anyhow::Result<()> {
         let m = GlobalChatMessageContent::MatchmakingMessage {
             msg: MatchmakingMessage::LFG {
-                 match_type: self.match_type.clone() ,
-                 rando: self.rando
-                }
+                match_type: self.match_type.clone(),
+                rando: self.rando,
+            },
         };
         let _ = self.global_chat.sender().broadcast_message(m).await?;
         Ok(())
     }
 
-    fn new(match_type: GameMatchType,
-         global_chat: ChatController<GlobalChatMessageType>,
-         sender: tokio::sync::mpsc::Sender<NodeIdentity>,
-         node_id:NodeIdentity    
-        )
-    -> Self {
+    fn new(
+        match_type: GameMatchType,
+        global_chat: ChatController<GlobalChatMessageType>,
+        sender: tokio::sync::mpsc::Sender<NodeIdentity>,
+        node_id: NodeIdentity,
+    ) -> Self {
         let state = GameMatchmakerState {
             result: None,
             blacklist: HashSet::new(),
@@ -87,7 +106,7 @@ impl GameMatchmaker {
             sender,
             state,
             own_node_id: node_id,
-            rando
+            rando,
         }
     }
 
@@ -97,28 +116,31 @@ impl GameMatchmaker {
         while let Some(received_message) = recv.next_message().await {
             let content = received_message.message;
             match content {
-                GlobalChatMessageContent::MatchmakingMessage {
-                    ref msg,
-                } => {
+                GlobalChatMessageContent::MatchmakingMessage { ref msg } => {
                     match &msg {
-                        MatchmakingMessage::LFG { match_type, rando: lfg_rando } => {
+                        MatchmakingMessage::LFG {
+                            match_type,
+                            rando: lfg_rando,
+                        } => {
                             self.on_lfg_message(
                                 match_type.clone(),
                                 received_message.from,
-                                *lfg_rando
-                            ).await;
+                                *lfg_rando,
+                            )
+                            .await;
                         }
                         MatchmakingMessage::Handshake {
                             match_type,
                             handshake_type,
-                            rando
+                            rando,
                         } => {
                             self.on_handshake_message(
                                 match_type.clone(),
                                 received_message.from,
                                 handshake_type.clone(),
-                                *rando
-                            ).await;
+                                *rando,
+                            )
+                            .await;
                         }
                     }
                 }
@@ -131,12 +153,14 @@ impl GameMatchmaker {
 
     async fn on_lfg_message(
         &mut self,
-        lfg_match_type: GameMatchType, 
-        message_from: NodeIdentity, 
+        lfg_match_type: GameMatchType,
+        message_from: NodeIdentity,
         lfg_rando: MatchmakeRandomId,
     ) {
-        
-        warn!("GameMatchmaker::on_lfg_message(rando = {:?}, my_rando = {:?})", lfg_rando, self.rando);
+        warn!(
+            "GameMatchmaker::on_lfg_message(rando = {:?}, my_rando = {:?})",
+            lfg_rando, self.rando
+        );
         if self.own_node_id == message_from {
             return;
         }
@@ -150,15 +174,17 @@ impl GameMatchmaker {
         if self.state.result.is_some() {
             return;
         }
-        let reply =
-            GlobalChatMessageContent::handshake_request(self.match_type.clone(), lfg_rando);
+        let reply = GlobalChatMessageContent::handshake_request(
+            self.match_type.clone(),
+            lfg_rando,
+        );
         self.send_direct_message(message_from, reply).await;
         info!("send request");
     }
     async fn on_handshake_message(
         &mut self,
-        match_type: GameMatchType, 
-        from: NodeIdentity, 
+        match_type: GameMatchType,
+        from: NodeIdentity,
         hand_type: MatchHandshakeType,
         hs_rando: MatchmakeRandomId,
     ) {
@@ -182,12 +208,16 @@ impl GameMatchmaker {
                 info!("get request");
                 if self.state.result.is_some() {
                     // answer NO
-                    let no = GlobalChatMessageContent::handshake_no(match_type, hs_rando);
+                    let no = GlobalChatMessageContent::handshake_no(
+                        match_type, hs_rando,
+                    );
                     self.send_direct_message(from, no).await;
                     info!("send no");
                     return;
                 }
-                let yes = GlobalChatMessageContent::handshake_yes(match_type, hs_rando);
+                let yes = GlobalChatMessageContent::handshake_yes(
+                    match_type, hs_rando,
+                );
                 self.send_direct_message(from, yes).await;
                 info!("send yes");
                 self.on_result(from).await;
@@ -203,7 +233,11 @@ impl GameMatchmaker {
         }
     }
 
-    async fn send_direct_message(&self, to: NodeIdentity, x: GlobalChatMessageContent) {
+    async fn send_direct_message(
+        &self,
+        to: NodeIdentity,
+        x: GlobalChatMessageContent,
+    ) {
         let _ = self.global_chat.sender().direct_message(to, x).await;
     }
 
@@ -214,7 +248,7 @@ impl GameMatchmaker {
 }
 
 #[derive(Debug, Clone)]
-struct GameMatchmakerState  {
+struct GameMatchmakerState {
     result: Option<NodeIdentity>,
     blacklist: HashSet<NodeIdentity>,
 }

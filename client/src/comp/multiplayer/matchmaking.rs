@@ -1,54 +1,63 @@
-use std::{collections::{HashSet, VecDeque}, time::Duration};
+use std::{
+    collections::{HashSet, VecDeque},
+    time::Duration,
+};
 
 use dioxus::{html::elements, prelude::*};
 use game::api::game_match::GameMatchType;
 use n0_future::StreamExt;
 use protocol::{
-    chat::{IChatController, IChatReceiver}, game_matchmaker::find_game, global_chat::{
+    chat::{IChatController, IChatReceiver},
+    game_matchmaker::find_game,
+    global_chat::{
         GlobalChatMessageContent, MatchHandshakeType, MatchmakingMessage,
-    }, user_identity::NodeIdentity
+    },
+    user_identity::NodeIdentity,
 };
 use tracing::{info, warn};
 
-use crate::{app::GlobalUrlContext, comp::{chat::chat_signals_hook::use_global_chat_controller_signal, multiplayer::_1v1}, network::NetworkState};
+use crate::{
+    app::GlobalUrlContext,
+    comp::{
+        chat::chat_signals_hook::use_global_chat_controller_signal,
+        multiplayer::_1v1,
+    },
+    network::NetworkState,
+};
 
 #[component]
 pub fn MatchmakingWindow(
     user_match_type: ReadOnlySignal<GameMatchType>,
     on_opponent_confirm: Callback<NodeIdentity>,
 ) -> Element {
-
     let chat = use_global_chat_controller_signal();
     let mut msg = use_signal(|| "".to_string());
 
     let coro = use_coroutine(move |mut _r| async move {
-
         while let Some(_x) = _r.next().await {
-            let Some( global_chat ) = chat.chat.read().clone() else {
+            let Some(global_chat) = chat.chat.read().clone() else {
                 warn!("no chat!");
                 continue;
             };
 
-            let timeout  = std::time::Duration::from_secs(15);
-            let game = find_game(GameMatchType::_1v1, global_chat, timeout).await;
+            let timeout = std::time::Duration::from_secs(15);
+            let game =
+                find_game(GameMatchType::_1v1, global_chat, timeout).await;
             match game {
                 Ok(from) => {
-                    let txt=  format!("ok: {from:?}");
+                    let txt = format!("ok: {from:?}");
                     msg.set(txt);
                     on_opponent_confirm.call(from);
                 }
                 Err(e) => {
-                    let txt=  format!("err: {e}");
+                    let txt = format!("err: {e}");
                     msg.set(txt);
                 }
             }
-
         }
     });
 
-    
     let mm = use_context::<NetworkState>().is_connected;
-
 
     rsx! {
         if *mm.read() {
@@ -130,7 +139,7 @@ pub fn MatchmakingWindow(
 
 //         let (match_type, from, hand_type) = x;
 //         info!("recv handshake {hand_type:?}!");
-        
+
 //         let user_match_type = user_match_type.read().clone();
 //         if match_type != user_match_type {
 //             return;

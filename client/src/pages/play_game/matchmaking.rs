@@ -25,7 +25,7 @@ pub fn MatchmakingPage() -> Element {
             button {
                 onclick: move |_| {
                     item.set(None);
-                }, 
+                },
                 class: "secondary",
                 "Reset"
             }

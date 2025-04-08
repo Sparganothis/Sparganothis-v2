@@ -7,13 +7,13 @@ pub mod chat;
 pub mod chat_presence;
 pub mod chat_ticket;
 pub(crate) mod echo;
+pub mod game_matchmaker;
 pub mod global_chat;
 pub mod global_matchmaker;
 pub(crate) mod main_node;
 pub(crate) mod signed_message;
 pub(crate) mod sleep;
 pub mod user_identity;
-pub mod game_matchmaker;
 
 pub fn timestamp_micros() -> u128 {
     web_time::SystemTime::now()
