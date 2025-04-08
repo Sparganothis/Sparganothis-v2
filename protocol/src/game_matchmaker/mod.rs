@@ -80,6 +80,7 @@ impl GameMatchmaker {
             blacklist: HashSet::new(),
         };
         let rando = MatchmakeRandomId::random();
+        warn!("GameMatchmaker::new(rando = {:?})", rando);
         Self {
             match_type,
             global_chat,
@@ -134,6 +135,8 @@ impl GameMatchmaker {
         message_from: NodeIdentity, 
         lfg_rando: MatchmakeRandomId,
     ) {
+        
+        warn!("GameMatchmaker::on_lfg_message(rando = {:?}, my_rando = {:?})", lfg_rando, self.rando);
         if self.own_node_id == message_from {
             return;
         }
@@ -159,6 +162,7 @@ impl GameMatchmaker {
         hand_type: MatchHandshakeType,
         hs_rando: MatchmakeRandomId,
     ) {
+        warn!("GameMatchmaker::on_handshake_message(rando = {:?}, my_rando = {:?}, hand_type = {:?})", hs_rando, self.rando, hand_type);
         if self.own_node_id == from {
             return;
         }
