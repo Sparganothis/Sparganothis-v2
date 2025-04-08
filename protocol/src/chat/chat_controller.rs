@@ -1,10 +1,11 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use chrono::{DateTime, Utc};
-use futures::{FutureExt, StreamExt};
+use futures::FutureExt;
 use iroh::NodeId;
 use n0_future::task::{spawn, AbortOnDropHandle};
 use tokio::sync::RwLock;
+use tokio_stream::StreamExt;
 use tracing::{info, warn};
 
 use crate::{
@@ -101,7 +102,7 @@ impl<T: IChatRoomType> ChatController<T> {
 
         let msg_receiver = Arc::new(RwLock::new(msg_receiver));
         let receiver = ChatReceiver {
-            msg_receiver: msg_receiver.clone(),
+            msg_receiver ,
             _p: PhantomData,
         };
         let inner2 = inner.clone();
@@ -199,10 +200,10 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
     }
     async fn receiver(&self) -> ChatReceiver<T> {
         let new_receiver = {
-            let mut m = self.receiver.msg_receiver.write().await;
-            let mut new_receiver = m.clone();
-            let m2 = &mut *m;
-            std::mem::swap(m2, &mut new_receiver);
+            let  m = self.receiver.msg_receiver.write().await;
+            let  new_receiver = m.clone();
+            // let m2 = &mut *m;
+            // std::mem::swap(m2, &mut new_receiver);
             new_receiver
         };
         ChatReceiver {
