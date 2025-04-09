@@ -14,9 +14,7 @@ use tracing::{info, warn};
 use crate::{
     app::GlobalUrlContext,
     comp::{
-        chat::chat_signals_hook::{
-            use_global_chat_controller_signal, ChatSignals,
-        },
+        chat::chat_signals_hook::{use_chat_signals, ChatSignals},
         modal::ModalArticle,
     },
     localstorage::LocalStorageContext,
@@ -58,6 +56,18 @@ fn GlobalChatClientParent(children: Element) -> Element {
         {children}
     }
 }
+fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType>
+{
+    info!("use_global_chat_controller_signal");
+    use_chat_signals(
+        true,
+        Callback::new(move |mm: GlobalMatchmaker| async move {
+            Some(mm.global_chat_controller().await?)
+        }),
+    )
+}
+
+
 
 #[component]
 fn GlobalMatchmakerParent(children: Element) -> Element {
@@ -191,7 +201,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     children
 }
 
-pub async fn client_connect(
+async fn client_connect(
     user_secrets: Arc<UserIdentitySecrets>,
 ) -> anyhow::Result<GlobalMatchmaker> {
     let global_mm = GlobalMatchmaker::new(user_secrets).await?;
@@ -208,13 +218,34 @@ pub fn NetworkConnectionStatusIcon() -> Element {
         ..
     } = use_context::<NetworkState>();
 
+    let mut peer_w = use_signal(move || 0);
+    let peer = use_memo(move || peer_w.read().clone());
+
+    let chat = use_context::<GlobalChatClientContext>().chat.chat;
+    let _ = use_resource(move || {
+        let chat = chat.read().clone();
+        async move {
+            let Some(chat) = chat else {
+                peer_w.set(0);
+                return;
+            };
+            let presence = chat.chat_presence();
+            peer_w.set(presence.get_presence_list().await.len());
+            loop {
+                presence.notified().await;
+                peer_w.set(presence.get_presence_list().await.len());
+            }
+        }
+    });
+
     let net_txt = use_memo(move || {
         let bs_idx = *bootstrap_idx.read();
+        let peer = *peer.read();
         if global_mm.read().is_some() {
             if let Some(bs_idx) = bs_idx {
-                format!("ONLINE #{}", bs_idx)
+                format!("{} ONLINE (#{})", peer, bs_idx)
             } else {
-                "ONLINE".to_string()
+                format!("{} ONLINE", peer)
             }
         } else {
             "OFFLINE".to_string()
@@ -222,7 +253,11 @@ pub fn NetworkConnectionStatusIcon() -> Element {
     });
     let net_txt_color = use_memo(move || {
         if global_mm.read().is_some() {
-            "blue"
+            if *peer.read() >= 2 {
+                "blue"
+            } else {
+                "orange"
+            }
         } else {
             "red"
         }
@@ -243,7 +278,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
                 let t = !*modal_open.peek();
                 modal_open.set(t);
             },
-            h3 {
+            h5 {
                 "aria-busy": "{global_mm_loading.read()}",
                 style: "margin: 0; color: {net_txt_color};",
                 "{net_txt}",

@@ -1,8 +1,8 @@
-use game::api::game_match::GameMatchType;
+use game::api::game_match::{GameMatch, GameMatchType};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, IChatRoomType,
+    chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, user_identity::{NodeIdentity, UserIdentity}, IChatRoomType
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -45,7 +45,7 @@ pub enum MatchmakingMessage {
         rando: MatchmakeRandomId,
     },
     Handshake {
-        match_type: GameMatchType,
+        game_match: GameMatch<NodeIdentity>,
         handshake_type: MatchHandshakeType,
         rando: MatchmakeRandomId,
     },
@@ -56,6 +56,7 @@ pub enum MatchHandshakeType {
     HandshakeRequest,
     AnswerYes,
     AnswerNo,
+    Ping(u8),
 }
 
 impl From<String> for GlobalChatMessageContent {
@@ -66,36 +67,36 @@ impl From<String> for GlobalChatMessageContent {
 
 impl GlobalChatMessageContent {
     pub fn handshake_request(
-        match_type: GameMatchType,
+        game_match: GameMatch<NodeIdentity>,
         rando: MatchmakeRandomId,
     ) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
-                match_type,
+                game_match,
                 handshake_type: MatchHandshakeType::HandshakeRequest,
                 rando,
             },
         }
     }
     pub fn handshake_yes(
-        match_type: GameMatchType,
+        game_match: GameMatch<NodeIdentity>,
         rando: MatchmakeRandomId,
     ) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
-                match_type,
+                game_match,
                 handshake_type: MatchHandshakeType::AnswerYes,
                 rando,
             },
         }
     }
     pub fn handshake_no(
-        match_type: GameMatchType,
+        game_match: GameMatch<NodeIdentity>,
         rando: MatchmakeRandomId,
     ) -> Self {
         Self::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
-                match_type,
+                game_match,
                 handshake_type: MatchHandshakeType::AnswerNo,
                 rando,
             },

@@ -389,7 +389,7 @@ impl GlobalMatchmaker {
             };
             let free_bs_idx =
                 all_bs_idx.difference(&present_bs_idx).collect::<Vec<_>>();
-            if free_bs_idx.is_empty() {
+            if free_bs_idx.len() <= 1 {
                 // info!("no free bootstrap idx, exiting.");
                 return Ok(false);
             }

@@ -5,10 +5,11 @@ use crate::tet::GameSeed;
 #[derive(
     Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash,
 )]
-pub struct GameMatch {
+pub struct GameMatch<User> {
+    pub match_id: uuid::Uuid,
     pub seed: GameSeed,
     pub time: i64,
-    pub users: Vec<uuid::Uuid>,
+    pub users: Vec<User>,
     pub title: String,
     pub type_: GameMatchType,
 }

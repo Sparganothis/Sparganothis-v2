@@ -165,6 +165,7 @@ impl<T: IChatRoomType> ChatController<T> {
                         "_presence_task: Error broadcasting presence: {:?}",
                         e
                     );
+                    anyhow::bail!("_presence_task: Error broadcasting presence: {:?}", e);
                 }
             }
         };

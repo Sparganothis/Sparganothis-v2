@@ -253,13 +253,3 @@ pub fn use_chat_signals<
         send_direct_user_message,
     }
 }
-pub fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType>
-{
-    info!("use_global_chat_controller_signal");
-    use_chat_signals(
-        false,
-        Callback::new(move |mm: GlobalMatchmaker| async move {
-            Some(mm.global_chat_controller().await?)
-        }),
-    )
-}
