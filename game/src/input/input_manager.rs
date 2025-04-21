@@ -85,12 +85,14 @@ impl GameInputManager {
         // TODO: smartter refresh interval to avoid floating
         // if action == TetAction::HardDrop {
         if action != TetAction::AutoSoftDrop && action != TetAction::UserSoftDrop {
-            cb.push(CallbackTicket {
-                request_type: CallbackRequestType::SetCallback(
-                    game_settings.game.auto_softdrop_interval,
-                ),
-                move_type: CallbackMoveType::AutoSoftDrop,
-            });
+            if game_state.try_action(action, 0).is_ok() {
+                cb.push(CallbackTicket {
+                    request_type: CallbackRequestType::SetCallback(
+                        game_settings.game.auto_softdrop_interval,
+                    ),
+                    move_type: CallbackMoveType::AutoSoftDrop,
+                });
+            }
         }
 
         let event = UserEvent {
