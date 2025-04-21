@@ -48,12 +48,12 @@ impl RenderElement for GlobalChatMessageType {
                     br{}
                     if ! payload.platform.is_empty() {
                         small {
-                            "{payload.platform}:"
+                            "{truncate_str(payload.platform.clone())}:"
                         }
                     }
                     if ! payload.url.is_empty() {
                         small {
-                            "{payload.url}"
+                            "{truncate_str(payload.url.clone())}"
                         }
                     }
                 }
@@ -63,4 +63,12 @@ impl RenderElement for GlobalChatMessageType {
             },
         }
     }
+}
+
+
+fn truncate_str(s: String) -> String {
+    if s.len() < 20 {
+        return s
+    }
+    s[0..20].to_string()
 }

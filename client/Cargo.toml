@@ -40,7 +40,7 @@ dioxus-native = { version = "0.1.0-alpha.1", optional = true }
 futures-util = "0.3.31"
 keyboard-types = {version = "0.7.0", features = ["serde"]}
 bincode = "1"
-
+base64 = "0.22"
 
 [features]
 default = ["web"]

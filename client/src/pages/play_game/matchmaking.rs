@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::comp::multiplayer::matchmaking::MatchmakingWindow;
+use crate::{comp::multiplayer::matchmaking::MatchmakingWindow, route::{Route, UrlParam}};
 
 #[component]
 pub fn MatchmakingPage() -> Element {
@@ -20,9 +20,10 @@ pub fn MatchmakingPage() -> Element {
             if item.read().is_none() && error.read().is_none() {
                 MatchmakingWindow {
                     user_match_type: game::api::game_match::GameMatchType::_1v1,
-                    on_opponent_confirm: move |other| {
-                        item.set(Some(other));
+                    on_opponent_confirm: move |other: game::api::game_match::GameMatch<protocol::user_identity::NodeIdentity>| {
+                        item.set(Some(other.clone()));
                         error.set(None);
+                        navigator().push(Route::Play1v1Page{game_match: UrlParam(other)});
                     },
                     on_matchmaking_failed: move |e| {
                         println!("matchmaking failed: {e}");
