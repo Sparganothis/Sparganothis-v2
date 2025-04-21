@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use crate::input::events::GameInputEvent;
 use crate::settings::GameSettings;
-use crate::tet::TetAction;
+use crate::tet::{GameState, TetAction};
 
 #[derive(Clone, Debug)]
 pub struct GameInputManager {
@@ -23,15 +23,22 @@ impl GameInputManager {
         &mut self,
         user_keyboard_event: GameInputEvent,
         game_settings: GameSettings,
+        game_state: &GameState,
     ) -> UserEvent {
         let GameInputEvent {
             key,
             event,
             ts: _ts,
         } = user_keyboard_event;
+        
         let Some(action) = key.to_game_action() else {
             return UserEvent::empty();
         };
+
+        if game_state.game_over() {
+            return UserEvent::empty();
+        }
+
         match event {
             super::events::GameInputEventType::KeyDown => {
                 self.new_held.insert(action);
@@ -61,6 +68,7 @@ impl GameInputManager {
             })
         }
         for key_down in new_down.iter().cloned() {
+            // if invalid move, do not apply
             let move_type = match key_down {
                 TetAction::MoveLeft => CallbackMoveType::RepeatMoveLeft,
                 TetAction::MoveRight => CallbackMoveType::RepeatMoveRight,
@@ -74,7 +82,9 @@ impl GameInputManager {
                 move_type,
             })
         }
-        if action == TetAction::HardDrop {
+        // TODO: smartter refresh interval to avoid floating
+        // if action == TetAction::HardDrop {
+        if action != TetAction::AutoSoftDrop && action != TetAction::UserSoftDrop {
             cb.push(CallbackTicket {
                 request_type: CallbackRequestType::SetCallback(
                     game_settings.game.auto_softdrop_interval,

@@ -4,6 +4,7 @@ use super::events::GameInputEvent;
 use super::input_manager::{CallbackMoveType, CallbackTicket, UserEvent};
 use crate::input::input_manager::GameInputManager;
 use crate::settings::GameSettings;
+use crate::tet::GameState;
 use crate::{tet::TetAction, timestamp::get_timestamp_now_ms};
 use async_stream::stream;
 use futures_channel::mpsc::UnboundedReceiver;
@@ -72,7 +73,7 @@ impl CallbackManager {
 
     pub async fn main_loop(
         &self,
-        mut _r: UnboundedReceiver<GameInputEvent>,
+        mut _r: UnboundedReceiver<(GameState, GameInputEvent)>,
         settings: Arc<RwLock<GameSettings>>,
     ) -> impl Stream<Item = TetAction> {
         let mut input_manager = GameInputManager::new();
@@ -107,14 +108,14 @@ impl CallbackManager {
 
                 tokio::select! {
                     kbd_event = _r.next().fuse() => {
-                        let Some(kbd_event) = kbd_event else {
+                        let Some((state, kbd_event)) = kbd_event else {
                             tracing::warn!("ticket manger loop end: coro end");
                             break;
                         };
 
                         let settings =  {settings.read().await.clone()};
                         let event = input_manager
-                            .on_user_keyboard_event(kbd_event, settings);
+                            .on_user_keyboard_event(kbd_event, settings, &state);
                         let y = callback_manager.accept_user_event(event).await;
                         if let Some(action) = y {
                             yield action;

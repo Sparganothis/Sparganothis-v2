@@ -35,7 +35,7 @@ pub fn SingleplayerGameBoard() -> Element {
         }
     });
     let ticket_manager = use_coroutine(
-        move |mut _r: UnboundedReceiver<GameInputEvent>| async move {
+        move |mut _r: UnboundedReceiver<(GameState, GameInputEvent)>| async move {
             let callback_manager = CallbackManager::new2();
             let mut s = use_game_settings();
             let arc_s = Arc::new(RwLock::new(s));
@@ -54,7 +54,8 @@ pub fn SingleplayerGameBoard() -> Element {
     );
 
     let on_user_event = Callback::new(move |event: GameInputEvent| {
-        ticket_manager.send(event);
+        let old_state = game_state.read().clone();
+        ticket_manager.send((old_state, event));
     });
     rsx! {
         GameInputCaptureParent {

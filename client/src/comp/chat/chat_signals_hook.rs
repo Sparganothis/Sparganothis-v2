@@ -7,7 +7,6 @@ use n0_future::StreamExt;
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
-    global_chat::GlobalChatMessageType,
     global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
     IChatRoomType, ReceivedMessage,

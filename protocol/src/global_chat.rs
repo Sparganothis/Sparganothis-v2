@@ -2,7 +2,7 @@ use game::api::game_match::{GameMatch, GameMatchType};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, user_identity::{NodeIdentity, UserIdentity}, IChatRoomType
+    chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, user_identity::NodeIdentity, IChatRoomType
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]

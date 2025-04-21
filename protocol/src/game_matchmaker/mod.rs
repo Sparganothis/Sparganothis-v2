@@ -1,10 +1,10 @@
-use std::{collections::HashSet, sync::Arc, time::Duration};
+use std::{collections::HashSet, time::Duration};
 
 use anyhow::Context;
-use game::{api::game_match::{GameMatch, GameMatchType}, tet::{get_random_seed, GameSeed}, timestamp::get_timestamp_now_ms};
+use game::{api::game_match::{GameMatch, GameMatchType}, tet::get_random_seed, timestamp::get_timestamp_now_ms};
 use n0_future::task::AbortOnDropHandle;
 use rand::Rng;
-use tokio::sync::{mpsc::channel, Mutex};
+use tokio::sync::mpsc::channel;
 use tracing::{info, warn};
 
 use crate::{
@@ -13,8 +13,7 @@ use crate::{
         GlobalChatMessageContent, GlobalChatMessageType, MatchHandshakeType,
         MatchmakingMessage,
     },
-    global_matchmaker::GlobalMatchmaker,
-    user_identity::{NodeIdentity, UserIdentity},
+    user_identity::NodeIdentity,
 };
 
 #[derive(
