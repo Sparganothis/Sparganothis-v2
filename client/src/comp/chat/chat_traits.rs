@@ -65,10 +65,9 @@ impl RenderElement for GlobalChatMessageType {
     }
 }
 
-
 fn truncate_str(s: String) -> String {
     if s.len() < 20 {
-        return s
+        return s;
     }
     s[0..20].to_string()
 }

@@ -16,22 +16,40 @@ use crate::{
     localstorage::use_game_settings,
 };
 
+/// Basic single player implementation with default rules.
+#[component]
+pub fn SingleplayerGameBoardBasic() -> Element {
+    let mut game_state = use_signal(move || GameState::empty());
+    let set_next_state = use_callback(move |c: GameState| {
+        if c.game_over() {
+            game_state.set(GameState::empty());
+        } else {
+            game_state.set(c);
+        }
+    });
+
+    rsx! {
+        GameBoardInputAndDisplay {game_state, set_next_state: set_next_state}
+    }
+}
+
+
 /// User Game board without fullscreen parent
 #[component]
-pub fn SingleplayerGameBoard() -> Element {
-    let mut game_state_w = use_signal(GameState::empty);
-    let game_state = use_memo(move || game_state_w.read().clone());
+pub fn GameBoardInputAndDisplay(game_state: ReadOnlySignal<GameState>, set_next_state: Callback<GameState>,) -> Element {
+    // let mut game_state_w = use_signal(GameState::empty);
+    // let game_state = use_memo(move || game_state_w.read().clone());
 
     let on_tet_action = Callback::new(move |action: TetAction| {
         let old_state = game_state.read().clone();
         if old_state.game_over() {
-            game_state_w.set(GameState::empty());
+            // set_next_state.call(GameState::empty());
             return;
         }
         if let Ok(next_state) =
             old_state.try_action(action, get_timestamp_now_ms())
         {
-            game_state_w.set(next_state);
+            set_next_state.call(next_state);
         }
     });
     let ticket_manager = use_coroutine(

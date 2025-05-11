@@ -64,9 +64,9 @@ pub enum Route {
     NotFoundPage { x: Vec<String> },
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)] 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UrlParam<T>(pub T);
-impl <T: Serialize + for<'a> Deserialize<'a> > Display for UrlParam<T> {
+impl<T: Serialize + for<'a> Deserialize<'a>> Display for UrlParam<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let bytes = bincode::serialize(&self.0).unwrap_or_default();
         let string = BASE64_URL_SAFE.encode(bytes);
@@ -75,7 +75,7 @@ impl <T: Serialize + for<'a> Deserialize<'a> > Display for UrlParam<T> {
     }
 }
 
-impl <T: Serialize + for<'a> Deserialize<'a> > FromStr for UrlParam<T> {
+impl<T: Serialize + for<'a> Deserialize<'a>> FromStr for UrlParam<T> {
     type Err = bincode::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {

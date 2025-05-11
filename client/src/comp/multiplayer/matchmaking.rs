@@ -4,10 +4,7 @@ use dioxus::prelude::*;
 use futures_util::FutureExt;
 use game::api::game_match::{GameMatch, GameMatchType};
 use n0_future::StreamExt;
-use protocol::{
-    game_matchmaker::find_game,
-    user_identity::NodeIdentity,
-};
+use protocol::{game_matchmaker::find_game, user_identity::NodeIdentity};
 use tracing::{info, warn};
 
 use crate::network::{GlobalChatClientContext, NetworkState};
@@ -23,8 +20,9 @@ pub fn MatchmakingWindow(
 
     let mut timer_w = use_signal(move || 0);
     let timer = use_memo(move || timer_w.read().clone());
-    let attempt_timeout_secs = 10;
-    let attempts = 5;
+    let attempt_timeout_secs = 7;
+    let attempts = 3;
+    let total_seconds_timeout = (attempt_timeout_secs + 1) * attempts as u64;
     let coro = use_coroutine(move |mut _r| async move {
         while let Some(_x) = _r.next().await {
             let Some(global_chat) = chat.chat.peek().clone() else {
@@ -35,14 +33,20 @@ pub fn MatchmakingWindow(
             info!("\n\n\n >>>>> > START MATCHMAKING \n\n");
 
             let timeout = std::time::Duration::from_secs(attempt_timeout_secs);
-            let mut game_fut =
-                find_game(user_match_type.peek().clone(), global_chat, timeout, attempts).fuse().boxed();
+            let mut game_fut = find_game(
+                user_match_type.peek().clone(),
+                global_chat,
+                timeout,
+                attempts,
+            )
+            .fuse()
+            .boxed();
             timer_w.set(0);
             let game = loop {
                 tokio::select! {
                     _ = n0_future::time::sleep(Duration::from_secs(1)).fuse() => {
                         let old = timer.peek().clone() + 1;
-                        if old > (attempt_timeout_secs + 1) * attempts as u64 {
+                        if old > total_seconds_timeout {
                             break Err("coro timeout".to_string());
                         }
                         timer_w.set(old);
@@ -63,7 +67,7 @@ pub fn MatchmakingWindow(
                     on_matchmaking_failed.call(txt.clone());
                 }
             }
-            
+
             info!("\n\n\n >>>>> > END MATCHMAKING \n\n");
         }
     });
@@ -91,7 +95,7 @@ pub fn MatchmakingWindow(
                     }
                 } else {
                     h3 {
-                        "Looking {timer}/{attempt_timeout_secs}..."
+                        "Looking {timer}/{total_seconds_timeout}..."
                     }
                 }
             } else {

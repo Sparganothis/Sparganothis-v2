@@ -1,7 +1,11 @@
 use std::{collections::HashSet, time::Duration};
 
 use anyhow::Context;
-use game::{api::game_match::{GameMatch, GameMatchType}, tet::get_random_seed, timestamp::get_timestamp_now_ms};
+use game::{
+    api::game_match::{GameMatch, GameMatchType},
+    tet::get_random_seed,
+    timestamp::get_timestamp_now_ms,
+};
 use n0_future::task::AbortOnDropHandle;
 use rand::Rng;
 use tokio::sync::mpsc::channel;
@@ -30,6 +34,10 @@ use crate::{
 )]
 pub struct MatchmakeRandomId(u16);
 
+const PING_LOWER_LIMIT: u8 = 3;
+const PING_MESSAGE_COUNT: u8 = 3;
+const PING_INITIAL_BURST_DELAY_MS: u64 = 75;
+
 impl MatchmakeRandomId {
     pub fn random() -> Self {
         MatchmakeRandomId(rand::thread_rng().gen())
@@ -42,8 +50,14 @@ pub async fn find_game(
     timeout: std::time::Duration,
     attempts: u8,
 ) -> anyhow::Result<GameMatch<NodeIdentity>> {
-    for _i in 0..attempts-1 {
-        if let Ok(game) = find_game_one_attempt(match_type.clone(), global_chat.clone(), timeout).await {
+    for _i in 0..attempts - 1 {
+        if let Ok(game) = find_game_one_attempt(
+            match_type.clone(),
+            global_chat.clone(),
+            timeout,
+        )
+        .await
+        {
             return Ok(game);
         }
         n0_future::time::sleep(std::time::Duration::from_secs(1)).await;
@@ -51,13 +65,11 @@ pub async fn find_game(
     find_game_one_attempt(match_type, global_chat, timeout).await
 }
 
-
- async fn find_game_one_attempt(
+async fn find_game_one_attempt(
     match_type: GameMatchType,
     global_chat: ChatController<GlobalChatMessageType>,
     timeout: std::time::Duration,
-) -> anyhow::Result<GameMatch<NodeIdentity>>
-{
+) -> anyhow::Result<GameMatch<NodeIdentity>> {
     let own_node_id = global_chat.node_identity();
     warn!(">>> find game: {:?}", &match_type);
     let (tx, mut rx) = channel(1);
@@ -218,14 +230,12 @@ impl GameMatchmaker {
             seed: get_random_seed(),
             time: get_timestamp_now_ms(),
         };
-        let reply = GlobalChatMessageContent::handshake_request(
-            new_match,
-            lfg_rando,
-        );
+        let reply =
+            GlobalChatMessageContent::handshake_request(new_match, lfg_rando);
         self.send_direct_message(message_from, reply).await;
         info!("send request");
     }
-    
+
     async fn on_handshake_message(
         &mut self,
         game_match: GameMatch<NodeIdentity>,
@@ -264,7 +274,8 @@ impl GameMatchmaker {
                 }
                 info!("got good request - sending YES");
                 let yes = GlobalChatMessageContent::handshake_yes(
-                    game_match.clone(), hs_rando,
+                    game_match.clone(),
+                    hs_rando,
                 );
                 self.send_direct_message(from, yes).await;
                 info!("send yes");
@@ -304,7 +315,12 @@ impl GameMatchmaker {
         }
     }
 
-    async fn handle_ping(&mut self, game_match: GameMatch<NodeIdentity>, from: NodeIdentity, ping: u8) {
+    async fn handle_ping(
+        &mut self,
+        game_match: GameMatch<NodeIdentity>,
+        from: NodeIdentity,
+        ping: u8,
+    ) {
         info!("GameMatchmaker::handle_ping: ping = {:?}", ping);
         let pong = GlobalChatMessageContent::MatchmakingMessage {
             msg: MatchmakingMessage::Handshake {
@@ -314,7 +330,7 @@ impl GameMatchmaker {
             },
         };
         self.send_direct_message(from, pong).await;
-        if ping >= 10 {
+        if ping >= PING_LOWER_LIMIT {
             self.on_confirm_match(game_match).await;
         }
     }
@@ -335,7 +351,11 @@ impl GameMatchmaker {
         }
     }
 
-    async fn on_start_pingpong(&mut self, from: NodeIdentity, game_match: GameMatch<NodeIdentity>) {
+    async fn on_start_pingpong(
+        &mut self,
+        from: NodeIdentity,
+        game_match: GameMatch<NodeIdentity>,
+    ) {
         self.state.result_opponent = Some(from);
         self.state.game_match = Some(game_match.clone());
 
@@ -343,7 +363,7 @@ impl GameMatchmaker {
         let rando = self.rando;
         n0_future::task::spawn(async move {
             let sender = cc.sender();
-            for _i in 0..3 {
+            for _i in 0..PING_MESSAGE_COUNT {
                 let pong = GlobalChatMessageContent::MatchmakingMessage {
                     msg: MatchmakingMessage::Handshake {
                         game_match: game_match.clone(),
@@ -354,7 +374,10 @@ impl GameMatchmaker {
                 if let Err(e) = sender.direct_message(from, pong).await {
                     warn!("on_start_pingpong failed: {e}");
                 };
-                n0_future::time::sleep(std::time::Duration::from_millis(50)).await;
+                n0_future::time::sleep(std::time::Duration::from_millis(
+                    PING_INITIAL_BURST_DELAY_MS,
+                ))
+                .await;
             }
         });
     }

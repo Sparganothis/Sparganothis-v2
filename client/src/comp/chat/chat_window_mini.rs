@@ -147,7 +147,7 @@ fn MiniChatImpl<T: ChatMessageType>(
                 height: 100%;
                 // border: 1px solid red;
                 container-type: size;
-                overflow-y: scroll;
+                overflow-y: hidden;
                 overflow-x: hidden;
                 ",
 

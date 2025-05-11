@@ -1,10 +1,10 @@
 use std::time::Duration;
 
 use dioxus::prelude::*;
+use game::tet::GameState;
 
 use crate::{
-    comp::singleplayer::SingleplayerGameBoard,
-    comp::slider::Slider,
+    comp::{singleplayer::{GameBoardInputAndDisplay, SingleplayerGameBoardBasic}, slider::Slider},
     localstorage::{set_game_settings, use_game_settings},
 };
 
@@ -168,6 +168,6 @@ fn GameDifficultyAutoSoftdropSlider() -> Element {
 #[component]
 pub fn GameSettingsInputPreview() -> Element {
     rsx! {
-        SingleplayerGameBoard {}
+        SingleplayerGameBoardBasic {}
     }
 }

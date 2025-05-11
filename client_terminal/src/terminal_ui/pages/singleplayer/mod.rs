@@ -23,8 +23,10 @@ pub struct SingleplayerPageFactory;
 
 impl PageFactory for SingleplayerPageFactory {
     fn create_page(&self, notify: Arc<Notify>) -> DynamicPage {
-        let (event_tx, event_rx) =
-            game::futures_channel::mpsc::unbounded::<(GameState, GameInputEvent)>();
+        let (event_tx, event_rx) = game::futures_channel::mpsc::unbounded::<(
+            GameState,
+            GameInputEvent,
+        )>();
         let page = SingleplayerPage {
             _notify: notify,
             data: Arc::new(RwLock::new(SingleplayerPageState {
@@ -64,7 +66,10 @@ impl PageFactory for SingleplayerPageFactory {
 pub struct SingleplayerPage {
     _notify: Arc<Notify>,
     data: Arc<RwLock<SingleplayerPageState>>,
-    event_tx: game::futures_channel::mpsc::UnboundedSender<(GameState, GameInputEvent)>,
+    event_tx: game::futures_channel::mpsc::UnboundedSender<(
+        GameState,
+        GameInputEvent,
+    )>,
 }
 
 #[derive(Debug, Clone)]
@@ -137,7 +142,9 @@ impl Page for SingleplayerPage {
                     key,
                     event,
                 };
-                self.event_tx.unbounded_send((self.get_gamestate().await, event)).unwrap();
+                self.event_tx
+                    .unbounded_send((self.get_gamestate().await, event))
+                    .unwrap();
             }
         }
     }

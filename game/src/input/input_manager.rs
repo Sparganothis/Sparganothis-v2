@@ -30,7 +30,7 @@ impl GameInputManager {
             event,
             ts: _ts,
         } = user_keyboard_event;
-        
+
         let Some(action) = key.to_game_action() else {
             return UserEvent::empty();
         };

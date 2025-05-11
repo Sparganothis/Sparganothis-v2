@@ -56,8 +56,7 @@ fn GlobalChatClientParent(children: Element) -> Element {
         {children}
     }
 }
-fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType>
-{
+fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType> {
     info!("use_global_chat_controller_signal");
     use_chat_signals(
         true,
@@ -66,8 +65,6 @@ fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType>
         }),
     )
 }
-
-
 
 #[component]
 fn GlobalMatchmakerParent(children: Element) -> Element {
