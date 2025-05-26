@@ -1,0 +1,14 @@
+[package]
+name = "game_net"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+[dependencies]
+game = {path = "../game"}
+protocol = {path = "../protocol"}
+anyhow = "1"
+serde = "1"
+
+[lints]
+workspace = true

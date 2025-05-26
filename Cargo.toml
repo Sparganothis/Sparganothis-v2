@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    'client', "client_terminal", "game", "protocol", "server", "client_terminal",
+    'client', "client_terminal", "game", "protocol", "server", "client_terminal", "game_net",
 ]
 resolver = "2"
 
