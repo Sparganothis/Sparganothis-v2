@@ -3255,9 +3255,11 @@ name = "game_net"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-stream",
  "game",
  "protocol",
  "serde",
+ "tracing",
 ]
 
 [[package]]

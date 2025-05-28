@@ -26,7 +26,7 @@ use crate::{
     user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct GlobalMatchmaker {
     user_secrets: Arc<UserIdentitySecrets>,
     own_public_key: Arc<PublicKey>,
@@ -35,6 +35,7 @@ pub struct GlobalMatchmaker {
     sleep_manager: SleepManager,
 }
 
+#[derive(Debug)]
 struct GlobalMatchmakerInner {
     own_main_node: Option<MainNode>,
     bootstrap_main_node: Option<MainNode>,

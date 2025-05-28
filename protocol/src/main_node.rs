@@ -23,7 +23,7 @@ use crate::{
     user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MainNode {
     pub(crate) router: Router,
     pub(crate) gossip: Gossip,

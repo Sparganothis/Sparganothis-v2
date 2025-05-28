@@ -36,7 +36,8 @@ pub fn SingleplayerGameBoardBasic() -> Element {
 
 /// User Game board without fullscreen parent
 #[component]
-pub fn GameBoardInputAndDisplay(game_state: ReadOnlySignal<GameState>, set_next_state: Callback<GameState>,) -> Element {
+pub fn GameBoardInputAndDisplay(game_state: ReadOnlySignal<GameState>, 
+    set_next_state: Callback<GameState>,) -> Element {
     // let mut game_state_w = use_signal(GameState::empty);
     // let game_state = use_memo(move || game_state_w.read().clone());
 
