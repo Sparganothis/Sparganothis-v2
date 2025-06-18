@@ -4,7 +4,10 @@ use dioxus::prelude::*;
 use game::tet::GameState;
 
 use crate::{
-    comp::{singleplayer::{GameBoardInputAndDisplay, SingleplayerGameBoardBasic}, slider::Slider},
+    comp::{
+        singleplayer::{GameBoardInputAndDisplay, SingleplayerGameBoardBasic},
+        slider::Slider,
+    },
     localstorage::{set_game_settings, use_game_settings},
 };
 

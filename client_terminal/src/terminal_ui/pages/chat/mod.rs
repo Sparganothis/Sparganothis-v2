@@ -11,7 +11,7 @@ use n0_future::task::AbortOnDropHandle;
 use protocol::{
     chat::{ChatSender, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
-    global_chat::{GlobalChatRoomType, GlobalChatPresence},
+    global_chat::{GlobalChatPresence, GlobalChatRoomType},
     global_matchmaker::GlobalMatchmaker,
     user_identity::{NodeIdentity, UserIdentitySecrets},
     ReceivedMessage,
@@ -229,10 +229,7 @@ impl ChatPageState {
             scroll_position: 0,
         }
     }
-    fn chat_set_presence_list(
-        &mut self,
-        p2: PresenceList<GlobalChatRoomType>,
-    ) {
+    fn chat_set_presence_list(&mut self, p2: PresenceList<GlobalChatRoomType>) {
         if let Self::ChatLoaded { presence, .. } = self {
             *presence = p2;
         }

@@ -1,18 +1,25 @@
-use std::sync::Arc;
+use std::{future::Future, sync::Arc};
 
 use async_stream::stream;
 use futures_util::StreamExt;
 use n0_future::{task::AbortOnDropHandle, Stream};
 use rand::{rng, thread_rng, Rng};
-use tokio::sync::{Notify, RwLock};
+use tokio::{
+    spawn,
+    sync::{Notify, RwLock},
+};
 
-use crate::{rule_manager::{RuleManager}, tet::{get_random_seed, GameSeed, GameState, TetAction}, timestamp::get_timestamp_now_ms};
+use crate::{
+    rule_manager::RuleManager,
+    tet::{get_random_seed, GameSeed, GameState, TetAction},
+    timestamp::get_timestamp_now_ms,
+};
 
 #[derive(Clone)]
 pub struct GameStateManager {
     state: Arc<RwLock<GameState>>,
     notify: Arc<Notify>,
-    rule_managers: Vec<Arc<dyn RuleManager + 'static +Send+Sync>>,
+    rule_managers: Vec<Arc<dyn RuleManager + 'static + Send + Sync>>,
     loops: Vec<Arc<AbortOnDropHandle<anyhow::Result<()>>>>,
     obj_id: u64,
 }
@@ -28,10 +35,7 @@ impl GameStateManager {
         self.state.read().await.clone()
     }
     pub fn new(game_seed: &GameSeed, start_time: i64) -> Self {
-        let state = GameState::new(
-                game_seed, 
-                start_time,
-            );
+        let state = GameState::new(game_seed, start_time);
         let id: u64 = (&mut rng()).random();
 
         Self {
@@ -43,11 +47,23 @@ impl GameStateManager {
         }
     }
 
-    pub fn add_rule(&mut self, rule: Arc<dyn RuleManager+'static+Send+Sync>) {
+    pub fn add_rule(&mut self, rule: Arc<dyn RuleManager + 'static + Send + Sync>) {
         self.rule_managers.push(rule);
     }
-    pub fn add_loop(&mut self, _loop: AbortOnDropHandle<anyhow::Result<()>>) {
-        self.loops.push(Arc::new(_loop));
+    pub fn add_loop<F: Future<Output = anyhow::Result<()>> + Send + 'static>(
+        &mut self,
+        _loop: F,
+    ) {
+        self.loops
+            .push(Arc::new(AbortOnDropHandle::new(n0_future::task::spawn({
+                async move {
+                    let r = _loop.await;
+                    if let Err(ref e) = r {
+                        tracing::error!("GameStateManager(): error in loop: {:#?} ", e)
+                    }
+                    r
+                }
+            }))));
     }
 
     pub async fn main_loop(&self) -> anyhow::Result<()> {
@@ -59,9 +75,7 @@ impl GameStateManager {
             let state2 = current_state;
             for manager in self.rule_managers.iter() {
                 let manager = manager.clone();
-                let next = async move {
-                    manager.accept_state(state2).await
-                };
+                let next = async move { manager.accept_state(state2).await };
                 fut.push(next);
             }
             while let Some(result) = fut.next().await {
@@ -72,7 +86,7 @@ impl GameStateManager {
                         self._set_state_and_notify(result).await;
                         tracing::info!("Got new game state from rule!");
                         break;
-                    },
+                    }
                     Ok(None) => {
                         // do nothing
                     }
@@ -87,16 +101,16 @@ impl GameStateManager {
     }
 
     async fn _set_state_and_notify(&self, new_state: GameState) {
-        {*self.state.write().await = new_state;}
+        {
+            *self.state.write().await = new_state;
+        }
         self.notify.notify_one();
         self.notify.notify_waiters();
     }
 
-    pub fn read_state_stream(
-        &self,
-    ) -> impl Stream<Item = GameState> + Send + 'static {
+    pub fn read_state_stream(&self) -> impl Stream<Item = GameState> + Send + 'static {
         let state_arc = self.state.clone();
-        let notify_arc=  self.notify.clone();
+        let notify_arc = self.notify.clone();
 
         stream! {
             let mut state = {state_arc.read().await.clone()};

@@ -7,11 +7,11 @@ pub mod api;
 pub mod bot;
 pub mod git_version;
 pub mod input;
+pub mod rule_manager;
 pub mod settings;
+pub mod state_manager;
 pub mod tet;
 pub mod timestamp;
-pub mod state_manager;
-pub mod rule_manager;
 
 #[cfg(test)]
 pub mod tests {

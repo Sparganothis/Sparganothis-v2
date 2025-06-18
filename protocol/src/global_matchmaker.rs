@@ -20,7 +20,7 @@ use crate::{
     chat_ticket::ChatTicket,
     datetime_now,
     echo::Echo,
-    global_chat::{GlobalChatRoomType, GlobalChatPresence},
+    global_chat::{GlobalChatPresence, GlobalChatRoomType},
     main_node::MainNode,
     sleep::SleepManager,
     user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},

@@ -5,7 +5,7 @@ use n0_future::StreamExt;
 use protocol::{
     _const::PRESENCE_INTERVAL,
     chat::{IChatController, IChatSender},
-    global_chat::{GlobalChatRoomType, GlobalChatPresence},
+    global_chat::{GlobalChatPresence, GlobalChatRoomType},
     global_matchmaker::GlobalMatchmaker,
     user_identity::UserIdentitySecrets,
 };

@@ -184,9 +184,7 @@ impl CallbackManagerInner {
     }
 }
 
-
-
-use crate::rule_manager::{RuleManager};
+use crate::rule_manager::RuleManager;
 
 #[derive(Debug)]
 pub struct InputCallbackManagerRule {
@@ -197,20 +195,22 @@ pub struct InputCallbackManagerRule {
 }
 
 impl InputCallbackManagerRule {
-    pub fn new(mut input_stream: UnboundedReceiver<GameInputEvent>,
-         state_stream: impl Stream<Item = GameState> + Send + 'static,
-          settings: Arc<RwLock<GameSettings>>, ) -> Self {
+    pub fn new(
+        mut input_stream: UnboundedReceiver<GameInputEvent>,
+        state_stream: impl Stream<Item = GameState> + Send + 'static,
+        settings: Arc<RwLock<GameSettings>>,
+    ) -> Self {
         let cb_manager = CallbackManager::new2();
 
         let (pair_tx, pair_rx) = unbounded();
         let (action_tx, action_rx) = unbounded();
 
-        let stream_loop =  AbortOnDropHandle::new(n0_future::task::spawn(async move {
+        let stream_loop = AbortOnDropHandle::new(n0_future::task::spawn(async move {
             pin_mut!(state_stream);
             let Some(mut state) = state_stream.next().await else {
                 anyhow::bail!("no initial state.");
             };
-            
+
             loop {
                 tokio::select! {
                     kbd_event = input_stream.next().fuse() => {
@@ -245,12 +245,14 @@ impl InputCallbackManagerRule {
     }
 }
 
-
 #[async_trait::async_trait]
 impl RuleManager for InputCallbackManagerRule {
-    async fn accept_state(&self, _state: GameState) ->  anyhow::Result<Option<GameState>> {
+    async fn accept_state(
+        &self,
+        _state: GameState,
+    ) -> anyhow::Result<Option<GameState>> {
         let mut recv = self.action_receiver.lock().await;
-        let Some( next_action ) = recv.next().fuse().await else {
+        let Some(next_action) = recv.next().fuse().await else {
             anyhow::bail!("no next action");
         };
         let next_state = _state.try_action(next_action, get_timestamp_now_ms())?;

@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use protocol::{
     global_chat::{
-        GlobalChatMessageContent, GlobalChatRoomType, GlobalChatPresence,
+        GlobalChatMessageContent, GlobalChatPresence, GlobalChatRoomType,
     },
     IChatRoomType as ChatMessageType2,
 };
