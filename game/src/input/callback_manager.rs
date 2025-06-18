@@ -16,7 +16,7 @@ use tokio::sync::Mutex;
 use tokio::sync::{futures::Notified, Notify, RwLock};
 
 #[derive(Debug, Clone)]
-pub struct CallbackManager {
+struct CallbackManager {
     inner: Arc<RwLock<CallbackManagerInner>>,
     _notify: Arc<Notify>,
 }
@@ -197,7 +197,9 @@ pub struct InputCallbackManagerRule {
 }
 
 impl InputCallbackManagerRule {
-    pub fn new(mut input_stream: UnboundedReceiver<GameInputEvent>, state_stream: impl Stream<Item = GameState> + Send + 'static, settings: Arc<RwLock<GameSettings>>, ) -> Self {
+    pub fn new(mut input_stream: UnboundedReceiver<GameInputEvent>,
+         state_stream: impl Stream<Item = GameState> + Send + 'static,
+          settings: Arc<RwLock<GameSettings>>, ) -> Self {
         let cb_manager = CallbackManager::new2();
 
         let (pair_tx, pair_rx) = unbounded();

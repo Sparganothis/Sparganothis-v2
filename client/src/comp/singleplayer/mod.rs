@@ -3,11 +3,9 @@ use std::sync::Arc;
 
 use futures_util::pin_mut;
 use game::{
-    input::{callback_manager::CallbackManager, events::GameInputEvent},
-    tet::{GameState, TetAction},
-    timestamp::get_timestamp_now_ms,
+    input::{callback_manager::InputCallbackManagerRule, events::GameInputEvent}, state_manager::GameStateManager, tet::{get_random_seed, GameState, TetAction}, timestamp::get_timestamp_now_ms
 };
-use n0_future::StreamExt;
+use n0_future::{task::AbortOnDropHandle, StreamExt};
 use tokio::sync::RwLock;
 use tracing::warn;
 
@@ -38,30 +36,29 @@ pub fn SingleplayerGameBoardBasic() -> Element {
 #[component]
 pub fn GameBoardInputAndDisplay(game_state: ReadOnlySignal<GameState>, 
     set_next_state: Callback<GameState>,) -> Element {
-    // let mut game_state_w = use_signal(GameState::empty);
-    // let game_state = use_memo(move || game_state_w.read().clone());
 
-    let on_tet_action = Callback::new(move |action: TetAction| {
-        let old_state = game_state.read().clone();
-        if old_state.game_over() {
-            // set_next_state.call(GameState::empty());
-            return;
-        }
-        if let Ok(next_state) =
-            old_state.try_action(action, get_timestamp_now_ms())
-        {
-            set_next_state.call(next_state);
-        }
-    });
     let ticket_manager = use_coroutine(
-        move |mut _r: UnboundedReceiver<(GameState, GameInputEvent)>| async move {
-            let callback_manager = CallbackManager::new2();
+        move |mut _r: UnboundedReceiver<GameInputEvent>| async move {
+            let mut game_state_manager = GameStateManager::new(
+                &get_random_seed(),
+                get_timestamp_now_ms(),
+            ).await;
             let mut s = use_game_settings();
             let arc_s = Arc::new(RwLock::new(s));
-            let _s = callback_manager.main_loop(_r, arc_s.clone()).await;
-            pin_mut!(_s);
-            while let Some(action) = _s.next().await {
-                on_tet_action.call(action);
+            let callback_manager = InputCallbackManagerRule::new(
+                _r, 
+                game_state_manager.read_state_stream(),
+                arc_s.clone(),
+            );
+            game_state_manager.add_rule(Arc::new(callback_manager));
+            let g2 = game_state_manager.clone();
+            let stream = game_state_manager.read_state_stream() ;
+            let main_loop = AbortOnDropHandle::new(n0_future::task::spawn(async move {
+                g2.main_loop().await
+            }));
+            pin_mut!(stream);
+            while let Some(next_state) = stream.next().await {
+                set_next_state.call(next_state);
                 let s2 = use_game_settings();
                 if s2 != s {
                     s = s2;
@@ -69,12 +66,12 @@ pub fn GameBoardInputAndDisplay(game_state: ReadOnlySignal<GameState>,
                 }
             }
             warn!("ZZZ ====???+++++????+?+?+?+?+ EVENT STRREAM FINISH");
+            drop(main_loop);
         },
     );
 
     let on_user_event = Callback::new(move |event: GameInputEvent| {
-        let old_state = game_state.read().clone();
-        ticket_manager.send((old_state, event));
+        ticket_manager.send(event);
     });
     rsx! {
         GameInputCaptureParent {

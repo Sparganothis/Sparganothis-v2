@@ -11,7 +11,7 @@ use crate::{rule_manager::{RuleManager}, tet::{get_random_seed, GameSeed, GameSt
 pub struct GameStateManager {
     state: Arc<RwLock<GameState>>,
     notify: Arc<Notify>,
-    rule_managers: Vec<Arc<dyn RuleManager + 'static>>,
+    rule_managers: Vec<Arc<dyn RuleManager + 'static +Send+Sync>>,
 }
 
 impl GameStateManager {
@@ -31,7 +31,7 @@ impl GameStateManager {
         }
     }
 
-    pub fn add_rule(&mut self, rule: Arc<dyn RuleManager+'static>) {
+    pub fn add_rule(&mut self, rule: Arc<dyn RuleManager+'static+Send+Sync>) {
         self.rule_managers.push(rule);
     }
 
@@ -77,7 +77,7 @@ impl GameStateManager {
         self.notify.notify_waiters();
     }
 
-    pub async fn read_state_stream(
+    pub fn read_state_stream(
         &self,
     ) -> impl Stream<Item = GameState> + Send + 'static {
         let state_arc = self.state.clone();
