@@ -255,7 +255,10 @@ impl RuleManager for InputCallbackManagerRule {
         let Some(next_action) = recv.next().fuse().await else {
             anyhow::bail!("no next action");
         };
-        let next_state = _state.try_action(next_action, get_timestamp_now_ms())?;
+        let Ok(next_state) = _state.try_action(next_action, get_timestamp_now_ms())
+        else {
+            return Ok(None);
+        };
         Ok(Some(next_state))
     }
 }

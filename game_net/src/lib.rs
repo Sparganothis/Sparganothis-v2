@@ -125,8 +125,6 @@ impl Game1v1MatchChatController {
                     continue;
                 }
                 if let GameMessage::GameState(s) = msg {
-                    // TODO: check from
-                    tracing::info!("opponent move: {:?}: {:?}", from, s);
                     yield s;
                 }
             }
@@ -184,10 +182,7 @@ impl RuleManager for Game1v1StateManagerForSpectator {
         &self,
         _state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
-        tracing::info!("Game1v1StateManagerForSpectator: locking");
         let r = Ok({ self.0.lock().await.next().fuse() }.await);
-
-        tracing::info!("Game1v1StateManagerForSpectator: unlocking");
         r
     }
 }
@@ -207,9 +202,6 @@ pub fn get_spectator_state_manager(
         let oppstream = cc.opponent_move_stream().await;
         pin_mut!(oppstream);
         while let Some(state) = oppstream.next().await {
-            tracing::info!(
-                "get_spectator_state_manager(): got message from oppstream!"
-            );
             state_tx.unbounded_send(state)?;
         }
 
@@ -240,9 +232,6 @@ pub fn get_1v1_player_state_manager(
         let stream = g2.read_state_stream();
         pin_mut!(stream);
         while let Some(s) = stream.next().await {
-            tracing::info!(
-                "get_1v1_player_state_manager(): got message from own stream!"
-            );
             cc.update_own_state(s).await?;
         }
         anyhow::Ok(())

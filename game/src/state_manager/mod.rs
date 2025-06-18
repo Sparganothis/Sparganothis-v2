@@ -84,7 +84,6 @@ impl GameStateManager {
                         drop(fut);
                         current_state = result;
                         self._set_state_and_notify(result).await;
-                        tracing::info!("Got new game state from rule!");
                         break;
                     }
                     Ok(None) => {
@@ -121,7 +120,6 @@ impl GameStateManager {
                 let new_state =  {state_arc.read().await.clone()};
                 if new_state != state {
                     state = new_state;
-                    tracing::info!("StateManager state_stream() -- new state.");
                     yield state;
                 }
             }

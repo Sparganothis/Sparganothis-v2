@@ -119,10 +119,6 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
         get_1v1_player_state_manager(cc.clone(), settings, input_rx);
     let spectator_manager = get_spectator_state_manager(cc);
     let on_user_event = Callback::new(move |event: GameInputEvent| {
-        tracing::info!(
-            "Play1v1FullScreenWindowInner(): on user event: {:#?}",
-            event
-        );
         let _ = input_tx.unbounded_send(event);
     });
 
@@ -161,9 +157,10 @@ fn GameStateManagerDisplay(manager: GameStateManager) -> Element {
     let _coro = use_coroutine(move |_rx: UnboundedReceiver<()>| {
         let m2 = manager.clone();
 
-        let main_loop = AbortOnDropHandle::new(n0_future::task::spawn(async move {
-            m2.main_loop().await
-        }));
+        let main_loop =
+            AbortOnDropHandle::new(n0_future::task::spawn(async move {
+                m2.main_loop().await
+            }));
         let m2 = manager.clone();
 
         async move {
@@ -173,7 +170,10 @@ fn GameStateManagerDisplay(manager: GameStateManager) -> Element {
                 game_state.set(s);
             }
             let main_loop_result = main_loop.await;
-            tracing::info!("GameStateManagerDisplay main loop finalized: {:#?}", main_loop_result);
+            tracing::info!(
+                "GameStateManagerDisplay main loop finalized: {:#?}",
+                main_loop_result
+            );
         }
     });
 
