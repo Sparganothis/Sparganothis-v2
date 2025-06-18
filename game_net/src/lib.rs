@@ -20,9 +20,9 @@ pub enum GameMessage {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Game1v1MessageType;
+pub struct Game1v1RoomType;
 
-impl IChatRoomType for Game1v1MessageType {
+impl IChatRoomType for Game1v1RoomType {
     type M = GameMessage;
     type P = ();
     fn default_presence() -> Self::P {
@@ -31,17 +31,17 @@ impl IChatRoomType for Game1v1MessageType {
 }
 
 #[derive(Debug)]
-pub struct Game1v1MatchController {
+pub struct Game1v1MatchChatController {
     mm: GlobalMatchmaker,
-    chat: ChatController<Game1v1MessageType>,
+    chat: ChatController<Game1v1RoomType>,
     match_info: GameMatch<NodeIdentity>,
     opponent_id: NodeIdentity,
 }
 
-pub async fn join_game(
+pub async fn join_1v1_match(
     mm: GlobalMatchmaker,
     game_match: GameMatch<NodeIdentity>,
-) -> anyhow::Result<Game1v1MatchController> {
+) -> anyhow::Result<Game1v1MatchChatController> {
     let ticket = ChatTicket::new_str_bs(
         &format!("1v1-{}", game_match.match_id),
         game_match
@@ -53,14 +53,14 @@ pub async fn join_game(
 
     let node = mm.own_node().await.context("no node")?;
     tracing::info!("joining game: {:?}", ticket);
-    let chat = node.join_chat::<Game1v1MessageType>(&ticket).await?;
+    let chat = node.join_chat::<Game1v1RoomType>(&ticket).await?;
     let opponent_id = game_match
         .users
         .iter()
         .find(|m| *m != node.node_identity())
         .context("no opponent")?
         .clone();
-    Ok(Game1v1MatchController {
+    Ok(Game1v1MatchChatController {
         mm,
         chat,
         opponent_id,
@@ -69,7 +69,7 @@ pub async fn join_game(
 }
 use async_stream::stream;
 
-impl Game1v1MatchController {
+impl Game1v1MatchChatController {
     pub async fn update_own_state(
         &self,
         next_state: GameState,
@@ -132,6 +132,8 @@ impl Game1v1MatchController {
     }
 }
 
+
+#[derive(Debug)]
 pub struct Game1v1MatchOutcome {
     match_info: GameMatch<NodeIdentity>,
     winner: NodeIdentity,

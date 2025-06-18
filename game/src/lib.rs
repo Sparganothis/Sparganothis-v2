@@ -10,6 +10,8 @@ pub mod input;
 pub mod settings;
 pub mod tet;
 pub mod timestamp;
+pub mod state_manager;
+pub mod rule_manager;
 
 #[cfg(test)]
 pub mod tests {

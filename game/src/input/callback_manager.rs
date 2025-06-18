@@ -7,10 +7,12 @@ use crate::settings::GameSettings;
 use crate::tet::GameState;
 use crate::{tet::TetAction, timestamp::get_timestamp_now_ms};
 use async_stream::stream;
-use futures_channel::mpsc::UnboundedReceiver;
+use futures_channel::mpsc::{unbounded, UnboundedReceiver};
 use futures_core::stream::Stream;
 use futures_util::stream::StreamExt;
 use futures_util::{pin_mut, FutureExt};
+use n0_future::task::AbortOnDropHandle;
+use tokio::sync::Mutex;
 use tokio::sync::{futures::Notified, Notify, RwLock};
 
 #[derive(Debug, Clone)]
@@ -179,5 +181,77 @@ impl CallbackManagerInner {
         self.events
             .insert(move_type, now + duration.as_millis() as i64);
         self.notify.notify_waiters();
+    }
+}
+
+
+
+use crate::rule_manager::{RuleManager};
+
+#[derive(Debug)]
+pub struct InputCallbackManagerRule {
+    cb_manager: CallbackManager,
+    main_loop: AbortOnDropHandle<anyhow::Result<()>>,
+    stream_loop: AbortOnDropHandle<anyhow::Result<()>>,
+    action_receiver: Mutex<UnboundedReceiver<TetAction>>,
+}
+
+impl InputCallbackManagerRule {
+    pub fn new(mut input_stream: UnboundedReceiver<GameInputEvent>, state_stream: impl Stream<Item = GameState> + Send + 'static, settings: Arc<RwLock<GameSettings>>, ) -> Self {
+        let cb_manager = CallbackManager::new2();
+
+        let (pair_tx, pair_rx) = unbounded();
+        let (action_tx, action_rx) = unbounded();
+
+        let stream_loop =  AbortOnDropHandle::new(n0_future::task::spawn(async move {
+            pin_mut!(state_stream);
+            let Some(mut state) = state_stream.next().await else {
+                anyhow::bail!("no initial state.");
+            };
+            
+            loop {
+                tokio::select! {
+                    kbd_event = input_stream.next().fuse() => {
+                        let Some(kbd_event) = kbd_event else {
+                            anyhow::bail!("no more kbd events");
+                        };
+                        pair_tx.unbounded_send((state, kbd_event))?;
+                    }
+                    new_state = state_stream.next().fuse() => {
+                        let Some(new_state) = new_state else {
+                            anyhow::bail!("no more states.");
+                        };
+                        state = new_state ;
+                    }
+                }
+            }
+        }));
+
+        Self {
+            cb_manager: cb_manager.clone(),
+            main_loop: AbortOnDropHandle::new(n0_future::task::spawn(async move {
+                let mut s = cb_manager.main_loop(pair_rx, settings).await;
+                while let Some(x) = s.next().await {
+                    action_tx.unbounded_send(x)?;
+                }
+
+                anyhow::Ok(())
+            })),
+            stream_loop,
+            action_receiver: Mutex::new(action_rx),
+        }
+    }
+}
+
+
+#[async_trait::async_trait]
+impl RuleManager for InputCallbackManagerRule {
+    async fn accept_state(&self, _state: GameState) ->  anyhow::Result<Option<GameState>> {
+        let mut recv = self.action_receiver.lock().await;
+        let Some( next_action ) = recv.next().fuse().await else {
+            anyhow::bail!("no next action");
+        };
+        let next_state = _state.try_action(next_action, get_timestamp_now_ms())?;
+        Ok(Some(next_state))
     }
 }

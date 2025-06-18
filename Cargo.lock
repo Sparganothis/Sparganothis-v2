@@ -3226,6 +3226,7 @@ version = "0.1.37"
 dependencies = [
  "anyhow",
  "async-stream",
+ "async-trait",
  "bincode",
  "bitfield-struct",
  "chrono",

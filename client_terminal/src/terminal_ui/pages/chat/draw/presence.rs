@@ -1,5 +1,5 @@
 use protocol::chat_presence::{PresenceFlag, PresenceList};
-use protocol::global_chat::GlobalChatMessageType;
+use protocol::global_chat::GlobalChatRoomType;
 use ratatui::layout::Rect;
 use ratatui::style::{Color, Style};
 use ratatui::text::{Line, Span, Text};
@@ -26,7 +26,7 @@ fn truncate_word(s: &str, max_len: usize) -> String {
 pub fn draw_presence_list(
     frame: &mut Frame,
     area: Rect,
-    data: &PresenceList<GlobalChatMessageType>,
+    data: &PresenceList<GlobalChatRoomType>,
 ) {
     let block = Block::bordered().title("Presence List");
 

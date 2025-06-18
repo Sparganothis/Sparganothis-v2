@@ -20,7 +20,7 @@ use crate::{
     chat_ticket::ChatTicket,
     datetime_now,
     echo::Echo,
-    global_chat::{GlobalChatMessageType, GlobalChatPresence},
+    global_chat::{GlobalChatRoomType, GlobalChatPresence},
     main_node::MainNode,
     sleep::SleepManager,
     user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
@@ -41,8 +41,8 @@ struct GlobalMatchmakerInner {
     bootstrap_main_node: Option<MainNode>,
     known_bootstrap_nodes: BTreeMap<usize, BootstrapNodeInfo>,
     _periodic_task: Option<AbortOnDropHandle<()>>,
-    global_chat_controller: Option<ChatController<GlobalChatMessageType>>,
-    bs_global_chat_controller: Option<ChatController<GlobalChatMessageType>>,
+    global_chat_controller: Option<ChatController<GlobalChatRoomType>>,
+    bs_global_chat_controller: Option<ChatController<GlobalChatRoomType>>,
 }
 
 impl GlobalMatchmakerInner {
@@ -115,12 +115,12 @@ impl GlobalMatchmaker {
 
     pub async fn global_chat_controller(
         &self,
-    ) -> Option<ChatController<GlobalChatMessageType>> {
+    ) -> Option<ChatController<GlobalChatRoomType>> {
         self.inner.read().await.global_chat_controller.clone()
     }
     pub async fn bs_global_chat_controller(
         &self,
-    ) -> Option<ChatController<GlobalChatMessageType>> {
+    ) -> Option<ChatController<GlobalChatRoomType>> {
         self.inner.read().await.bs_global_chat_controller.clone()
     }
     pub async fn display_debug_info(&self) -> Result<String> {

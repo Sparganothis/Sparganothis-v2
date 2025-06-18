@@ -14,7 +14,7 @@ use tracing::{info, warn};
 use crate::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     global_chat::{
-        GlobalChatMessageContent, GlobalChatMessageType, MatchHandshakeType,
+        GlobalChatMessageContent, GlobalChatRoomType, MatchHandshakeType,
         MatchmakingMessage,
     },
     user_identity::NodeIdentity,
@@ -46,7 +46,7 @@ impl MatchmakeRandomId {
 
 pub async fn find_game(
     match_type: GameMatchType,
-    global_chat: ChatController<GlobalChatMessageType>,
+    global_chat: ChatController<GlobalChatRoomType>,
     timeout: std::time::Duration,
     attempts: u8,
 ) -> anyhow::Result<GameMatch<NodeIdentity>> {
@@ -67,7 +67,7 @@ pub async fn find_game(
 
 async fn find_game_one_attempt(
     match_type: GameMatchType,
-    global_chat: ChatController<GlobalChatMessageType>,
+    global_chat: ChatController<GlobalChatRoomType>,
     timeout: std::time::Duration,
 ) -> anyhow::Result<GameMatch<NodeIdentity>> {
     let own_node_id = global_chat.node_identity();
@@ -112,7 +112,7 @@ async fn find_game_one_attempt(
 struct GameMatchmaker {
     own_node_id: NodeIdentity,
     match_type: GameMatchType,
-    global_chat: ChatController<GlobalChatMessageType>,
+    global_chat: ChatController<GlobalChatRoomType>,
     sender: tokio::sync::mpsc::Sender<GameMatch<NodeIdentity>>,
     state: GameMatchmakerState,
     rando: MatchmakeRandomId,
@@ -134,7 +134,7 @@ impl GameMatchmaker {
 
     fn new(
         match_type: GameMatchType,
-        global_chat: ChatController<GlobalChatMessageType>,
+        global_chat: ChatController<GlobalChatRoomType>,
         sender: tokio::sync::mpsc::Sender<GameMatch<NodeIdentity>>,
         node_id: NodeIdentity,
     ) -> Self {

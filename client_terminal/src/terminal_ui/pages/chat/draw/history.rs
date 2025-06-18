@@ -1,4 +1,4 @@
-use protocol::global_chat::{GlobalChatMessageContent, GlobalChatMessageType};
+use protocol::global_chat::{GlobalChatMessageContent, GlobalChatRoomType};
 use protocol::user_identity::NodeIdentity;
 use protocol::{datetime_now, ReceivedMessage};
 use ratatui::prelude::*;
@@ -62,7 +62,7 @@ struct ChatMessage {
 
 impl ChatMessage {
     fn new(
-        msg: &ReceivedMessage<GlobalChatMessageType>,
+        msg: &ReceivedMessage<GlobalChatRoomType>,
         own_identity: &NodeIdentity,
         width: u16,
     ) -> Self {
@@ -157,7 +157,7 @@ impl Widget for ChatMessage {
 pub fn draw_chat_messages(
     frame: &mut Frame,
     area: Rect,
-    data: &Vec<ReceivedMessage<GlobalChatMessageType>>,
+    data: &Vec<ReceivedMessage<GlobalChatRoomType>>,
     own_identity: &NodeIdentity,
     scroll_position: usize,
 ) {

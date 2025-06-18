@@ -11,7 +11,7 @@ use n0_future::task::AbortOnDropHandle;
 use protocol::{
     chat::{ChatSender, IChatController, IChatReceiver, IChatSender},
     chat_presence::PresenceList,
-    global_chat::{GlobalChatMessageType, GlobalChatPresence},
+    global_chat::{GlobalChatRoomType, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     user_identity::{NodeIdentity, UserIdentitySecrets},
     ReceivedMessage,
@@ -45,7 +45,7 @@ impl PageFactory for ChatPageFactory {
 pub struct ChatPage {
     _notify: Arc<Notify>,
     data: Arc<Mutex<ChatPageState>>,
-    sender: Arc<Mutex<Option<ChatSender<GlobalChatMessageType>>>>,
+    sender: Arc<Mutex<Option<ChatSender<GlobalChatRoomType>>>>,
     mm: Arc<Mutex<Option<GlobalMatchmaker>>>,
 }
 
@@ -53,8 +53,8 @@ pub struct ChatPage {
 pub enum ChatPageState {
     ChatLoaded {
         own_identity: NodeIdentity,
-        presence: PresenceList<GlobalChatMessageType>,
-        msg_history: Vec<ReceivedMessage<GlobalChatMessageType>>,
+        presence: PresenceList<GlobalChatRoomType>,
+        msg_history: Vec<ReceivedMessage<GlobalChatRoomType>>,
         input_buffer: String,
         scroll_position: usize,
     },
@@ -180,7 +180,7 @@ impl ChatPage {
     }
     async fn chat_set_presence_list(
         &self,
-        p2: PresenceList<GlobalChatMessageType>,
+        p2: PresenceList<GlobalChatRoomType>,
     ) {
         {
             self.data.lock().await.chat_set_presence_list(p2);
@@ -189,7 +189,7 @@ impl ChatPage {
     }
     async fn chat_append_msg_history(
         &self,
-        msg: ReceivedMessage<GlobalChatMessageType>,
+        msg: ReceivedMessage<GlobalChatRoomType>,
     ) {
         {
             self.data.lock().await.chat_append_msg_history(msg);
@@ -231,7 +231,7 @@ impl ChatPageState {
     }
     fn chat_set_presence_list(
         &mut self,
-        p2: PresenceList<GlobalChatMessageType>,
+        p2: PresenceList<GlobalChatRoomType>,
     ) {
         if let Self::ChatLoaded { presence, .. } = self {
             *presence = p2;
@@ -239,7 +239,7 @@ impl ChatPageState {
     }
     fn chat_append_msg_history(
         &mut self,
-        msg: ReceivedMessage<GlobalChatMessageType>,
+        msg: ReceivedMessage<GlobalChatRoomType>,
     ) {
         if let Self::ChatLoaded {
             msg_history,

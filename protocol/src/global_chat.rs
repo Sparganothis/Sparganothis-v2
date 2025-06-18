@@ -7,9 +7,9 @@ use crate::{
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct GlobalChatMessageType;
+pub struct GlobalChatRoomType;
 
-impl IChatRoomType for GlobalChatMessageType {
+impl IChatRoomType for GlobalChatRoomType {
     type M = GlobalChatMessageContent;
     type P = GlobalChatPresence;
     fn default_presence() -> Self::P {

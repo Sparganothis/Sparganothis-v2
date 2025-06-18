@@ -2,7 +2,7 @@ mod history;
 mod presence;
 
 use protocol::chat_presence::PresenceList;
-use protocol::global_chat::GlobalChatMessageType;
+use protocol::global_chat::GlobalChatRoomType;
 use protocol::user_identity::NodeIdentity;
 use protocol::{datetime_now, ReceivedMessage};
 use ratatui::layout::{Constraint, Layout};
@@ -46,8 +46,8 @@ pub fn draw_chat(frame: &mut Frame, data: &ChatPageState) {
 fn draw_chat_ui(
     frame: &mut Frame,
     own_identity: &NodeIdentity,
-    presence: &PresenceList<GlobalChatMessageType>,
-    msg_history: &Vec<ReceivedMessage<GlobalChatMessageType>>,
+    presence: &PresenceList<GlobalChatRoomType>,
+    msg_history: &Vec<ReceivedMessage<GlobalChatRoomType>>,
     input_buffer: &str,
     scroll_position: usize,
 ) {

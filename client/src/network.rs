@@ -5,7 +5,7 @@ use n0_future::StreamExt;
 use protocol::{
     _const::PRESENCE_INTERVAL,
     chat::{IChatController, IChatSender},
-    global_chat::{GlobalChatMessageType, GlobalChatPresence},
+    global_chat::{GlobalChatRoomType, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     user_identity::UserIdentitySecrets,
 };
@@ -44,7 +44,7 @@ pub fn NetworkConnectionParent(children: Element) -> Element {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct GlobalChatClientContext {
-    pub chat: ChatSignals<GlobalChatMessageType>,
+    pub chat: ChatSignals<GlobalChatRoomType>,
 }
 
 #[component]
@@ -56,7 +56,7 @@ fn GlobalChatClientParent(children: Element) -> Element {
         {children}
     }
 }
-fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatMessageType> {
+fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatRoomType> {
     info!("use_global_chat_controller_signal");
     use_chat_signals(
         true,
