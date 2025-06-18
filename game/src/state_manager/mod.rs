@@ -3,6 +3,7 @@ use std::sync::Arc;
 use async_stream::stream;
 use futures_util::StreamExt;
 use n0_future::{task::AbortOnDropHandle, Stream};
+use rand::{rng, thread_rng, Rng};
 use tokio::sync::{Notify, RwLock};
 
 use crate::{rule_manager::{RuleManager}, tet::{get_random_seed, GameSeed, GameState, TetAction}, timestamp::get_timestamp_now_ms};
@@ -13,6 +14,13 @@ pub struct GameStateManager {
     notify: Arc<Notify>,
     rule_managers: Vec<Arc<dyn RuleManager + 'static +Send+Sync>>,
     loops: Vec<Arc<AbortOnDropHandle<anyhow::Result<()>>>>,
+    obj_id: u64,
+}
+
+impl PartialEq for GameStateManager {
+    fn eq(&self, other: &Self) -> bool {
+        self.obj_id == other.obj_id
+    }
 }
 
 impl GameStateManager {
@@ -24,12 +32,14 @@ impl GameStateManager {
                 game_seed, 
                 start_time,
             );
+        let id: u64 = (&mut rng()).random();
 
         Self {
             state: Arc::new(RwLock::new(state)),
             notify: Arc::new(Notify::new()),
             rule_managers: vec![],
             loops: vec![],
+            obj_id: id,
         }
     }
 

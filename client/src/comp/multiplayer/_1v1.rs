@@ -1,10 +1,17 @@
+use std::sync::Arc;
+
+use async_channel::unbounded;
 use dioxus::prelude::*;
-use game::api::game_match::GameMatch;
+use futures_util::pin_mut;
+use game::{api::game_match::GameMatch, futures_channel, input::events::GameInputEvent, state_manager::GameStateManager, tet::GameState};
+use game_net::{get_1v1_player_state_manager, get_spectator_state_manager, Game1v1MatchChatController};
+use n0_future::StreamExt;
 use protocol::{
     global_matchmaker::GlobalMatchmaker, user_identity::NodeIdentity,
 };
+use tokio::sync::RwLock;
 
-use crate::comp::singleplayer::SingleplayerGameBoardBasic;
+use crate::{comp::{game_display::GameDisplay, input::GameInputCaptureParent, singleplayer::SingleplayerGameBoardBasic}, localstorage::use_game_settings};
 
 #[component]
 pub fn Play1v1WindowTitle(
@@ -61,18 +68,69 @@ pub fn Play1v1FullscreenWindow(
     mm: GlobalMatchmaker,
     game_match: GameMatch<NodeIdentity>,
 ) -> Element {
+    
+
+    // let opponent_idx = if game_match.users[0] == mm.own_node_identity() {
+    //     1
+    // } else { 0};
+
+
+    let match_chat = use_resource(move ||{
+        let mm2 = mm.clone();
+        let game_match = game_match.clone();
+        
+         async move {
+        let match_chat = game_net::join_1v1_match(mm2, game_match).await;
+        match_chat.ok()
+    }});
+
+    let match_chat = use_memo(move || {
+        match_chat.read().clone().flatten()
+    });
+
+
     rsx! {
         div {
             style: "display: flex; flex-direction: row; container-type: size; width: 100%; height: 100%;",
-            div {
-                style: "width: 50cqw; height: 100cqh",
-                SingleplayerGameBoardBasic {}
+            if let Some(cc) = match_chat.read().clone() {
+                Play1v1FullScreenWindowInner {cc}
+            } else {
+                h1 {
+                    "Chat loading .... "
+                }
             }
-            div {
-                style: "width: 50cqw; height: 100cqh;",
-                SingleplayerGameBoardBasic {}
+        }
+    }
+}
 
+
+#[component]
+fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
+
+    let (input_tx, input_rx) = futures_channel::mpsc::unbounded();
+    let settings = Arc::new(RwLock::new(use_game_settings()));
+    let play_state_manager = get_1v1_player_state_manager(
+        cc.clone(), 
+        settings, 
+        input_rx
+    );
+    let spectator_manager = get_spectator_state_manager(cc);
+    let on_user_event = Callback::new(move |event: GameInputEvent| {
+        let _ = input_tx.unbounded_send(event);
+    });
+
+    rsx! {
+        div {
+            style: "width: 50cqw; height: 100cqh",
+            GameInputCaptureParent {
+                on_user_event,
+
+                GameStateManagerDisplay {manager: play_state_manager}
             }
+        }
+        div {
+            style: "width: 50cqw; height: 100cqh;",
+            GameStateManagerDisplay {manager: spectator_manager}
         }
     }
 }
@@ -83,8 +141,34 @@ pub fn Spectate1v1FullScreenWindow(
     game_match: GameMatch<NodeIdentity>,
 ) -> Element {
     rsx! {
-        Play1v1FullscreenWindow {
-            mm, game_match
+        h1 {
+            "TODO : SPECTATE plz wait for impl"
         }
     }
+}
+
+
+
+#[component]
+fn GameStateManagerDisplay(manager: GameStateManager) -> Element {
+    let mut game_state = use_signal(
+        GameState::empty);
+
+    let _coro = use_coroutine(move |_rx: UnboundedReceiver<()>|{
+        
+        let m2 = manager.clone();
+        
+         async move {
+        let stream = m2.read_state_stream();
+        pin_mut!(stream);
+        while let Some(s) = stream.next().await {
+            game_state.set(s);
+        }
+        }
+    });
+
+    rsx! {
+        GameDisplay {game_state }
+    }
+    
 }

@@ -41,6 +41,7 @@ futures-util = "0.3.31"
 keyboard-types = {version = "0.7.0", features = ["serde"]}
 bincode = "1"
 base64 = "0.22"
+game_net = {path = "../game_net"}
 
 [features]
 default = ["web"]

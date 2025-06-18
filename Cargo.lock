@@ -1236,6 +1236,7 @@ dependencies = [
  "dioxus-sdk",
  "futures-util",
  "game",
+ "game_net",
  "getrandom 0.2.15",
  "iroh",
  "keyboard-types",
@@ -3259,8 +3260,10 @@ dependencies = [
  "async-stream",
  "async-trait",
  "game",
+ "n0-future",
  "protocol",
  "serde",
+ "tokio",
  "tracing",
 ]
 
