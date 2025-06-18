@@ -11,6 +11,7 @@ anyhow = "1"
 serde = "1"
 async-stream = "0.3.6"
 tracing = "0.1.41"
+async-trait.workspace = true
 
 [lints]
 workspace = true

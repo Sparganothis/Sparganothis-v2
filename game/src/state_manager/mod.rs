@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_stream::stream;
 use futures_util::StreamExt;
-use n0_future::Stream;
+use n0_future::{task::AbortOnDropHandle, Stream};
 use tokio::sync::{Notify, RwLock};
 
 use crate::{rule_manager::{RuleManager}, tet::{get_random_seed, GameSeed, GameState, TetAction}, timestamp::get_timestamp_now_ms};
@@ -12,13 +12,14 @@ pub struct GameStateManager {
     state: Arc<RwLock<GameState>>,
     notify: Arc<Notify>,
     rule_managers: Vec<Arc<dyn RuleManager + 'static +Send+Sync>>,
+    loops: Vec<Arc<AbortOnDropHandle<anyhow::Result<()>>>>,
 }
 
 impl GameStateManager {
     pub async fn get_state(&self) -> GameState {
         self.state.read().await.clone()
     }
-    pub async fn new(game_seed: &GameSeed, start_time: i64) -> Self {
+    pub fn new(game_seed: &GameSeed, start_time: i64) -> Self {
         let state = GameState::new(
                 game_seed, 
                 start_time,
@@ -28,11 +29,15 @@ impl GameStateManager {
             state: Arc::new(RwLock::new(state)),
             notify: Arc::new(Notify::new()),
             rule_managers: vec![],
+            loops: vec![],
         }
     }
 
     pub fn add_rule(&mut self, rule: Arc<dyn RuleManager+'static+Send+Sync>) {
         self.rule_managers.push(rule);
+    }
+    pub fn add_loop(&mut self, _loop: AbortOnDropHandle<anyhow::Result<()>>) {
+        self.loops.push(Arc::new(_loop));
     }
 
     pub async fn main_loop(&self) -> anyhow::Result<()> {

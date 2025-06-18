@@ -1,8 +1,8 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use game::{
-    api::game_match::GameMatch,
-    futures_util::{FutureExt, Stream, StreamExt},
-    tet::{GameOverReason, GameState},
+    api::game_match::GameMatch, futures_channel::mpsc::{unbounded, UnboundedReceiver}, futures_util::{lock::Mutex, FutureExt, Stream, StreamExt}, rule_manager::RuleManager, state_manager::GameStateManager, tet::{GameOverReason, GameState}
 };
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
@@ -141,4 +141,46 @@ pub struct Game1v1MatchOutcome {
     reason: GameOverReason,
     winner_state: GameState,
     loser_state: GameState,
+}
+
+
+struct Game1v1StateManagerForPlayer(Game1v1MatchChatController);
+
+#[async_trait::async_trait]
+impl RuleManager for Game1v1StateManagerForPlayer {
+    async fn accept_state(&self, state: GameState) 
+    ->  anyhow::Result<Option<GameState>> {
+        todo!()
+    }
+}
+
+struct Game1v1StateManagerForSpectator(Mutex<UnboundedReceiver<GameState>>);
+#[async_trait::async_trait]
+impl RuleManager for Game1v1StateManagerForSpectator {
+    async fn accept_state(&self, _state: GameState) 
+    ->  anyhow::Result<Option<GameState>> {
+        Ok( {self.0.lock().await.next().fuse()}.await)
+    }
+}
+
+
+pub fn get_spectator_state_manager(cc: Game1v1MatchChatController, idx: i32) 
+-> GameStateManager {
+    let mut manager = GameStateManager::new(&cc.match_info.seed, cc.match_info.time);
+
+    let (state_tx, state_rx) = unbounded();
+    let spectate_rule = Game1v1StateManagerForSpectator(Mutex::new(state_rx));
+    manager.add_rule(Arc::new(spectate_rule));
+    
+
+    manager
+}
+
+
+pub fn get_player_state_manager(cc:Game1v1MatchChatController)
+ -> GameStateManager {
+    let mut manager = GameStateManager::new(&cc.match_info.seed, cc.match_info.time);
+
+
+    manager
 }

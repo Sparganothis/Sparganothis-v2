@@ -42,7 +42,7 @@ pub fn GameBoardInputAndDisplay(game_state: ReadOnlySignal<GameState>,
             let mut game_state_manager = GameStateManager::new(
                 &get_random_seed(),
                 get_timestamp_now_ms(),
-            ).await;
+            );
             let mut s = use_game_settings();
             let arc_s = Arc::new(RwLock::new(s));
             let callback_manager = InputCallbackManagerRule::new(
