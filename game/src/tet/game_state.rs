@@ -117,7 +117,7 @@ pub struct CurrentPcsInfo {
 }
 
 impl GameState {
-    pub fn add_pending_garbage(&mut self) {
+    fn add_pending_garbage(&mut self) {
         while self.garbage_applied < self.garbage_recv {
             self.main_board.inject_single_garbage_line(self.seed);
             self.garbage_applied += 1;

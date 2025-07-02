@@ -195,6 +195,7 @@ impl RuleManager for Game1v1YouWinIfOpponentLoseRule {
         &self,
         mut _state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
+        tracing::info!("Game1v1YouWinIfOpponentLoseRule");
         if _state.game_over() {
             return Ok(None);
         }
@@ -207,6 +208,29 @@ impl RuleManager for Game1v1YouWinIfOpponentLoseRule {
     }
 }
 
+struct Game1v1RecvLinesFromOpponentRule(Mutex<UnboundedReceiver<GameState>>);
+#[async_trait::async_trait]
+impl RuleManager for Game1v1RecvLinesFromOpponentRule {
+    async fn accept_state(
+        &self,
+        my_state: GameState,
+    ) -> anyhow::Result<Option<GameState>> {
+        let Some(opponent_state) = { self.0.lock().await.next().fuse() }.await else {
+            anyhow::bail!("no oppoonent omves ???");
+        };
+        if my_state.game_over() || opponent_state.game_over() {
+            return Ok(None);
+        }
+        if opponent_state.total_garbage_sent == my_state.garbage_recv {
+            return Ok(None);
+        }
+
+        let mut new_state = my_state;
+        new_state.apply_raw_garbage(opponent_state.total_garbage_sent);
+        Ok(Some(new_state))
+    }
+}
+
 pub fn get_spectator_state_manager(
     cc: Game1v1MatchChatController,
 ) -> GameStateManager {
@@ -216,7 +240,7 @@ pub fn get_spectator_state_manager(
 
     let (state_tx, state_rx) = unbounded();
     let spectate_rule = Game1v1SpectatorRule(Mutex::new(state_rx));
-    manager.add_rule(Arc::new(spectate_rule));
+    manager.add_rule("spectate_rule", Arc::new(spectate_rule));
 
     manager.add_loop(async move {
         let oppstream = cc.opponent_move_stream().await;
@@ -245,7 +269,7 @@ pub fn get_1v1_player_state_manager(
         game_state_manager.read_state_stream(),
         settings,
     );
-    game_state_manager.add_rule(Arc::new(callback_manager));
+    game_state_manager.add_rule("callback_manager", Arc::new(callback_manager));
 
     let g2 = game_state_manager.clone();
     let cc2 = cc.clone();
@@ -258,17 +282,26 @@ pub fn get_1v1_player_state_manager(
         anyhow::Ok(())
     });
 
-    let (state_tx, state_rx) = unbounded();
-    let you_win_rule = Game1v1YouWinIfOpponentLoseRule(Mutex::new(state_rx));
-    game_state_manager.add_rule(Arc::new(you_win_rule));
+    let (tx_you_win, rx_you_win) = unbounded();
+    let you_win_rule = Game1v1YouWinIfOpponentLoseRule(Mutex::new(rx_you_win));
+    game_state_manager.add_rule("you_win_rule" , Arc::new(you_win_rule));
+
+        let (state_tx2, state_rx2) = unbounded();
+    let send_line_rule = Game1v1RecvLinesFromOpponentRule(Mutex::new(state_rx2));
+    game_state_manager.add_rule("sendline", Arc::new(send_line_rule));
+    
 
     let cc2 = cc.clone();
     game_state_manager.add_loop(async move {
         let stream = cc2.opponent_move_stream().await;
         pin_mut!(stream);
-        while let Some(s) = stream.next().await {
-            if s.game_over() {
-                let _e = state_tx.unbounded_send(());
+        while let Some(oppponent_state) = stream.next().await {
+            tracing::info!("\n\n NEW opponent state receive!!!");
+            if state_tx2.unbounded_send(oppponent_state).is_err() {
+                tracing::info!("failed to notify send lines function");
+            }
+            if oppponent_state.game_over() {
+                let _e = tx_you_win.unbounded_send(());
                 if _e.is_err() {
                     tracing::info!("failed to notify opponent lost game: {_e:#?}");
                 }
@@ -276,10 +309,6 @@ pub fn get_1v1_player_state_manager(
         }
         anyhow::Ok(())
     });
-
-
-
-
 
     game_state_manager
 }

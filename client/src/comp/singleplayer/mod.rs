@@ -51,7 +51,7 @@ pub fn GameBoardInputAndDisplay(
                 game_state_manager.read_state_stream(),
                 arc_s.clone(),
             );
-            game_state_manager.add_rule(Arc::new(callback_manager));
+            game_state_manager.add_rule("callback_manager", Arc::new(callback_manager));
             let g2 = game_state_manager.clone();
             let stream = game_state_manager.read_state_stream();
             let main_loop =

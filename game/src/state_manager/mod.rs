@@ -19,7 +19,7 @@ use crate::{
 pub struct GameStateManager {
     state: Arc<RwLock<GameState>>,
     notify: Arc<Notify>,
-    rule_managers: Vec<Arc<dyn RuleManager + 'static + Send + Sync>>,
+    rule_managers: Vec<(String, Arc<dyn RuleManager + 'static + Send + Sync>)>,
     loops: Vec<Arc<AbortOnDropHandle<anyhow::Result<()>>>>,
     obj_id: u64,
 }
@@ -37,6 +37,7 @@ impl GameStateManager {
     pub fn new(game_seed: &GameSeed, start_time: i64) -> Self {
         let state = GameState::new(game_seed, start_time);
         let id: u64 = (&mut rng()).random();
+        tracing::info!("INIT GAME MANAGER {id}");
 
         Self {
             state: Arc::new(RwLock::new(state)),
@@ -47,13 +48,15 @@ impl GameStateManager {
         }
     }
 
-    pub fn add_rule(&mut self, rule: Arc<dyn RuleManager + 'static + Send + Sync>) {
-        self.rule_managers.push(rule);
+    pub fn add_rule(&mut self, name: &str, rule: Arc<dyn RuleManager + 'static + Send + Sync>) {
+        tracing::info!("GAME MANAGER ADD RULE.");
+        self.rule_managers.push((name.to_string(), rule));
     }
     pub fn add_loop<F: Future<Output = anyhow::Result<()>> + Send + 'static>(
         &mut self,
         _loop: F,
     ) {
+        tracing::info!("GAME MANAGER ADD LOOP.");
         self.loops
             .push(Arc::new(AbortOnDropHandle::new(n0_future::task::spawn({
                 async move {
@@ -61,6 +64,7 @@ impl GameStateManager {
                     if let Err(ref e) = r {
                         tracing::error!("GameStateManager(): error in loop: {:#?} ", e)
                     }
+                    tracing::warn!("GameManager(): LOOP EXITED WITH NO ERROR!!");
                     r
                 }
             }))));
@@ -69,28 +73,36 @@ impl GameStateManager {
     pub async fn main_loop(&self) -> anyhow::Result<()> {
         let mut current_state = self.get_state().await;
         self.notify.notify_waiters();
+        tracing::info!("GameManager(): main_loop() started");
 
         while !current_state.game_over() {
+            tracing::info!("GameManager(): main_loop() iteration");
             let mut fut = n0_future::FuturesUnordered::new();
             let state2 = current_state;
             for manager in self.rule_managers.iter() {
                 let manager = manager.clone();
-                let next = async move { manager.accept_state(state2).await };
+                let next = async move { (manager.0.clone(), manager.1.accept_state(state2).await) };
                 fut.push(next);
             }
-            while let Some(result) = fut.next().await {
+            while let Some((rule_name, result)) = fut.next().await {
+                tracing::info!("GameManager(): GOT RULE REPLY FROM RULE {rule_name}!");
                 match result {
                     Ok(Some(result)) => {
+                        
+                        tracing::info!("GameManager(): GOT OK result!  \n WILL DROP FUT AFTER {rule_name}");
                         drop(fut);
+                        tracing::info!("GameManager(): DROP FUT FUT OK - {rule_name}");
+
                         current_state = result;
                         self._set_state_and_notify(result).await;
                         break;
                     }
                     Ok(None) => {
+                        tracing::info!("GameManager(): DO NOTHING for {rule_name}");
                         // do nothing
                     }
                     Err(err) => {
-                        tracing::error!("rule returned error: {:#?}", err);
+                        tracing::error!("rule {rule_name} returned error: {:#?}", err);
                     }
                 }
             }

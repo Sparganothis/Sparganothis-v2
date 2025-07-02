@@ -251,14 +251,22 @@ impl RuleManager for InputCallbackManagerRule {
         &self,
         _state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
+        tracing::info!("InputCallbackManagerRule before lock.");
         let mut recv = self.action_receiver.lock().await;
+        
+        loop {
+        tracing::info!("InputCallbackManagerRule after lock.");
         let Some(next_action) = recv.next().fuse().await else {
+            tracing::info!("InputCallbackManagerRule NO RECV NEXT TET ACTION - closed??.");
             anyhow::bail!("no next action");
         };
         let Ok(next_state) = _state.try_action(next_action, get_timestamp_now_ms())
         else {
-            return Ok(None);
+            // tracing::info!("InputCallbackManagerRule NO ACTION (error).");
+            continue;
         };
-        Ok(Some(next_state))
+        return Ok(Some(next_state));
+        }
+
     }
 }
