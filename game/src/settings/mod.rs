@@ -38,8 +38,8 @@ pub struct GameInputSettings {
 impl Default for GameInputSettings {
     fn default() -> Self {
         Self {
-            autorepeat_delay_initial: Duration::from_millis(167),
-            autorepeat_delay_after: Duration::from_millis(33),
+            autorepeat_delay_initial: Duration::from_millis(140),
+            autorepeat_delay_after: Duration::from_millis(29),
         }
     }
 }

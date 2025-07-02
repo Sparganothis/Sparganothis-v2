@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use game::tet::{BoardMatrix, CellValue, GameState, Tet};
+use game::tet::{BoardMatrix, CellValue, GameOverReason, GameState, Tet};
 
 // const INTER_BOX_PADDING: &'static str = "0px";
 const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";
@@ -31,6 +31,26 @@ pub fn YouDied(
     game_state: ReadOnlySignal<GameState>,
     children: Element,
 ) -> Element {
+    let msg = use_memo(move || {
+        let r = game_state.read().clone().game_over_reason;
+        match r {
+            None => "",
+            Some(GameOverReason::Win) => "YOU WIN",
+            Some(GameOverReason::Knockout) => "K.O.",
+            Some(GameOverReason::Disconnect) => "DISCONNECT",
+            Some(GameOverReason::Abandon) => "ABANDON",
+        }.to_string()
+    });
+    let color = use_memo(move || {
+        let r = game_state.read().clone().game_over_reason;
+        match r {
+            None => "",
+            Some(GameOverReason::Win) => "green",
+            Some(GameOverReason::Knockout) => "red",
+            Some(GameOverReason::Disconnect) => "orange",
+            Some(GameOverReason::Abandon) => "purple",
+        }.to_string()
+    });
     rsx! {
         if game_state.read().game_over() {
             div {
@@ -38,8 +58,8 @@ pub fn YouDied(
                 div {
                     style: "position: absolute; width: 20cqw; height: 20cqh; color: red; z-index: 666;",
                     h3 {
-                        style: "color:red; z-index: 666; font-size: 6rem; transform: rotate(-45deg); background-color: black; width: fit-content; height: fit-content;",
-                        "YOU DIED"
+                        style: "color:{color}; z-index: 666; font-size: 6rem; transform: rotate(-45deg); background-color: black; width: fit-content; height: fit-content;",
+                        "{msg}"
                     }
                 }
             }
