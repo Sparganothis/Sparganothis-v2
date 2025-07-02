@@ -358,6 +358,10 @@ fn GameStateInfo(game_state: ReadOnlySignal<GameState>) -> Element {
             div { "Moves: {state.total_moves}" }
             div { "Combo: {state.combo_counter}" }
             div { "Time: {state.current_time_string()}" }
+            div { "Lines Sent: {state.total_garbage_sent}"}
+            div { "Lines Recv: {state.garbage_recv}"}
+            div { "Lines Applied: {state.garbage_applied}"}
+
 
             // Show B2B and T-spin indicators if active
             if state.is_b2b {
