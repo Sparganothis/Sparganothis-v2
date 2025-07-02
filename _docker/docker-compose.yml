@@ -1,7 +1,7 @@
 services:
   iroh-relay:
     container_name: iroh-relay
-    image: n0computer/iroh-relay:v0.34.0
+    image: n0computer/iroh-relay:v0.34.1
     ports:
       - "31232:3478/udp"
       - "8084:80/tcp"
@@ -19,7 +19,7 @@ services:
 
   iroh-dns:
     container_name: iroh-dns
-    image: n0computer/iroh-dns-server:v0.34.0
+    image: n0computer/iroh-dns-server:v0.34.1
     ports:
       - "53:53/udp"
       - "18080:18080/tcp"

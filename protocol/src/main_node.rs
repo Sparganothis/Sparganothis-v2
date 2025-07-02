@@ -38,8 +38,7 @@ pub struct MainNode {
 async fn create_endpoint(
     node_secret_key: Arc<SecretKey>,
 ) -> anyhow::Result<Endpoint> {
-    let relay_url = format!("http://{}:8084", get_relay_domain());
-    let pkarr_url = format!("http://{}:18080/pkarr", get_relay_domain());
+    let (relay_url, pkarr_url) = get_relay_domain();
     let relay_map = RelayMap::from_nodes([RelayNode {
         url: relay_url.parse().unwrap(),
         stun_only: false,
