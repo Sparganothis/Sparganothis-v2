@@ -3,9 +3,9 @@ services:
     container_name: iroh-relay
     image: n0computer/iroh-relay:v0.34.1
     ports:
-      - "31232:3478/udp"
-      - "8084:80/tcp"
-      - "9090:9090/tcp"
+      - "127.0.0.1:31232:3478/udp"
+      - "127.0.0.1:8084:80/tcp"
+      - "127.0.0.1:9090:9090/tcp"
     restart: always
     command: ["--config-path", "/config/iroh-relay.toml"]
     environment:
@@ -22,7 +22,7 @@ services:
     image: n0computer/iroh-dns-server:v0.34.1
     ports:
       - "53:53/udp"
-      - "18080:18080/tcp"
+      - "127.0.0.1:18080:18080/tcp"
     restart: always
     volumes:
       - ./iroh-dns-server-dev.toml:/config/iroh-dns-server-dev.toml
@@ -51,8 +51,8 @@ services:
       - CLICKHOUSE_USER=sparganothis
       - CLICKHOUSE_PASSWORD=sparganothis
     ports:
-      - '8123:8123'
-      - '9000:9000'
+      - '127.0.0.1:8123:8123'
+      - '127.0.0.1:9000:9000'
     volumes:
       - clickhouse_data3:/var/lib/clickhouse
       # - ./data:/var/lib/clickhouse/user_files
@@ -75,7 +75,7 @@ services:
       clickhouse:
         condition: service_healthy
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
     volumes:
       - /var/lib/clickhouse-monitoring
     memswap_limit: 1000M
@@ -86,7 +86,7 @@ services:
   ch-ui:
     image: ghcr.io/caioricciuti/ch-ui:sha-6227281d8c096e4259a1b96c92aa3f8d784a3c2b
     ports:
-      - '5521:5521'
+      - '127.0.0.1:5521:5521'
     depends_on:
       clickhouse:
         condition: service_healthy
