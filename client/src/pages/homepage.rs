@@ -6,7 +6,7 @@ use crate::comp::{bot_player::BotPlayer, game_display::GameDisplay};
 /// Home page
 #[component]
 pub fn Home() -> Element {
-    let game_state = use_signal(GameState::empty);
+    let game_state = use_signal(GameState::new_random);
 
     rsx! {
         BotPlayer {game_state}

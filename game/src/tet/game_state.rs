@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::random::{accept_event, shuffle_tets, GameSeed};
-use crate::timestamp::get_timestamp_now_nano;
+use crate::{tet::get_random_seed, timestamp::get_timestamp_now_ms};
 
 use super::{
     matrix::{BoardMatrix, BoardMatrixHold, BoardMatrixNext, CellValue},
@@ -117,30 +117,24 @@ pub struct CurrentPcsInfo {
 }
 
 impl GameState {
-    fn add_pending_garbage(&mut self) {
+    fn add_pending_received_garbage(&mut self) {
         while self.garbage_applied < self.garbage_recv {
             self.main_board.inject_single_garbage_line(self.seed);
             self.garbage_applied += 1;
         }
     }
-    pub fn apply_raw_garbage(&mut self, new_garbage: u16) {
+    pub fn apply_raw_received_garbage(&mut self, new_garbage: u16) {
         if new_garbage > self.garbage_recv {
             self.garbage_recv = new_garbage;
         }
     }
     pub fn current_time_string(&self) -> String {
-        let dt_s = self.current_time_sec();
+        let dt_s = get_timestamp_now_ms() - self.start_time;
         if dt_s < 0 {
             return "future".to_string();
         }
-        let duration = Duration::from_secs(dt_s as u64);
-        format!("{:?}", duration)
-    }
-    pub fn current_time_sec(&self) -> i64 {
-        let now = get_timestamp_now_nano();
-        let dt_nano = now - self.start_time;
-        let dt_s = dt_nano / 1000000;
-        dt_s
+        let duration = dt_s as f32 / 1000.0;
+        format!("{:.2?}s", duration)
     }
 
     pub fn game_over(&self) -> bool {
@@ -189,9 +183,9 @@ impl GameState {
         new_state
     }
 
-    pub fn empty() -> Self {
-        let seed = [0; 32];
-        let start_time = 0;
+    pub fn new_random() -> Self {
+        let seed = get_random_seed();
+        let start_time = get_timestamp_now_ms();
         Self::new(&seed, start_time)
     }
     pub fn get_debug_info(&self) -> String {
@@ -259,11 +253,11 @@ impl GameState {
             lines += 1;
         }
         self.add_score_for_clear_line(lines);
-        self.add_garbage_for_clear_line(lines);
+        self.add_garbage_sent_for_clear_line(lines);
         self.total_lines += lines;
     }
 
-    fn add_garbage_for_clear_line(&mut self, lines: u16) {
+    fn add_garbage_sent_for_clear_line(&mut self, lines: u16) {
         self.total_garbage_sent += match self.combo_counter {
             1 | 2 => 1,
             3 | 4 => 2,
@@ -430,7 +424,7 @@ impl GameState {
         }
 
         self.clear_line();
-        self.add_pending_garbage();
+        self.add_pending_received_garbage();
         let next_tet = match maybe_next_pcs {
             None => self.pop_next_pcs(_event_time),
             Some(x) => x,

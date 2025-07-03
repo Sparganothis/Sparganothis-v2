@@ -34,7 +34,6 @@ rand = { workspace = true }
 async-trait.workspace = true
 rand_chacha = "0.9.0"
 uuid = { workspace = true }
-timediff = "0.2.3"
 
 wasm-bindgen-test = "0.3"
 

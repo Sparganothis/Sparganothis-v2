@@ -152,7 +152,7 @@ pub fn Spectate1v1FullScreenWindow(
 
 #[component]
 fn GameStateManagerDisplay(manager: GameStateManager) -> Element {
-    let mut game_state = use_signal(GameState::empty);
+    let mut game_state = use_signal(GameState::new_random);
 
     let _coro = use_coroutine(move |_rx: UnboundedReceiver<()>| {
         let m2 = manager.clone();

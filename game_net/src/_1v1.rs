@@ -226,7 +226,7 @@ impl RuleManager for Game1v1RecvLinesFromOpponentRule {
         }
 
         let mut new_state = my_state;
-        new_state.apply_raw_garbage(opponent_state.total_garbage_sent);
+        new_state.apply_raw_received_garbage(opponent_state.total_garbage_sent);
         Ok(Some(new_state))
     }
 }

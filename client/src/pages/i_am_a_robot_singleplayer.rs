@@ -18,7 +18,7 @@ use protocol::{
 use tracing::{info, warn};
 #[component]
 pub fn IAmARobotSingleplayer() -> Element {
-    let game_state = use_signal(GameState::empty);
+    let game_state = use_signal(GameState::new_random);
     let mut url_sig = use_signal(|| "".to_string());
     let global_chat = use_context::<GlobalChatClientContext>().chat;
     let _link_sender = use_resource(move || {

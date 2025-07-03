@@ -30,7 +30,7 @@ impl PageFactory for SingleplayerPageFactory {
         let page = SingleplayerPage {
             _notify: notify,
             data: Arc::new(RwLock::new(SingleplayerPageState {
-                game_state: GameState::empty(),
+                game_state: GameState::new_random(),
             })),
             event_tx,
         };
@@ -50,7 +50,7 @@ impl PageFactory for SingleplayerPageFactory {
                     {
                         data.game_state = next;
                     } else if data.game_state.game_over() {
-                        data.game_state = GameState::empty();
+                        data.game_state = GameState::new_random();
                     }
                 }
                 _page._notify.notify_waiters();

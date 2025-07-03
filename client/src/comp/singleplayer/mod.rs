@@ -22,7 +22,7 @@ use crate::{
 /// Basic single player implementation with default rules.
 #[component]
 pub fn SingleplayerGameBoardBasic() -> Element {
-    let mut game_state = use_signal(move || GameState::empty());
+    let mut game_state = use_signal(move || GameState::new_random());
     let set_next_state = use_callback(move |c: GameState| {
         game_state.set(c);
     });

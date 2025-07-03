@@ -20,7 +20,7 @@ pub fn BotPlayer(game_state: Signal<GameState>) -> Element {
         let mut p = pending_actions.write();
 
         if g.game_over() {
-            *g = GameState::empty();
+            *g = GameState::new_random();
             return;
         }
         if p.is_empty() {
