@@ -48,7 +48,11 @@ impl GameStateManager {
         }
     }
 
-    pub fn add_rule(&mut self, name: &str, rule: Arc<dyn RuleManager + 'static + Send + Sync>) {
+    pub fn add_rule(
+        &mut self,
+        name: &str,
+        rule: Arc<dyn RuleManager + 'static + Send + Sync>,
+    ) {
         tracing::info!("GAME MANAGER ADD RULE.");
         self.rule_managers.push((name.to_string(), rule));
     }
@@ -81,14 +85,15 @@ impl GameStateManager {
             let state2 = current_state;
             for manager in self.rule_managers.iter() {
                 let manager = manager.clone();
-                let next = async move { (manager.0.clone(), manager.1.accept_state(state2).await) };
+                let next = async move {
+                    (manager.0.clone(), manager.1.accept_state(state2).await)
+                };
                 fut.push(next);
             }
             while let Some((rule_name, result)) = fut.next().await {
                 tracing::info!("GameManager(): GOT RULE REPLY FROM RULE {rule_name}!");
                 match result {
                     Ok(Some(result)) => {
-                        
                         tracing::info!("GameManager(): GOT OK result!  \n WILL DROP FUT AFTER {rule_name}");
                         drop(fut);
                         tracing::info!("GameManager(): DROP FUT FUT OK - {rule_name}");

@@ -39,7 +39,8 @@ pub fn YouDied(
             Some(GameOverReason::Knockout) => "K.O.",
             Some(GameOverReason::Disconnect) => "DISCONNECT",
             Some(GameOverReason::Abandon) => "ABANDON",
-        }.to_string()
+        }
+        .to_string()
     });
     let color = use_memo(move || {
         let r = game_state.read().clone().game_over_reason;
@@ -49,7 +50,8 @@ pub fn YouDied(
             Some(GameOverReason::Knockout) => "red",
             Some(GameOverReason::Disconnect) => "orange",
             Some(GameOverReason::Abandon) => "purple",
-        }.to_string()
+        }
+        .to_string()
     });
     rsx! {
         if game_state.read().game_over() {

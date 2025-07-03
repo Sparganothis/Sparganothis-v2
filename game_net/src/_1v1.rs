@@ -199,8 +199,8 @@ impl RuleManager for Game1v1YouWinIfOpponentLoseRule {
         if _state.game_over() {
             return Ok(None);
         }
-        let _r ={ self.0.lock().await.next().fuse() }.await;
-        if _r.is_none(){
+        let _r = { self.0.lock().await.next().fuse() }.await;
+        if _r.is_none() {
             anyhow::bail!("no actual message on recv");
         }
         _state.game_over_reason = Some(GameOverReason::Win);
@@ -215,7 +215,8 @@ impl RuleManager for Game1v1RecvLinesFromOpponentRule {
         &self,
         my_state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
-        let Some(opponent_state) = { self.0.lock().await.next().fuse() }.await else {
+        let Some(opponent_state) = { self.0.lock().await.next().fuse() }.await
+        else {
             anyhow::bail!("no oppoonent omves ???");
         };
         if my_state.game_over() || opponent_state.game_over() {
@@ -284,12 +285,12 @@ pub fn get_1v1_player_state_manager(
 
     let (tx_you_win, rx_you_win) = unbounded();
     let you_win_rule = Game1v1YouWinIfOpponentLoseRule(Mutex::new(rx_you_win));
-    game_state_manager.add_rule("you_win_rule" , Arc::new(you_win_rule));
+    game_state_manager.add_rule("you_win_rule", Arc::new(you_win_rule));
 
-        let (state_tx2, state_rx2) = unbounded();
-    let send_line_rule = Game1v1RecvLinesFromOpponentRule(Mutex::new(state_rx2));
+    let (state_tx2, state_rx2) = unbounded();
+    let send_line_rule =
+        Game1v1RecvLinesFromOpponentRule(Mutex::new(state_rx2));
     game_state_manager.add_rule("sendline", Arc::new(send_line_rule));
-    
 
     let cc2 = cc.clone();
     game_state_manager.add_loop(async move {
@@ -303,7 +304,9 @@ pub fn get_1v1_player_state_manager(
             if oppponent_state.game_over() {
                 let _e = tx_you_win.unbounded_send(());
                 if _e.is_err() {
-                    tracing::info!("failed to notify opponent lost game: {_e:#?}");
+                    tracing::info!(
+                        "failed to notify opponent lost game: {_e:#?}"
+                    );
                 }
             }
         }
