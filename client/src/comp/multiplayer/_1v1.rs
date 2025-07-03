@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use async_channel::unbounded;
 use dioxus::prelude::*;
 use futures_util::pin_mut;
 use game::{
@@ -20,7 +19,6 @@ use tokio::sync::RwLock;
 use crate::{
     comp::{
         game_display::GameDisplay, input::GameInputCaptureParent,
-        singleplayer::SingleplayerGameBoardBasic,
     },
     localstorage::use_game_settings,
 };

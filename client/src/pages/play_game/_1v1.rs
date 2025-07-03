@@ -17,9 +17,6 @@ pub fn Play1v1Page(
 ) -> Element {
     let NetworkState {
         global_mm,
-        reset_network,
-        global_mm_loading,
-        bootstrap_idx,
         ..
     } = use_context::<NetworkState>();
 

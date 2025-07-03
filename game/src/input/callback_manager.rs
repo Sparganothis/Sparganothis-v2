@@ -188,9 +188,9 @@ use crate::rule_manager::RuleManager;
 
 #[derive(Debug)]
 pub struct InputCallbackManagerRule {
-    cb_manager: CallbackManager,
-    main_loop: AbortOnDropHandle<anyhow::Result<()>>,
-    stream_loop: AbortOnDropHandle<anyhow::Result<()>>,
+    _cb_manager: CallbackManager,
+    _main_loop: AbortOnDropHandle<anyhow::Result<()>>,
+    _stream_loop: AbortOnDropHandle<anyhow::Result<()>>,
     action_receiver: Mutex<UnboundedReceiver<TetAction>>,
 }
 
@@ -230,8 +230,8 @@ impl InputCallbackManagerRule {
         }));
 
         Self {
-            cb_manager: cb_manager.clone(),
-            main_loop: AbortOnDropHandle::new(n0_future::task::spawn(async move {
+            _cb_manager: cb_manager.clone(),
+            _main_loop: AbortOnDropHandle::new(n0_future::task::spawn(async move {
                 let mut s = cb_manager.main_loop(pair_rx, settings).await;
                 while let Some(x) = s.next().await {
                     action_tx.unbounded_send(x)?;
@@ -239,7 +239,7 @@ impl InputCallbackManagerRule {
 
                 anyhow::Ok(())
             })),
-            stream_loop,
+            _stream_loop: stream_loop,
             action_receiver: Mutex::new(action_rx),
         }
     }

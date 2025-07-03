@@ -14,10 +14,6 @@ use game::{
     state_manager::GameStateManager,
     tet::{GameOverReason, GameState},
 };
-use n0_future::{
-    task::{spawn, AbortOnDropHandle},
-    SinkExt,
-};
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_ticket::ChatTicket,
@@ -46,7 +42,7 @@ impl IChatRoomType for Game1v1RoomType {
 
 #[derive(Debug, Clone)]
 pub struct Game1v1MatchChatController {
-    mm: GlobalMatchmaker,
+    _mm: GlobalMatchmaker,
     chat: ChatController<Game1v1RoomType>,
     match_info: GameMatch<NodeIdentity>,
     opponent_id: NodeIdentity,
@@ -83,7 +79,7 @@ pub async fn join_1v1_match(
         .context("no opponent")?
         .clone();
     Ok(Game1v1MatchChatController {
-        mm,
+        _mm: mm,
         chat,
         opponent_id,
         match_info: game_match,

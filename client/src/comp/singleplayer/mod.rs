@@ -7,7 +7,7 @@ use game::{
         callback_manager::InputCallbackManagerRule, events::GameInputEvent,
     },
     state_manager::GameStateManager,
-    tet::{get_random_seed, GameState, TetAction},
+    tet::{get_random_seed, GameState},
     timestamp::get_timestamp_now_ms,
 };
 use n0_future::{task::AbortOnDropHandle, StreamExt};

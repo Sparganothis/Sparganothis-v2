@@ -1,11 +1,10 @@
 use std::time::Duration;
 
 use dioxus::prelude::*;
-use game::tet::GameState;
 
 use crate::{
     comp::{
-        singleplayer::{GameBoardInputAndDisplay, SingleplayerGameBoardBasic},
+        singleplayer::SingleplayerGameBoardBasic,
         slider::Slider,
     },
     localstorage::{set_game_settings, use_game_settings},

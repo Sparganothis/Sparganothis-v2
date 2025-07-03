@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use super::random::{accept_event, shuffle_tets, GameSeed};
 use crate::{tet::get_random_seed, timestamp::get_timestamp_now_ms};
 
