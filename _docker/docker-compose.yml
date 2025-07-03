@@ -34,31 +34,71 @@ services:
         limits:
           memory: 420M
 
-  # coturn:
-  #   container_name: coturn
-  #   image: coturn/coturn:4.6.3-r3
-  #   # ports:
-  #   #   - "31233:31233"
-  #   #   - "31233:31233/udp"
-  #   #   - "31234:31234"
-  #   #   - "31234:31234/udp"
-  #   #   - "49160-49200:49160-49200/udp"
-  #   command: [
-  #     "--listening-port=31233",
-  #     "--listening-ip=0.0.0.0",
-  #     "--tls-listening-port=31234",
-  #     "--min-port=49160",
-  #     "--max-port=49200",
-  #     "--log-file=stdout",
-  #     "--external-ip=$(detect-external-ip)",
-  #     "--relay-ip=$(detect-external-ip)",
-  #     "--user=free3:free4",
-  #   ]
-  #   restart: always
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         memory: 800M
-  #   network_mode: host
-  #   cap_add:
-  #     - NET_BIND_SERVICE
+  clickhouse:
+    container_name: clickhouse
+    image: clickhouse:25.5
+    cap_add:
+      - SYS_NICE
+      - NET_ADMIN
+      - IPC_LOCK
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    environment:
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+      - CLICKHOUSE_DB=sparganothis
+      - CLICKHOUSE_USER=sparganothis
+      - CLICKHOUSE_PASSWORD=sparganothis
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    volumes:
+      - clickhouse_data3:/var/lib/clickhouse
+      # - ./data:/var/lib/clickhouse/user_files
+      # - ./clickhouse-server-config-override.xml:/etc/clickhouse-server/config.d/clickhouse-server-config-override.xml
+    healthcheck:
+      test: wget --no-verbose --tries=1 http://127.0.0.1:8123/ping || exit 1
+      interval: 13s
+      timeout: 15s
+      retries: 6
+    memswap_limit: 1500M
+    mem_limit: 1500M
+    restart: unless-stopped
+  clickhouse-monitoring:
+    image: ghcr.io/duyet/clickhouse-monitoring:2cc8058
+    environment:
+      - "CLICKHOUSE_HOST=http://clickhouse:8123"
+      - CLICKHOUSE_USER=sparganothis
+      - CLICKHOUSE_PASSWORD=sparganothis
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - 3000:3000
+    volumes:
+      - /var/lib/clickhouse-monitoring
+    memswap_limit: 1000M
+    mem_limit: 1000M
+    restart: unless-stopped
+
+
+  ch-ui:
+    image: ghcr.io/caioricciuti/ch-ui:sha-6227281d8c096e4259a1b96c92aa3f8d784a3c2b
+    ports:
+      - '5521:5521'
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    memswap_limit: 2000M
+    mem_limit: 2000M
+    restart: unless-stopped
+    environment:
+      VITE_CLICKHOUSE_URL: "http://localhost:8123"
+      VITE_CLICKHOUSE_USER: "sparganothis"
+      VITE_CLICKHOUSE_PASS: "sparganothis"
+
+
+volumes:
+  clickhouse_data3:
+    driver: local
