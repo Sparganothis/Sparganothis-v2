@@ -53,7 +53,7 @@ pub fn GameBoardInputAndDisplay(
             game_state_manager
                 .add_rule("callback_manager", Arc::new(callback_manager));
 
-game_state_manager
+            game_state_manager
                 .add_rule("regula_misto", Arc::new(RegulaNoua{}));
 
 

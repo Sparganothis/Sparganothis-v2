@@ -8,7 +8,7 @@
 
 
 ## todo
-
+- crackhouse + migrations https://docs.bytebase.com/get-started/self-host
 - spectate: anyone any game anytime
 - chat: direct message (pink like wow; button mute msg from some peer)
 - invite to party
