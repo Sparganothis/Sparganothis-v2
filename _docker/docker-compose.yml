@@ -98,7 +98,24 @@ services:
       VITE_CLICKHOUSE_USER: "sparganothis"
       VITE_CLICKHOUSE_PASS: "sparganothis"
 
+  bytebase:
+    image: bytebase/bytebase:3.8.0
+    ports:
+      - '127.0.0.1:8099:8080'
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    memswap_limit: 2000M
+    mem_limit: 2000M
+    restart: unless-stopped
+    environment:
+      VITE_CLICKHOUSE_URL: "http://localhost:8123"
+      VITE_CLICKHOUSE_USER: "sparganothis"
+      VITE_CLICKHOUSE_PASS: "sparganothis"
+
 
 volumes:
   clickhouse_data3:
+    driver: local
+  bytebase:
     driver: local
