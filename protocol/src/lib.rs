@@ -11,10 +11,10 @@ pub mod game_matchmaker;
 pub mod global_chat;
 pub mod global_matchmaker;
 pub(crate) mod main_node;
+pub mod server_chat;
 pub(crate) mod signed_message;
 pub(crate) mod sleep;
 pub mod user_identity;
-pub mod server_chat;
 
 pub fn timestamp_micros() -> u128 {
     web_time::SystemTime::now()

@@ -1,2 +1,2 @@
-pub mod main_loop;
 mod db;
+pub mod main_loop;

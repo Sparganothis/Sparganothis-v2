@@ -17,9 +17,7 @@ use protocol::{
 use tokio::sync::RwLock;
 
 use crate::{
-    comp::{
-        game_display::GameDisplay, input::GameInputCaptureParent,
-    },
+    comp::{game_display::GameDisplay, input::GameInputCaptureParent},
     localstorage::use_game_settings,
 };
 

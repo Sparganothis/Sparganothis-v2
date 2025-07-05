@@ -5,7 +5,11 @@ use futures_util::pin_mut;
 use game::{
     input::{
         callback_manager::InputCallbackManagerRule, events::GameInputEvent,
-    }, rule_manager::{RegulaNoua, RuleManager}, state_manager::GameStateManager, tet::{get_random_seed, GameState}, timestamp::get_timestamp_now_ms
+    },
+    rule_manager::{RegulaNoua, RuleManager},
+    state_manager::GameStateManager,
+    tet::{get_random_seed, GameState},
+    timestamp::get_timestamp_now_ms,
 };
 use n0_future::{task::AbortOnDropHandle, StreamExt};
 use tokio::sync::RwLock;
@@ -48,14 +52,12 @@ pub fn GameBoardInputAndDisplay(
                 game_state_manager.read_state_stream(),
                 arc_s.clone(),
             );
-            
-            
+
             game_state_manager
                 .add_rule("callback_manager", Arc::new(callback_manager));
 
             game_state_manager
-                .add_rule("regula_misto", Arc::new(RegulaNoua{}));
-
+                .add_rule("regula_misto", Arc::new(RegulaNoua {}));
 
             let g2 = game_state_manager.clone();
             let stream = game_state_manager.read_state_stream();
@@ -88,5 +90,3 @@ pub fn GameBoardInputAndDisplay(
         }
     }
 }
-
-

@@ -12,7 +12,12 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+    {
+                let sub =
+            tracing_subscriber::FmtSubscriber::builder().with_max_level(tracing::Level::INFO);
+
+            tracing::subscriber::set_global_default(sub.finish()).unwrap();
+    }
 
     let id = UserIdentitySecrets::generate();
     let global_mm = GlobalMatchmaker::new(Arc::new(id)).await?;

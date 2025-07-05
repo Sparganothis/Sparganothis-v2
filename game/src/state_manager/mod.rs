@@ -4,9 +4,7 @@ use async_stream::stream;
 use futures_util::StreamExt;
 use n0_future::{task::AbortOnDropHandle, Stream};
 use rand::{rng, Rng};
-use tokio::{
-    sync::{Notify, RwLock},
-};
+use tokio::sync::{Notify, RwLock};
 
 use crate::{
     rule_manager::RuleManager,

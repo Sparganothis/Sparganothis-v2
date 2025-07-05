@@ -11,25 +11,24 @@ pub trait RuleManager {
         -> anyhow::Result<Option<GameState>>;
 }
 
-
-pub struct RegulaNoua{}
+pub struct RegulaNoua {}
 
 #[async_trait::async_trait]
-impl RuleManager for RegulaNoua{
-    async fn accept_state(&self, state: GameState)
-        -> anyhow::Result<Option<GameState>>{
-            if state.game_over() {
-                return Ok(None);
-            }
-
-            if state.total_garbage_sent == state.garbage_recv {
-                return Ok(None);
-            }
-
-            else {
-                let mut state2 = state;
-                state2.apply_raw_received_garbage(state.total_garbage_sent);
-                return Ok(Some(state2));
-            }
+impl RuleManager for RegulaNoua {
+    async fn accept_state(
+        &self,
+        state: GameState,
+    ) -> anyhow::Result<Option<GameState>> {
+        if state.game_over() {
+            return Ok(None);
         }
+
+        if state.total_garbage_sent == state.garbage_recv {
+            return Ok(None);
+        } else {
+            let mut state2 = state;
+            state2.apply_raw_received_garbage(state.total_garbage_sent);
+            return Ok(Some(state2));
+        }
+    }
 }

@@ -13,7 +13,14 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+        {
+                let sub =
+            tracing_subscriber::FmtSubscriber::builder().with_max_level(tracing::Level::INFO);
+
+            tracing::subscriber::set_global_default(sub.finish()).unwrap();
+    }
+    
+    info!("server START...");
 
     let id = UserIdentitySecrets::generate();
     let global_mm = GlobalMatchmaker::new(Arc::new(id)).await?;
@@ -23,18 +30,18 @@ async fn main() -> Result<()> {
     let _r = n0_future::future::race(
         async move {
             let _r = server_main_loop(_mm).await;
-            println!("* server_main_loop closed: {:?}", _r);
+            tracing::info!("* server_main_loop closed: {:?}", _r);
         },
         async move {
             let _r = tokio::signal::ctrl_c().await;
-            println!("* ctrl-c received");
+             tracing::info!("* ctrl-c received");
         },
     )
     .await;
 
     global_mm.shutdown().await?;
 
-    println!("* shutdown OK");
+     tracing::info!("* shutdown OK");
     // std::process::exit(0);
 
     Ok(())

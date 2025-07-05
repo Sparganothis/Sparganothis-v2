@@ -3,11 +3,7 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL,
-    chat::{IChatController, IChatSender},
-    global_chat::{GlobalChatPresence, GlobalChatRoomType},
-    global_matchmaker::GlobalMatchmaker,
-    user_identity::UserIdentitySecrets,
+    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat::client_api::{connect_api_manager, ClientApiManager}, user_identity::UserIdentitySecrets
 };
 use tracing::{info, warn};
 
@@ -28,6 +24,7 @@ pub struct NetworkState {
     pub reset_network: Callback<()>,
     pub bootstrap_idx: ReadOnlySignal<Option<u32>>,
     pub debug_info_txt: ReadOnlySignal<String>,
+    pub client_api_manager: ReadOnlySignal<Option<ClientApiManager>>,
 }
 
 #[component]
@@ -173,7 +170,11 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     let _ = use_resource(move || {
         let url = url.read().clone();
         let platform = "browser".to_string();
-        let presence = GlobalChatPresence { url, platform, is_server: false };
+        let presence = GlobalChatPresence {
+            url,
+            platform,
+            is_server: false,
+        };
         let mm = mm_signal.read().clone();
         async move {
             let Some(mm) = mm else {
@@ -186,6 +187,42 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         }
     });
 
+
+    // clietn api manager
+
+    let mut client_api_manager_w = use_signal(move || None);
+    let client_api_manager = use_memo(move || client_api_manager_w.read().clone());
+
+    let _ = use_resource(move || {
+        let mm = mm_signal.read().clone();
+        async move {
+            let Some(mm) = mm else {
+                return;
+            };
+            let Ok(api) = connect_api_manager(mm).await else {
+                return;
+            };
+            client_api_manager_w.set(Some(api));
+        }
+    });
+
+
+    let _  = use_resource(move || {
+        let api = client_api_manager.read().clone();
+        async move {
+            let Some(api) = api else {
+                return;
+            };
+            let login = api.send_login().await;
+            if login.is_ok() {
+                tracing::info!("LOGIN OK!");
+            } else {
+                tracing::error!("LOGIN ERROR: {:#?}", login);
+            }
+        }
+    });
+
+
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
         global_mm_loading: mm_signal_loading.into(),
@@ -193,6 +230,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         is_connected: is_connected.into(),
         debug_info_txt: debug_info_txt.into(),
         bootstrap_idx: bootstrap_idx.into(),
+        client_api_manager: client_api_manager.into(),
     });
 
     children

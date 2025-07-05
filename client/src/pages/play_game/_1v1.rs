@@ -15,10 +15,7 @@ use crate::{
 pub fn Play1v1Page(
     game_match: ReadOnlySignal<UrlParam<GameMatch<NodeIdentity>>>,
 ) -> Element {
-    let NetworkState {
-        global_mm,
-        ..
-    } = use_context::<NetworkState>();
+    let NetworkState { global_mm, .. } = use_context::<NetworkState>();
 
     let mm = global_mm.read().clone();
     let Some(mm) = mm else {
