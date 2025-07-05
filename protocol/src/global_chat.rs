@@ -22,6 +22,7 @@ impl IChatRoomType for GlobalChatRoomType {
 pub struct GlobalChatPresence {
     pub url: String,
     pub platform: String,
+    pub is_server: bool,
 }
 
 #[non_exhaustive]

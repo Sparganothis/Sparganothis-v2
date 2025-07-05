@@ -283,6 +283,7 @@ async fn chat_driver(
         .set_presence(&GlobalChatPresence {
             url: "".to_string(),
             platform: "Terminal UI".to_string(),
+            is_server: false,
         })
         .await;
     {

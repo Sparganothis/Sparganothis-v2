@@ -173,7 +173,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     let _ = use_resource(move || {
         let url = url.read().clone();
         let platform = "browser".to_string();
-        let presence = GlobalChatPresence { url, platform };
+        let presence = GlobalChatPresence { url, platform, is_server: false };
         let mm = mm_signal.read().clone();
         async move {
             let Some(mm) = mm else {

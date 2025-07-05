@@ -341,6 +341,7 @@ impl GlobalMatchmaker {
                     .set_presence(&GlobalChatPresence {
                         url: "".to_string(),
                         platform: "Bootstrap".to_string(),
+                        is_server: false,
                     })
                     .await;
                 let mut i = mm.inner.write().await;

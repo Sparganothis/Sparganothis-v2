@@ -16,4 +16,6 @@ async-channel = "2.3.1"
 tokio-stream = { version = "0.1.17", default-features = false, features = ["sync"] }
 tracing = "0.1.41"
 futures = "0.3.31"
-# game = { path = "../game" }
+game = { path = "../game" }
+
+serde = "1"

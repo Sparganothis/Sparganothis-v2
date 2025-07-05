@@ -14,6 +14,7 @@ pub(crate) mod main_node;
 pub(crate) mod signed_message;
 pub(crate) mod sleep;
 pub mod user_identity;
+pub mod server_chat;
 
 pub fn timestamp_micros() -> u128 {
     web_time::SystemTime::now()
