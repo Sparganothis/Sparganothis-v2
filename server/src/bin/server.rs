@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
 
             tracing::subscriber::set_global_default(sub.finish()).unwrap();
     }
-    
+
     info!("server START...");
 
     let id = UserIdentitySecrets::generate();
@@ -42,7 +42,7 @@ async fn main() -> Result<()> {
     global_mm.shutdown().await?;
 
      tracing::info!("* shutdown OK");
-    // std::process::exit(0);
+    std::process::exit(0);
 
     Ok(())
 }
