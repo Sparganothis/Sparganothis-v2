@@ -1,24 +1,20 @@
-use std::{collections::BTreeSet, sync::Arc};
-
-use anyhow::{Context, Result};
 use protocol::{
-    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
-    chat_ticket::ChatTicket,
+    chat::{IChatController, IChatReceiver, IChatSender},
     global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
-    server_chat::server_chat::{
+    server_chat_api::{join_chat::{
         server_join_server_chat, ServerChatMessageContent, ServerChatPresence,
         ServerChatRoomType, ServerMessageReply, ServerMessageRequest,
-    },
-    user_identity::{NodeIdentity, UserIdentitySecrets},
-    IChatRoomType, ReceivedMessage,
+    }, server_info::{ServerInfo, SERVER_VERSION}},
+    user_identity::NodeIdentity,
+    ReceivedMessage,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
 
 use crate::server::db::guest_login::db_add_guest_login;
 
-pub async fn server_main_loop(global_mm: GlobalMatchmaker) -> Result<()> {
+pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) -> anyhow::Result<()> {
     // let mut our_ticket = ticket.clone();
     // our_ticket.bootstrap = [node.node_id()].into_iter().collect();
     //  tracing::info!("* ticket to join this chat:");
@@ -33,7 +29,10 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker) -> Result<()> {
         .set_presence(&GlobalChatPresence {
             url: "".to_string(),
             platform: "server".to_string(),
-            is_server: true,
+            is_server: Some(ServerInfo {
+                server_version: SERVER_VERSION,
+                server_name
+            }),
         })
         .await;
 

@@ -6,7 +6,6 @@ use game::{
     input::{
         callback_manager::InputCallbackManagerRule, events::GameInputEvent,
     },
-    rule_manager::{RegulaNoua, RuleManager},
     state_manager::GameStateManager,
     tet::{get_random_seed, GameState},
     timestamp::get_timestamp_now_ms,
@@ -55,9 +54,6 @@ pub fn GameBoardInputAndDisplay(
 
             game_state_manager
                 .add_rule("callback_manager", Arc::new(callback_manager));
-
-            game_state_manager
-                .add_rule("regula_misto", Arc::new(RegulaNoua {}));
 
             let g2 = game_state_manager.clone();
             let stream = game_state_manager.read_state_stream();

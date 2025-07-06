@@ -3,7 +3,7 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat::client_api::{connect_api_manager, ClientApiManager}, user_identity::UserIdentitySecrets
+    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat_api::client_api_manager::{connect_api_manager, ClientApiManager}, user_identity::UserIdentitySecrets
 };
 use tracing::{info, warn};
 
@@ -173,7 +173,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         let presence = GlobalChatPresence {
             url,
             platform,
-            is_server: false,
+            is_server: None,
         };
         let mm = mm_signal.read().clone();
         async move {

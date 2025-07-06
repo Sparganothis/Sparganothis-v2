@@ -1,7 +1,7 @@
 use crate::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     global_matchmaker::GlobalMatchmaker,
-    server_chat::server_chat::{
+    server_chat_api::join_chat::{
         client_join_server_chat, ServerChatMessageContent, ServerChatRoomType,
     },
     user_identity::NodeIdentity,
@@ -38,7 +38,7 @@ impl ClientApiManager {
         let sender = cc.sender();
 
         let request_message = ServerChatMessageContent::Request(
-            super::server_chat::ServerMessageRequest::GuestLoginMessage {},
+            super::join_chat::ServerMessageRequest::GuestLoginMessage {},
         );
         let receiver = cc.receiver().await;
         sender

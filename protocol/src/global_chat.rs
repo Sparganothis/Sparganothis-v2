@@ -2,8 +2,7 @@ use game::api::game_match::{GameMatch, GameMatchType};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId,
-    user_identity::NodeIdentity, IChatRoomType,
+    chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, server_chat_api::server_info::ServerInfo, user_identity::NodeIdentity, IChatRoomType
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -22,7 +21,7 @@ impl IChatRoomType for GlobalChatRoomType {
 pub struct GlobalChatPresence {
     pub url: String,
     pub platform: String,
-    pub is_server: bool,
+    pub is_server: Option<ServerInfo>,
 }
 
 #[non_exhaustive]

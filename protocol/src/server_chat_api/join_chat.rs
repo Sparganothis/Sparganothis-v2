@@ -8,12 +8,7 @@ use game::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat::{ChatController, IChatController},
-    chat_ticket::ChatTicket,
-    game_matchmaker::MatchmakeRandomId,
-    global_matchmaker::GlobalMatchmaker,
-    user_identity::NodeIdentity,
-    IChatRoomType,
+    chat::{ChatController, IChatController}, chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, global_matchmaker::GlobalMatchmaker, server_chat_api::server_info::SERVER_VERSION, user_identity::NodeIdentity, IChatRoomType
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -97,7 +92,7 @@ pub(crate) async fn client_join_server_chat(
     const RETRY_SLEEP_SECONDS  : i32 = 3;
 
     for i in 0..=RETRY_COUNT {
-        tracing::info!("connecting to server chat {i}/RETRY_COUNT ... ");
+        tracing::info!("connecting to server chat {i}/{RETRY_COUNT} ... ");
         let presence_list = presence.get_presence_list().await;
         let mut server_nodes: Vec<_> = vec![];
         for p in presence_list {
@@ -105,7 +100,10 @@ pub(crate) async fn client_join_server_chat(
                 continue;
             };
             let node_id = p.identity;
-            if !payload.is_server {
+            let Some(server_info) = payload.is_server.clone() else {
+                continue;
+            };
+            if  server_info.server_version != SERVER_VERSION {
                 continue;
             }
             server_nodes.push(node_id);

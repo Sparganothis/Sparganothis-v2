@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
 
     let _r = n0_future::future::race(
         async move {
-            let _r = server_main_loop(_mm).await;
+            let _r = server_main_loop(_mm, "server".to_string()).await;
             tracing::info!("* server_main_loop closed: {:?}", _r);
         },
         async move {

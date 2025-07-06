@@ -253,7 +253,7 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
                 break;
             }
             let _ =
-                n0_future::time::timeout(CONNECT_TIMEOUT / 20, p.notified())
+                n0_future::time::timeout(CONNECT_TIMEOUT / 10, p.notified())
                     .await;
             x += 1;
         }

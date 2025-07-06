@@ -59,7 +59,7 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
         .set_presence(&GlobalChatPresence {
             url: "".to_string(),
             platform: "CLI".to_string(),
-            is_server: false,
+            is_server: None,
         })
         .await;
 
