@@ -1,14 +1,15 @@
 use std::{collections::BTreeSet, time::Duration};
 
 use anyhow::Context;
-use game::{
-    api::game_match::{GameMatch, GameMatchType},
-    tet::GameSeed,
-};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat::{ChatController, IChatController}, chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, global_matchmaker::GlobalMatchmaker, server_chat_api::api_methods::SERVER_VERSION, user_identity::NodeIdentity, IChatRoomType
+    chat::{ChatController, IChatController},
+    chat_ticket::ChatTicket,
+    global_matchmaker::GlobalMatchmaker,
+    server_chat_api::api_methods::SERVER_VERSION,
+    user_identity::NodeIdentity,
+    IChatRoomType,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -30,10 +31,17 @@ pub struct ServerChatPresence {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ServerChatMessageContent {
-    Request{method_name: String, nonce: i64, req: Vec<u8>},
-    Reply{method_name:String, nonce: i64,ret: Result<Vec<u8>, String>},
+    Request {
+        method_name: String,
+        nonce: i64,
+        req: Vec<u8>,
+    },
+    Reply {
+        method_name: String,
+        nonce: i64,
+        ret: Result<Vec<u8>, String>,
+    },
 }
-
 
 pub async fn server_join_server_chat(
     mm: GlobalMatchmaker,
@@ -70,7 +78,9 @@ async fn client_join_server_chat_with_server_ids(
     Ok(chat)
 }
 
-pub(crate) async fn fetch_server_ids(mm: GlobalMatchmaker) -> anyhow::Result<Vec<NodeIdentity>> {
+pub(crate) async fn fetch_server_ids(
+    mm: GlobalMatchmaker,
+) -> anyhow::Result<Vec<NodeIdentity>> {
     let global = mm
         .global_chat_controller()
         .await
@@ -78,32 +88,29 @@ pub(crate) async fn fetch_server_ids(mm: GlobalMatchmaker) -> anyhow::Result<Vec
     let presence = global.chat_presence();
 
     let presence_list = presence.get_presence_list().await;
-        let mut server_nodes: Vec<_> = vec![];
-        for p in presence_list {
-            let Some(payload) = &p.payload else {
-                continue;
-            };
-            let node_id = p.identity;
-            let Some(server_info) = payload.is_server.clone() else {
-                continue;
-            };
-            if  server_info.server_version != SERVER_VERSION {
-                continue;
-            }
-            server_nodes.push(node_id);
+    let mut server_nodes: Vec<_> = vec![];
+    for p in presence_list {
+        let Some(payload) = &p.payload else {
+            continue;
+        };
+        let node_id = p.identity;
+        let Some(server_info) = payload.is_server.clone() else {
+            continue;
+        };
+        if server_info.server_version != SERVER_VERSION {
+            continue;
         }
+        server_nodes.push(node_id);
+    }
 
-        Ok(server_nodes)
-
+    Ok(server_nodes)
 }
 
 pub(crate) async fn client_join_server_chat(
     mm: GlobalMatchmaker,
 ) -> anyhow::Result<(Vec<NodeIdentity>, ChatController<ServerChatRoomType>)> {
-
-
     const RETRY_COUNT: i32 = 8;
-    const RETRY_SLEEP_SECONDS  : i32 = 2;
+    const RETRY_SLEEP_SECONDS: i32 = 2;
 
     for i in 0..=RETRY_COUNT {
         tracing::info!("connecting to server chat {i}/{RETRY_COUNT} ... ");
@@ -137,7 +144,7 @@ pub(crate) async fn client_join_server_chat(
                 anyhow::bail!("{chat:#?}")
             } else {
                 tracing::warn!("retry error {i}/{RETRY_COUNT}: {:?}", chat);
-                
+
                 let sleep = i + RETRY_SLEEP_SECONDS;
                 n0_future::time::sleep(Duration::from_secs(sleep as u64)).await;
             }

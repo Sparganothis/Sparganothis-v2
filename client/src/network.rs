@@ -3,7 +3,15 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat_api::{api_methods::LoginApiMethod, client_api_manager::{connect_api_manager, ClientApiManager}}, user_identity::UserIdentitySecrets
+    _const::PRESENCE_INTERVAL,
+    chat::{IChatController, IChatSender},
+    global_chat::{GlobalChatPresence, GlobalChatRoomType},
+    global_matchmaker::GlobalMatchmaker,
+    server_chat_api::{
+        api_methods::LoginApiMethod,
+        client_api_manager::{connect_api_manager, ClientApiManager},
+    },
+    user_identity::UserIdentitySecrets,
 };
 use tracing::{info, warn};
 
@@ -187,11 +195,11 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         }
     });
 
-
     // clietn api manager
 
     let mut client_api_manager_w = use_signal(move || None);
-    let client_api_manager = use_memo(move || client_api_manager_w.read().clone());
+    let client_api_manager =
+        use_memo(move || client_api_manager_w.read().clone());
 
     let _ = use_resource(move || {
         let mm = mm_signal.read().clone();
@@ -199,36 +207,32 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
             let Some(mm) = mm else {
                 return;
             };
-            let api = match connect_api_manager(mm).await {
+            let api = match connect_api_manager(mm.clone()).await {
                 Ok(api) => api,
                 Err(e) => {
-                    tracing::error!("FAILED TO CREATE ClientApiManager: {e:#?}!");
+                    tracing::error!(
+                        "FAILED TO CREATE ClientApiManager: {e:#?}!"
+                    );
                     return;
                 }
             };
             tracing::info!("Successfully created ClientApiManager.");
+            for _i in 0..3 {
+                tracing::info!("Calling Login Method...");
+                let login = api.call_method::<LoginApiMethod>(()).await;
+                if login.is_ok() {
+                    tracing::info!("LOGIN OK!");
+                    break;
+                } else {
+                    tracing::error!("LOGIN ERROR: {:#?}", login);
+                    mm.sleep(std::time::Duration::from_secs(1 + _i)).await;
+                    continue;
+                }
+            }
+            
             client_api_manager_w.set(Some(api));
         }
     });
-
-
-    let _  = use_resource(move || {
-        let api = client_api_manager.read().clone();
-        async move {
-            let Some(api) = api else {
-                tracing::warn!("No Client Api Manager - cannot do login.");
-                return;
-            };
-            tracing::info!("Calling Login Method...");
-            let login = api.call_method::<LoginApiMethod>(()).await;
-            if login.is_ok() {
-                tracing::info!("LOGIN OK!");
-            } else {
-                tracing::error!("LOGIN ERROR: {:#?}", login);
-            }
-        }
-    });
-
 
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
@@ -257,6 +261,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
         reset_network,
         global_mm_loading,
         bootstrap_idx,
+        client_api_manager,
         ..
     } = use_context::<NetworkState>();
 
@@ -293,6 +298,22 @@ pub fn NetworkConnectionStatusIcon() -> Element {
             "OFFLINE".to_string()
         }
     });
+    let api_txt = use_memo(move || {
+        let have_api_server = client_api_manager.read().is_some();
+        if have_api_server {
+            "SRV OK".to_string()
+        }else {
+            "NO SRV".to_string()
+        }
+    });
+    let api_color = use_memo(move || {
+        let have_api_server = client_api_manager.read().is_some();
+        if have_api_server {
+            "darkgreen".to_string()
+        } else{
+            "darkred".to_string()
+        }
+    });
     let net_txt_color = use_memo(move || {
         if global_mm.read().is_some() {
             if *peer.read() >= 2 {
@@ -315,6 +336,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
             margin: 0px;
             cursor: pointer;
             display: flex;
+            flex-direction:column;
             ",
             onclick: move |_| {
                 let t = !*modal_open.peek();
@@ -324,6 +346,10 @@ pub fn NetworkConnectionStatusIcon() -> Element {
                 "aria-busy": "{global_mm_loading.read()}",
                 style: "margin: 0; color: {net_txt_color};",
                 "{net_txt}",
+            }
+            h5 {
+                style: "margin: 0; color: {api_color};",
+                "{api_txt}",
             }
         }
         if *modal_open.read() {

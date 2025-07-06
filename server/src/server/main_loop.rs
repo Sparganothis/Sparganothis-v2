@@ -1,24 +1,36 @@
+use futures::{FutureExt, StreamExt};
+use game::futures_util;
+use n0_future::FuturesUnordered;
 use protocol::{
     chat::{IChatController, IChatReceiver, IChatSender},
     global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{api_methods::{inventory_get_implementation_by_name, ServerInfo, SERVER_VERSION}, join_chat::{
-        server_join_server_chat, ServerChatMessageContent, ServerChatPresence,
-        ServerChatRoomType
-    }},
+    server_chat_api::{
+        api_methods::{
+            inventory_get_implementation_by_name, ApiMethodImpl, ServerInfo,
+            SERVER_VERSION,
+        },
+        join_chat::{
+            server_join_server_chat, ServerChatMessageContent,
+            ServerChatPresence, ServerChatRoomType,
+        },
+    },
     user_identity::NodeIdentity,
     ReceivedMessage,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
 
-pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) -> anyhow::Result<()> {
+pub async fn server_main_loop(
+    global_mm: GlobalMatchmaker,
+    server_name: String,
+) -> anyhow::Result<()> {
     // let mut our_ticket = ticket.clone();
     // our_ticket.bootstrap = [node.node_id()].into_iter().collect();
     //  tracing::info!("* ticket to join this chat:");
     //  tracing::info!("{}", our_ticket.serialize());
 
-     tracing::info!("* waiting for peers ...");
+    tracing::info!("* waiting for peers ...");
     let global_controller = global_mm.global_chat_controller().await.unwrap();
     let global_sender = global_controller.sender();
     let global_receiver = global_controller.receiver().await;
@@ -29,17 +41,21 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
             platform: format!("server v{SERVER_VERSION}"),
             is_server: Some(ServerInfo {
                 server_version: SERVER_VERSION,
-                server_name
+                server_name,
             }),
         })
         .await;
 
     // controller.wait_joined().await?;
 
-     tracing::info!("***********************************************************");
-     tracing::info!("* join OK");
-     tracing::info!("***********************************************************");
-     tracing::info!("> ");
+    tracing::info!(
+        "***********************************************************"
+    );
+    tracing::info!("* join OK");
+    tracing::info!(
+        "***********************************************************"
+    );
+    tracing::info!("> ");
 
     let global_receive = tokio::task::spawn(async move {
         while let Some(message) = global_receiver.next_message().await {
@@ -48,17 +64,17 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
             let user_id = message.from.user_id().fmt_short();
             match message.message {
                 GlobalChatMessageContent::TextMessage { text } => {
-                     tracing::info!("<{user_id}@{node_id}> {nickname}: {text}");
+                    tracing::info!("<{user_id}@{node_id}> {nickname}: {text}");
                 }
                 GlobalChatMessageContent::MatchmakingMessage { .. } => {
-                     tracing::info!("{nickname} matchmaking: 1v1 message!");
+                    tracing::info!("{nickname} matchmaking: 1v1 message!");
                 }
                 _ => {
-                     tracing::info!("<{user_id}@{node_id}> {nickname}: other message: {:#?}", message.message)
+                    tracing::info!("<{user_id}@{node_id}> {nickname}: other message: {:#?}", message.message)
                 }
             }
         }
-         tracing::info!("* recv closed");
+        tracing::info!("* recv closed");
         anyhow::Ok(())
     });
 
@@ -69,12 +85,12 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
             if line.is_empty() {
                 continue;
             }
-             tracing::info!("* sending message: {line}");
+            tracing::info!("* sending message: {line}");
             global_sender
                 .broadcast_message(line.to_string().into())
                 .await?;
         }
-         tracing::info!("* sender closed.");
+        tracing::info!("* sender closed.");
         anyhow::Ok(())
     });
 
@@ -88,16 +104,34 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
     let server_receiver = server_chat.receiver().await;
 
     let server_recv_thread = n0_future::task::spawn(async move {
-        while let Some(message) = server_receiver.next_message().await {
-            let Some((to, message)) = server_process_message(message).await else {
-                continue;
-            };
-            let _r = server_sender.direct_message(to, message).await;
-            if _r.is_err() {
-                tracing::error!("erroR: {_r:#?}");
+        let mut fut = FuturesUnordered::new();
+        loop {
+            if fut.is_empty() {
+                let new_message = server_receiver.next_message().fuse().await;
+                let Some(message) = new_message else {
+                    anyhow::bail!("ran out of next messages");
+                };
+                fut.push(server_process_message(message));
+            } else {
+                tokio::select! {
+                    new_message = server_receiver.next_message().fuse() => {
+                        let Some(message) = new_message else {
+                            anyhow::bail!("ran out of next messages");
+                        };
+                        fut.push(server_process_message(message));
+                    },
+                    new_result = fut.next() => {
+                        let Some(Some((to, message))) = new_result else {
+                            continue;
+                        };
+                        let _r = server_sender.direct_message(to, message).await;
+                        if _r.is_err() {
+                            tracing::error!("error sending direct message: {_r:#?}");
+                        }
+                    }
+                }
             }
         }
-        Ok(())
     });
 
     // /////////////////////////
@@ -119,7 +153,12 @@ async fn server_process_message(
 ) -> Option<(NodeIdentity, ServerChatMessageContent)> {
     let from = message.from;
     let message = message.message;
-    let ServerChatMessageContent::Request{method_name, nonce, req} = message else {
+    let ServerChatMessageContent::Request {
+        method_name,
+        nonce,
+        req,
+    } = message
+    else {
         return None;
     };
 
@@ -128,30 +167,45 @@ async fn server_process_message(
     Some((from, reply))
 }
 
+pub const SERVER_TIMEOUT_SECS: f32 = 4.0;
+
 async fn server_compute_reply(
     from: NodeIdentity,
     method_name: String,
     nonce: i64,
     req: Vec<u8>,
 ) -> ServerChatMessageContent {
-    // Ok(match request {
-    //     ServerMessageRequest::GuestLoginMessage {} => {
-    //         // db_add_guest_login(from).await?;
-    //         ServerMessageReply::GuestLoginMessage {}
-    //     }
-    // })
-    let Ok(function) = inventory_get_implementation_by_name(&method_name) else {
-        return ServerChatMessageContent::Reply { method_name, nonce, ret: Err("method not found".to_string()) };
+    let Ok(function) = inventory_get_implementation_by_name(&method_name)
+    else {
+        return ServerChatMessageContent::Reply {
+            method_name,
+            nonce,
+            ret: Err("method not found".to_string()),
+        };
     };
-    let future = tokio::task::spawn((function.func)(from, req));
-    let ret = future.await.map_err(|e| format!("{e:#?}"));
-    let ret = match ret {
-        Ok(ret) => ret,
-        Err(e) => Err(e),
-    };
+
+    let ret = server_run_method(function, from, req).await;
+    let ret = ret.map_err(|e| format!("{e:#?}"));
+
     ServerChatMessageContent::Reply {
         method_name,
         nonce,
-        ret
+        ret,
     }
+}
+
+async fn server_run_method(
+    function: &'static ApiMethodImpl,
+    from: NodeIdentity,
+    req: Vec<u8>,
+) -> anyhow::Result<Vec<u8>> {
+    let future = tokio::task::spawn(async move {
+        n0_future::time::timeout(
+            std::time::Duration::from_secs_f32(SERVER_TIMEOUT_SECS),
+            (function.func)(from, req),
+        )
+        .await
+    });
+    let ret = future.await??.map_err(|e| anyhow::anyhow!("{:?}", e));
+    ret
 }
