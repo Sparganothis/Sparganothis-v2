@@ -2,17 +2,15 @@ use protocol::{
     chat::{IChatController, IChatReceiver, IChatSender},
     global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{join_chat::{
+    server_chat_api::{api_methods::{inventory_get_implementation_by_name, ServerInfo, SERVER_VERSION}, join_chat::{
         server_join_server_chat, ServerChatMessageContent, ServerChatPresence,
-        ServerChatRoomType, ServerMessageReply, ServerMessageRequest,
-    }, server_info::{ServerInfo, SERVER_VERSION}},
+        ServerChatRoomType
+    }},
     user_identity::NodeIdentity,
     ReceivedMessage,
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
-
-use crate::server::db::guest_login::db_add_guest_login;
 
 pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) -> anyhow::Result<()> {
     // let mut our_ticket = ticket.clone();
@@ -28,7 +26,7 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
     global_sender
         .set_presence(&GlobalChatPresence {
             url: "".to_string(),
-            platform: "server".to_string(),
+            platform: format!("server v{SERVER_VERSION}"),
             is_server: Some(ServerInfo {
                 server_version: SERVER_VERSION,
                 server_name
@@ -89,9 +87,11 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
         .await;
     let server_receiver = server_chat.receiver().await;
 
-    let server_recv_thread = tokio::task::spawn(async move {
+    let server_recv_thread = n0_future::task::spawn(async move {
         while let Some(message) = server_receiver.next_message().await {
-            let (to, message) = server_process_message(message).await;
+            let Some((to, message)) = server_process_message(message).await else {
+                continue;
+            };
             let _r = server_sender.direct_message(to, message).await;
             if _r.is_err() {
                 tracing::error!("erroR: {_r:#?}");
@@ -116,33 +116,42 @@ pub async fn server_main_loop(global_mm: GlobalMatchmaker, server_name: String) 
 
 async fn server_process_message(
     message: ReceivedMessage<ServerChatRoomType>,
-) -> (NodeIdentity, ServerChatMessageContent) {
+) -> Option<(NodeIdentity, ServerChatMessageContent)> {
     let from = message.from;
     let message = message.message;
-    let ServerChatMessageContent::Request(request) = message else {
-        return (
-            from,
-            ServerChatMessageContent::Reply(Err(
-                "message not request!".to_string()
-            )),
-        );
+    let ServerChatMessageContent::Request{method_name, nonce, req} = message else {
+        return None;
     };
 
-    let reply = server_compute_reply(from, request)
-        .await
-        .map_err(move |e| e.to_string());
+    let reply = server_compute_reply(from, method_name, nonce, req).await;
 
-    (from, ServerChatMessageContent::Reply(reply))
+    Some((from, reply))
 }
 
 async fn server_compute_reply(
     from: NodeIdentity,
-    request: ServerMessageRequest,
-) -> anyhow::Result<ServerMessageReply> {
-    Ok(match request {
-        ServerMessageRequest::GuestLoginMessage {} => {
-            db_add_guest_login(from).await?;
-            ServerMessageReply::GuestLoginMessage {}
-        }
-    })
+    method_name: String,
+    nonce: i64,
+    req: Vec<u8>,
+) -> ServerChatMessageContent {
+    // Ok(match request {
+    //     ServerMessageRequest::GuestLoginMessage {} => {
+    //         // db_add_guest_login(from).await?;
+    //         ServerMessageReply::GuestLoginMessage {}
+    //     }
+    // })
+    let Ok(function) = inventory_get_implementation_by_name(&method_name) else {
+        return ServerChatMessageContent::Reply { method_name, nonce, ret: Err("method not found".to_string()) };
+    };
+    let future = tokio::task::spawn((function.func)(from, req));
+    let ret = future.await.map_err(|e| format!("{e:#?}"));
+    let ret = match ret {
+        Ok(ret) => ret,
+        Err(e) => Err(e),
+    };
+    ServerChatMessageContent::Reply {
+        method_name,
+        nonce,
+        ret
+    }
 }

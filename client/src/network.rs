@@ -3,7 +3,7 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat_api::client_api_manager::{connect_api_manager, ClientApiManager}, user_identity::UserIdentitySecrets
+    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat_api::{api_methods::LoginApiMethod, client_api_manager::{connect_api_manager, ClientApiManager}}, user_identity::UserIdentitySecrets
 };
 use tracing::{info, warn};
 
@@ -199,9 +199,14 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
             let Some(mm) = mm else {
                 return;
             };
-            let Ok(api) = connect_api_manager(mm).await else {
-                return;
+            let api = match connect_api_manager(mm).await {
+                Ok(api) => api,
+                Err(e) => {
+                    tracing::error!("FAILED TO CREATE ClientApiManager: {e:#?}!");
+                    return;
+                }
             };
+            tracing::info!("Successfully created ClientApiManager.");
             client_api_manager_w.set(Some(api));
         }
     });
@@ -211,9 +216,11 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         let api = client_api_manager.read().clone();
         async move {
             let Some(api) = api else {
+                tracing::warn!("No Client Api Manager - cannot do login.");
                 return;
             };
-            let login = api.send_login().await;
+            tracing::info!("Calling Login Method...");
+            let login = api.call_method::<LoginApiMethod>(()).await;
             if login.is_ok() {
                 tracing::info!("LOGIN OK!");
             } else {

@@ -1,7 +1,7 @@
 use anyhow::Context;
 use base64::Engine;
 use game::timestamp::get_timestamp_now_ms;
-use protocol::user_identity::NodeIdentity;
+use protocol::{impl_api_method, user_identity::NodeIdentity};
 
 use crate::server::db::clickhouse_client::get_clickhouse_client;
 
@@ -24,8 +24,8 @@ struct GuestUserLoginEvent {
 }
 
 
-pub async fn db_add_guest_login(from: NodeIdentity) -> anyhow::Result<()> {
-    tracing::info!("TODO: CRACKHOUSE INSERT for user = {:?}", from);
+pub async fn db_add_guest_login(from: NodeIdentity, _arg: ()) -> anyhow::Result<()> {
+    tracing::info!("DB ADD GUEST LOGIN for user = {:?}", from);
 
     let client = get_clickhouse_client();
 
@@ -47,7 +47,6 @@ pub async fn db_add_guest_login(from: NodeIdentity) -> anyhow::Result<()> {
 
     // select
     let user_count = {
-
         let  cursor = client.query( "SELECT count() FROM ? WHERE user_id = ?",        ).bind(Identifier("guest_users"))
         .bind(user_id.clone()).fetch_all::<u64>().await?;
         let count = *cursor.get(0).context("no count row??")?;
@@ -59,7 +58,6 @@ pub async fn db_add_guest_login(from: NodeIdentity) -> anyhow::Result<()> {
         let mut insert = client.insert("guest_users")?;
         insert.write(&new_guest_user).await?;
         insert.end().await?;
-
     }
 
     let mut insert = client.insert("guest_user_login_events ")?;
@@ -69,3 +67,6 @@ pub async fn db_add_guest_login(from: NodeIdentity) -> anyhow::Result<()> {
 
     Ok(())
 }
+
+use protocol::server_chat_api::api_methods::LoginApiMethod;
+impl_api_method!(LoginApiMethod, db_add_guest_login);

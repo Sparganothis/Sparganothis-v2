@@ -4699,6 +4699,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "inventory"
+version = "0.3.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab08d7cd2c5897f2c949e5383ea7c7db03fb19130ffcfbf7eda795137ae3cb83"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "ipconfig"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7140,11 +7149,13 @@ dependencies = [
  "futures",
  "game",
  "hex",
+ "inventory",
  "iroh",
  "iroh-base",
  "iroh-blake3",
  "iroh-gossip",
  "n0-future",
+ "paste",
  "postcard",
  "rand 0.8.5",
  "random_word",

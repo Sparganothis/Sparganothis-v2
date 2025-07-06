@@ -44,5 +44,5 @@ async fn main() -> Result<()> {
      tracing::info!("* shutdown OK");
     std::process::exit(0);
 
-    Ok(())
+    // Ok(())
 }

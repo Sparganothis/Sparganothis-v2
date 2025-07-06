@@ -8,7 +8,7 @@ use game::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat::{ChatController, IChatController}, chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, global_matchmaker::GlobalMatchmaker, server_chat_api::server_info::SERVER_VERSION, user_identity::NodeIdentity, IChatRoomType
+    chat::{ChatController, IChatController}, chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId, global_matchmaker::GlobalMatchmaker, server_chat_api::api_methods::SERVER_VERSION, user_identity::NodeIdentity, IChatRoomType
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -30,19 +30,10 @@ pub struct ServerChatPresence {
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum ServerChatMessageContent {
-    Request(ServerMessageRequest),
-    Reply(Result<ServerMessageReply, String>),
+    Request{method_name: String, nonce: i64, req: Vec<u8>},
+    Reply{method_name:String, nonce: i64,ret: Result<Vec<u8>, String>},
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum ServerMessageRequest {
-    GuestLoginMessage {},
-}
-
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub enum ServerMessageReply {
-    GuestLoginMessage {},
-}
 
 pub async fn server_join_server_chat(
     mm: GlobalMatchmaker,
@@ -79,21 +70,14 @@ async fn client_join_server_chat_with_server_ids(
     Ok(chat)
 }
 
-pub(crate) async fn client_join_server_chat(
-    mm: GlobalMatchmaker,
-) -> anyhow::Result<(Vec<NodeIdentity>, ChatController<ServerChatRoomType>)> {
+pub(crate) async fn fetch_server_ids(mm: GlobalMatchmaker) -> anyhow::Result<Vec<NodeIdentity>> {
     let global = mm
         .global_chat_controller()
         .await
         .context("no global chat?")?;
     let presence = global.chat_presence();
 
-    const RETRY_COUNT: i32 = 4;
-    const RETRY_SLEEP_SECONDS  : i32 = 3;
-
-    for i in 0..=RETRY_COUNT {
-        tracing::info!("connecting to server chat {i}/{RETRY_COUNT} ... ");
-        let presence_list = presence.get_presence_list().await;
+    let presence_list = presence.get_presence_list().await;
         let mut server_nodes: Vec<_> = vec![];
         for p in presence_list {
             let Some(payload) = &p.payload else {
@@ -108,6 +92,22 @@ pub(crate) async fn client_join_server_chat(
             }
             server_nodes.push(node_id);
         }
+
+        Ok(server_nodes)
+
+}
+
+pub(crate) async fn client_join_server_chat(
+    mm: GlobalMatchmaker,
+) -> anyhow::Result<(Vec<NodeIdentity>, ChatController<ServerChatRoomType>)> {
+
+
+    const RETRY_COUNT: i32 = 8;
+    const RETRY_SLEEP_SECONDS  : i32 = 2;
+
+    for i in 0..=RETRY_COUNT {
+        tracing::info!("connecting to server chat {i}/{RETRY_COUNT} ... ");
+        let server_nodes = fetch_server_ids(mm.clone()).await.unwrap_or(vec![]);
 
         if server_nodes.is_empty() {
             tracing::warn!("FOUND NO SERVER NODES!");
