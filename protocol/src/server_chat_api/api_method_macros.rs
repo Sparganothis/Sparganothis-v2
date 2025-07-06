@@ -16,7 +16,7 @@ pub trait ApiMethod {
     type Ret: Serialize + for<'a> Deserialize<'a>;
 }
 
-struct ApiMethodInfoStatic {
+pub struct ApiMethodInfoStatic {
     name: &'static str,
     arg: &'static str,
     ret: &'static str,
@@ -66,19 +66,21 @@ fn list_api_methods() -> Vec<ApiMethodInfo> {
 //     type Ret = ();
 // }
 
+#[macro_export]
 macro_rules! declare_api_method {
     ($name:tt, $arg:ty, $ret:ty) => { paste::paste! {
         pub struct $name;
-        impl ApiMethod for $name {
+        impl $crate::server_chat_api::api_method_macros::ApiMethod for $name {
             const NAME: &str = stringify!($name);
             type Arg = $arg;
             type Ret = $ret;
         }
         inventory::submit!{
-            ApiMethodInfoStatic::new(stringify!($name), stringify!($arg), stringify!($ret))
+            $crate::server_chat_api::api_method_macros::ApiMethodInfoStatic::new(stringify!($name), stringify!($arg), stringify!($ret))
         }
     } }
 }
+
 pub struct ApiMethodImpl {
     pub name: &'static str,
     pub func: fn(
@@ -105,7 +107,7 @@ macro_rules! impl_api_method {
     ($name: tt, $func_name: tt) => { $crate::paste::paste! {
         #[allow(non_snake_case)]
         async fn [< __ $name _wrapper1>] (from: NodeIdentity, arg: Vec<u8>) -> anyhow::Result<Vec<u8>> {
-                use $crate::server_chat_api::api_methods::ApiMethod;
+                use $crate::server_chat_api::api_method_macros::ApiMethod;
                 type Arg = <$name as ApiMethod>::Arg;
                 type Ret = <$name as ApiMethod>::Ret;
                 let arg: Arg = $crate::postcard::from_bytes(&arg)?;
@@ -126,7 +128,7 @@ macro_rules! impl_api_method {
         }
 
         $crate::inventory::submit!{
-            $crate::server_chat_api::api_methods::ApiMethodImpl {
+            $crate::server_chat_api::api_method_macros::ApiMethodImpl {
                 name: stringify!($name),
                 func: [< __ $name _wrapper3>]
             }
@@ -143,6 +145,3 @@ async fn _list_api_methods(
 ) -> anyhow::Result<Vec<ApiMethodInfo>> {
     Ok(list_api_methods())
 }
-
-// SERVER SIDE IMPLEMENTATION API METHODS
-declare_api_method!(LoginApiMethod, (), ());

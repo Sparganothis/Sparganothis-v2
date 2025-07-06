@@ -7,7 +7,7 @@ use crate::{
     chat::{ChatController, IChatController},
     chat_ticket::ChatTicket,
     global_matchmaker::GlobalMatchmaker,
-    server_chat_api::api_methods::SERVER_VERSION,
+    server_chat_api::api_method_macros::SERVER_VERSION,
     user_identity::NodeIdentity,
     IChatRoomType,
 };

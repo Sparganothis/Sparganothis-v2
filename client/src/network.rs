@@ -8,7 +8,7 @@ use protocol::{
     global_chat::{GlobalChatPresence, GlobalChatRoomType},
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
-        api_methods::LoginApiMethod,
+        api_declarations::LoginApiMethod,
         client_api_manager::{connect_api_manager, ClientApiManager},
     },
     user_identity::UserIdentitySecrets,

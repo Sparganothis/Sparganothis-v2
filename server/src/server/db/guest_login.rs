@@ -69,5 +69,5 @@ pub async fn db_add_guest_login(
     Ok(())
 }
 
-use protocol::server_chat_api::api_methods::LoginApiMethod;
+use protocol::server_chat_api::api_declarations::LoginApiMethod;
 impl_api_method!(LoginApiMethod, db_add_guest_login);

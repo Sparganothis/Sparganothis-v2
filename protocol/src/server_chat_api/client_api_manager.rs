@@ -8,7 +8,7 @@ use crate::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
-        api_methods::ApiMethod,
+        api_method_macros::ApiMethod,
         join_chat::{
             client_join_server_chat, fetch_server_ids,
             ServerChatMessageContent, ServerChatRoomType,

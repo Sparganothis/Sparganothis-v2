@@ -6,7 +6,7 @@ use protocol::{
     global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
-        api_methods::{
+        api_method_macros::{
             inventory_get_implementation_by_name, ApiMethodImpl, ServerInfo,
             SERVER_VERSION,
         },
