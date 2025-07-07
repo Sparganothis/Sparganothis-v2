@@ -62,8 +62,8 @@ services:
       interval: 13s
       timeout: 15s
       retries: 6
-    memswap_limit: 1500M
-    mem_limit: 1500M
+    memswap_limit: 2000M
+    mem_limit: 2000M
     restart: unless-stopped
   clickhouse-monitoring:
     image: ghcr.io/duyet/clickhouse-monitoring:2cc8058
@@ -90,8 +90,8 @@ services:
     depends_on:
       clickhouse:
         condition: service_healthy
-    memswap_limit: 2000M
-    mem_limit: 2000M
+    memswap_limit: 1000M
+    mem_limit: 1000M
     restart: unless-stopped
     environment:
       VITE_CLICKHOUSE_URL: "http://localhost:8123"

@@ -123,6 +123,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
                     }
                     drop(client);
                 }
+
                 c = match client_connect(user_secrets.clone()).await {
                     Ok(client) => {
                         mm_signal_w.set(Some(client.clone()));
@@ -234,11 +235,19 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         }
     });
 
+    let loading2 = use_memo(move || {
+        * mm_signal_loading.read() || client_api_manager.read().is_none()
+    });
+
+    let is_connected2 = use_memo(move || {
+       * mm_signal_loading.read() &&  client_api_manager.read().is_some()
+    });
+
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
-        global_mm_loading: mm_signal_loading.into(),
+        global_mm_loading: loading2.into(),
         reset_network: reset_network.clone(),
-        is_connected: is_connected.into(),
+        is_connected: is_connected2.into(),
         debug_info_txt: debug_info_txt.into(),
         bootstrap_idx: bootstrap_idx.into(),
         client_api_manager: client_api_manager.into(),
