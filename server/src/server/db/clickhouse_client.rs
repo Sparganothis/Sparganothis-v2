@@ -8,5 +8,5 @@ pub fn get_clickhouse_client() -> Client {
         .with_password("sparganothis")
         .with_database("sparganothis")
         .with_option("async_insert", "1")
-        .with_option("wait_for_async_insert", "0")
+        .with_option("wait_for_async_insert", "1")
 }

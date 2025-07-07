@@ -35,7 +35,7 @@ pub async fn db_send_new_match(
     _from: NodeIdentity,
     (_match, ): (GameMatch<NodeIdentity>, ),
 ) -> anyhow::Result<()> {
-    info!("db_send_new_match!");
+    tracing::warn!("\n\n db_send_new_match !!!! \n\n !");
 
     if _from != _match.users[0] {
         info!("Skipping db_send_match for non-first identity");
@@ -61,6 +61,8 @@ pub async fn db_send_new_match(
     let mut insert = client.insert("matches")?;
     insert.write(&new_match).await?;
     insert.end().await?;
+
+    info!("INSRT OK!");
 
     Ok(())
 }

@@ -191,7 +191,7 @@ impl RuleManager for Game1v1YouWinIfOpponentLoseRule {
         &self,
         mut _state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
-        tracing::info!("Game1v1YouWinIfOpponentLoseRule");
+        // tracing::info!("Game1v1YouWinIfOpponentLoseRule");
         if _state.game_over() {
             return Ok(None);
         }
@@ -293,7 +293,7 @@ pub fn get_1v1_player_state_manager(
         let stream = cc2.opponent_move_stream().await;
         pin_mut!(stream);
         while let Some(oppponent_state) = stream.next().await {
-            tracing::info!("\n\n NEW opponent state receive!!!");
+            // tracing::info!("\n\n NEW opponent state receive!!!");
             if state_tx2.unbounded_send(oppponent_state).is_err() {
                 tracing::info!("failed to notify send lines function");
             }

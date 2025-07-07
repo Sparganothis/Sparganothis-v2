@@ -96,11 +96,15 @@ impl ClientApiManager {
         &self,
         arg: M::Arg,
     ) -> anyhow::Result<M::Ret> {
-        n0_future::time::timeout(
+                tracing::info!("vvv\ncall start method={} \n arg: {:#?} \n^^^/n", M::NAME, &arg);
+
+        let ret = n0_future::time::timeout(
             std::time::Duration::from_secs_f32(API_METHOD_TIMEOUT_SECONDS),
-            self._do_call_method::<M>(arg),
+            self._do_call_method::<M>(arg.clone()),
         )
-        .await?
+        .await;
+        tracing::info!("vvv\ncall result method={} \n arg: {:#?} \nret: {:#?} \n^^^\n", M::NAME, &arg, &ret);
+        ret?
     }
 
     async fn _do_call_method<M: ApiMethod>(
@@ -150,6 +154,7 @@ impl ClientApiManager {
                 tracing::warn!("error: {:?}", err);
                 anyhow::bail!("got error: {err}");
             };
+            tracing::info!("\n Got back message with reply for method: \n {method_name} {nonce} : length = {}", ret_bytes.len());
             let ret = postcard::from_bytes(&ret_bytes)?;
             return Ok(ret);
         }

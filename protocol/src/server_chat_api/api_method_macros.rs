@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::user_identity::NodeIdentity;
 
-pub const SERVER_VERSION: i64 = 3;
+pub const SERVER_VERSION: i64 = 4;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, PartialOrd)]
 pub struct ServerInfo {
@@ -12,8 +12,8 @@ pub struct ServerInfo {
 
 pub trait ApiMethod {
     const NAME: &'static str;
-    type Arg: Serialize + for<'a> Deserialize<'a>;
-    type Ret: Serialize + for<'a> Deserialize<'a>;
+    type Arg: Clone+std::fmt::Debug+Serialize + for<'a> Deserialize<'a>;
+    type Ret: std::fmt::Debug+Serialize + for<'a> Deserialize<'a>;
 }
 
 pub struct ApiMethodInfoStatic {
