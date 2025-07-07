@@ -27,14 +27,55 @@ pub struct MatchRow {
     pub data_version: i64,
     pub match_info: String,
 }
+#[derive(Row, Serialize)]
+pub struct GameRow {
+    pub game_type: String,
+    pub start_time: i64,
+    pub user_id: String,
+    pub game_seed: String,
+    pub data_version: i64,
+    pub match_info: Option<String>,
+}
+
+async fn db_send_new_game(
+    _from: NodeIdentity, _match: GameMatch<NodeIdentity>)  -> anyhow::Result<()> {
+        let user_id = _from.user_id().as_bytes();
+        let user_id = serialize_base64(user_id)?;
 
 
+    let game_seed = _match.seed;
+    let game_seed = serialize_base64(&game_seed)?;
+    let new_row = GameRow {
+        game_type: format!("{:?}", _match.type_),
+        start_time: _match.time,
+        user_id,
+        game_seed,
+        data_version: 0,
+        match_info: Some(serialize_base64(&_match)?),
+    };
+
+        
+    info!("INSERT NEW MATCH!");
+    let client = get_clickhouse_client();
+    let mut insert = client.insert("games")?;
+    insert.write(&new_row).await?;
+    insert.end().await?;
+
+    info!("INSRT OK!");
+
+    Ok(())
+}
 
 pub async fn db_send_new_match(
     _from: NodeIdentity,
     (_match, ): (GameMatch<NodeIdentity>, ),
 ) -> anyhow::Result<()> {
     tracing::warn!("\n\n db_send_new_match !!!! \n\n !");
+
+    db_send_new_game(_from, _match.clone()).await?;
+
+
+
 
     if _from != _match.users[0] {
         info!("Skipping db_send_match for non-first identity");
