@@ -24,8 +24,6 @@ pub fn MatchmakingWindow(
     let attempts = 3;
     let total_seconds_timeout = (attempt_timeout_secs + 1) * attempts as u64;
 
-    let send_new_match = use_coroutine(send_new_match_coro);
-
     let coro = use_coroutine(move |mut _r| async move {
         while let Some(_x) = _r.next().await {
             let Some(global_chat) = chat.chat.peek().clone() else {
@@ -63,7 +61,10 @@ pub fn MatchmakingWindow(
             };
             match game {
                 Ok(from) => {
-                    send_new_match.send(from.clone());
+                    
+                    tracing::info!("confirm matchmaking!");
+                    let from2 = from.clone();
+                    send_new_match(from2).await;
                     on_opponent_confirm.call(from);
                 }
                 Err(e) => {
@@ -112,16 +113,15 @@ pub fn MatchmakingWindow(
 }
 
 
-async fn send_new_match_coro(mut _r: UnboundedReceiver<GameMatch<NodeIdentity>>) {
-    while let Some(m) = _r.next().await {
-        let api = use_context::<NetworkState>().client_api_manager.peek().clone();
-        let Some(api) = api else {
-            warn!("no api! skipping send_new_match m,essage...");
-            continue;
-        };
-        if let Err(e) = api.call_method::<SendNewMatch>((m,)).await {
-            warn!("FAILED TO SEND SendNewMatch method to backend! {e:#?}");
-            continue;
-        }
+async fn send_new_match(m: GameMatch<NodeIdentity>) {
+    let api = use_context::<NetworkState>().client_api_manager.peek().clone();
+    tracing::info!("send_new_match_coro()");
+    let Some(api) = api else {
+        warn!("no api! skipping send_new_match m,essage...");
+        return;
+    };
+    if let Err(e) = api.call_method::<SendNewMatch>((m,)).await {
+        warn!("FAILED TO SEND SendNewMatch method to backend! {e:#?}");
+        return;
     }
 }
