@@ -71,8 +71,8 @@ jobs:
         sha=$(git rev-parse --short HEAD)
         ( echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh ) || true
 
-    - name: Build Web Release
-      run: chmod +x ./build_web_release.sh && ./build_web_release.sh
+    # - name: Build Web Release
+    #   run: chmod +x ./build_web_release.sh && ./build_web_release.sh
 
     - name: Send Chat Message Finished
       run: |
@@ -80,45 +80,45 @@ jobs:
         sha=$(git rev-parse --short HEAD)
         ( echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh ) || true
 
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: "./dist"
+    # - name: Upload artifact
+    #   uses: actions/upload-pages-artifact@v3
+    #   with:
+    #     path: "./dist"
 
-    - name: Zip website and exe
-      run: |
-        set -ex
-        mkdir -p release_exes/
-        zip -r website.zip ./dist
-        mv website.zip release_exes/
-        cp target/debug/echo_cli release_exes/echo_cli_linux_x64
+    # - name: Zip website and exe
+    #   run: |
+    #     set -ex
+    #     mkdir -p release_exes/
+    #     zip -r website.zip ./dist
+    #     mv website.zip release_exes/
+    #     cp target/debug/echo_cli release_exes/echo_cli_linux_x64
 
-    - name: Github Release
-      uses: ncipollo/release-action@v1
-      with:
-        allowUpdates: true
-        commit: "${{ github.sha }}"
-        tag: "latest"
-        makeLatest: true
-        artifacts: "release_exes/**/*"
-        bodyFile: ".github/release_template.md"
+    # - name: Github Release
+    #   uses: ncipollo/release-action@v1
+    #   with:
+    #     allowUpdates: true
+    #     commit: "${{ github.sha }}"
+    #     tag: "latest"
+    #     makeLatest: true
+    #     artifacts: "release_exes/**/*"
+    #     bodyFile: ".github/release_template.md"
 
-  release_pages:
-    name: Release Github Pages
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    # if: "startsWith(github.ref, 'refs/tags/')"
-    needs: [build]
-    steps:
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-      with:
-        enablement: true
-    - uses: actions/download-artifact@v4
-    - name: print all downloaded artifacts
-      run: ls -R .
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+  # release_pages:
+  #   name: Release Github Pages
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   runs-on: ubuntu-latest
+  #   # if: "startsWith(github.ref, 'refs/tags/')"
+  #   needs: [build]
+  #   steps:
+  #   - name: Setup Pages
+  #     uses: actions/configure-pages@v4
+  #     with:
+  #       enablement: true
+  #   - uses: actions/download-artifact@v4
+  #   - name: print all downloaded artifacts
+  #     run: ls -R .
+  #   - name: Deploy to GitHub Pages
+  #     id: deployment
+  #     uses: actions/deploy-pages@v4
