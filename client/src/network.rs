@@ -229,7 +229,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
                     continue;
                 }
             }
-            
+
             client_api_manager_w.set(Some(api));
         }
     });
@@ -302,7 +302,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
         let have_api_server = client_api_manager.read().is_some();
         if have_api_server {
             "SRV OK".to_string()
-        }else {
+        } else {
             "NO SRV".to_string()
         }
     });
@@ -310,7 +310,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
         let have_api_server = client_api_manager.read().is_some();
         if have_api_server {
             "darkgreen".to_string()
-        } else{
+        } else {
             "darkred".to_string()
         }
     });

@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     chat_ticket::ChatTicket, game_matchmaker::MatchmakeRandomId,
-    server_chat_api::api_method_macros::ServerInfo, user_identity::NodeIdentity,
-    IChatRoomType,
+    server_chat_api::api_method_macros::ServerInfo,
+    user_identity::NodeIdentity, IChatRoomType,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
