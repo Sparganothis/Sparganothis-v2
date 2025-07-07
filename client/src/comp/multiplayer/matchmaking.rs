@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use futures_util::FutureExt;
 use game::api::game_match::{GameMatch, GameMatchType};
 use n0_future::StreamExt;
-use protocol::{game_matchmaker::find_game, user_identity::NodeIdentity};
+use protocol::{game_matchmaker::find_game, server_chat_api::api_declarations::SendNewMatch, user_identity::NodeIdentity};
 use tracing::{info, warn};
 
 use crate::network::{GlobalChatClientContext, NetworkState};
@@ -23,6 +23,9 @@ pub fn MatchmakingWindow(
     let attempt_timeout_secs = 7;
     let attempts = 3;
     let total_seconds_timeout = (attempt_timeout_secs + 1) * attempts as u64;
+
+    let send_new_match = use_coroutine(send_new_match_coro);
+
     let coro = use_coroutine(move |mut _r| async move {
         while let Some(_x) = _r.next().await {
             let Some(global_chat) = chat.chat.peek().clone() else {
@@ -60,6 +63,7 @@ pub fn MatchmakingWindow(
             };
             match game {
                 Ok(from) => {
+                    send_new_match.send(from.clone());
                     on_opponent_confirm.call(from);
                 }
                 Err(e) => {
@@ -103,6 +107,21 @@ pub fn MatchmakingWindow(
                     "Connecting..."
                 }
             }
+        }
+    }
+}
+
+
+async fn send_new_match_coro(mut _r: UnboundedReceiver<GameMatch<NodeIdentity>>) {
+    while let Some(m) = _r.next().await {
+        let api = use_context::<NetworkState>().client_api_manager.peek().clone();
+        let Some(api) = api else {
+            warn!("no api! skipping send_new_match m,essage...");
+            continue;
+        };
+        if let Err(e) = api.call_method::<SendNewMatch>((m,)).await {
+            warn!("FAILED TO SEND SendNewMatch method to backend! {e:#?}");
+            continue;
         }
     }
 }

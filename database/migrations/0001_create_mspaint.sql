@@ -50,9 +50,11 @@ CREATE TABLE matches
     start_time  BigInt,
     user_ids Array(BLOB),
     game_seed String,
+    match_id UUID,
 
+    data_version BigInt,
     match_info BLOB,
 )
 ENGINE = MergeTree ()
-ORDER BY (game_type, start_time, user_ids,  game_seed)
+ORDER BY (game_type, start_time, user_ids,  game_seed, match_id)
 COMMENT 'list of multi-user matches';

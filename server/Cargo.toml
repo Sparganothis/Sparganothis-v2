@@ -25,3 +25,5 @@ clickhouse = "0.13.3"
 # clickhouse = { version = "0.13.3", features = ["test-util"] }
 bytes = "1"
 base64 = "0.22"
+
+uuid = { workspace = true }
