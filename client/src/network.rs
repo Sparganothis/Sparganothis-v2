@@ -240,7 +240,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     });
 
     let is_connected2 = use_memo(move || {
-       * mm_signal_loading.read() &&  client_api_manager.read().is_some()
+       * is_connected.read() &&  client_api_manager.read().is_some()
     });
 
     use_context_provider(move || NetworkState {
