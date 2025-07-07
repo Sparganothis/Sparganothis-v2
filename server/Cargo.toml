@@ -11,7 +11,7 @@ n0-future = "0.1.2"
 rand = "0.8"
 protocol = { version = "0.1.0", path = "../protocol" }
 tokio = { version = "1.43.0", features = ["rt", "macros", "sync"] }
-tracing-subscriber = "0.3.19"
+tracing-subscriber = {version="0.3.19", features = ["env-filter"]}
 async-channel = "2.3.1"
 tokio-stream = { version = "0.1.17", default-features = false, features = ["sync"] }
 tracing = "0.1.41"

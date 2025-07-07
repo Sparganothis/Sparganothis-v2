@@ -15,7 +15,8 @@ use tracing::info;
 async fn main() -> Result<()> {
     {
         let sub = tracing_subscriber::FmtSubscriber::builder()
-            .with_max_level(tracing::Level::INFO);
+            // .with_max_level(tracing::Level::INFO)
+                .with_env_filter(tracing_subscriber::EnvFilter::from_default_env());
 
         tracing::subscriber::set_global_default(sub.finish()).unwrap();
     }
