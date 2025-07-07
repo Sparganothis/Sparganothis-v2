@@ -112,7 +112,7 @@ impl ClientApiManager {
         let cc = self.chat_controller.clone();
         let sender = cc.sender();
 
-        let nonce = ((&mut rand::thread_rng()).gen::<i64>());
+        let nonce = (&mut rand::thread_rng()).gen::<i64>();
         let method_name = M::NAME.to_string();
 
         let request_message = ServerChatMessageContent::Request {
