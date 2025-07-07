@@ -50,7 +50,7 @@ CREATE TABLE matches
     start_time  BigInt,
     user_ids Array(BLOB),
     game_seed String,
-    match_id UUID,
+    match_id String,
 
     data_version BigInt,
     match_info BLOB,

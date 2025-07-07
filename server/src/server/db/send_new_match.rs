@@ -18,15 +18,14 @@ use crate::server::db::{clickhouse_client::get_clickhouse_client, guest_login::s
 // ENGINE = MergeTree ()
 // ORDER BY (game_type, start_time, user_ids,  game_seed)
 #[derive(Row, Serialize)]
-struct MatchRow {
-    game_type: String,
-    start_time: i64,
-    user_ids: Vec<String>,
-    game_seed: String,
-    match_id: uuid::Uuid,
-    // is base64
-    data_version: i64,
-    match_info: String,
+pub struct MatchRow {
+    pub game_type: String,
+    pub start_time: i64,
+    pub user_ids: Vec<String>,
+    pub game_seed: String,
+    pub match_id: String,
+    pub data_version: i64,
+    pub match_info: String,
 }
 
 
@@ -51,7 +50,7 @@ pub async fn db_send_new_match(
         start_time: _match.time,
         user_ids: _match.users.iter().map(|x| serialize_base64(&x.user_id().as_bytes())).collect::<anyhow::Result<Vec<_>>>()?,
         game_seed,
-        match_id: _match.match_id.clone(),
+        match_id: _match.match_id.clone().to_string(),
         data_version: 0,
         match_info: serialize_base64(&_match)?,
     };
