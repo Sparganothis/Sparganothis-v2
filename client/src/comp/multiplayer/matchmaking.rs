@@ -4,7 +4,11 @@ use dioxus::prelude::*;
 use futures_util::FutureExt;
 use game::api::game_match::{GameMatch, GameMatchType};
 use n0_future::StreamExt;
-use protocol::{game_matchmaker::find_game, server_chat_api::api_declarations::SendNewMatch, user_identity::NodeIdentity};
+use protocol::{
+    game_matchmaker::find_game,
+    server_chat_api::api_declarations::SendNewMatch,
+    user_identity::NodeIdentity,
+};
 use tracing::{info, warn};
 
 use crate::network::{GlobalChatClientContext, NetworkState};
@@ -61,7 +65,6 @@ pub fn MatchmakingWindow(
             };
             match game {
                 Ok(from) => {
-                    
                     tracing::info!("confirm matchmaking!");
                     let from2 = from.clone();
                     send_new_match(from2).await;
@@ -112,9 +115,11 @@ pub fn MatchmakingWindow(
     }
 }
 
-
 async fn send_new_match(m: GameMatch<NodeIdentity>) {
-    let api = use_context::<NetworkState>().client_api_manager.peek().clone();
+    let api = use_context::<NetworkState>()
+        .client_api_manager
+        .peek()
+        .clone();
     tracing::info!("send_new_match_coro()");
     let Some(api) = api else {
         warn!("no api! skipping send_new_match m,essage...");

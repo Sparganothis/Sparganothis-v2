@@ -96,14 +96,23 @@ impl ClientApiManager {
         &self,
         arg: M::Arg,
     ) -> anyhow::Result<M::Ret> {
-                tracing::info!("vvv\ncall start method={} \n arg: {:#?} \n^^^/n", M::NAME, &arg);
+        tracing::info!(
+            "vvv\ncall start method={} \n arg: {:#?} \n^^^/n",
+            M::NAME,
+            &arg
+        );
 
         let ret = n0_future::time::timeout(
             std::time::Duration::from_secs_f32(API_METHOD_TIMEOUT_SECONDS),
             self._do_call_method::<M>(arg.clone()),
         )
         .await;
-        tracing::info!("vvv\ncall result method={} \n arg: {:#?} \nret: {:#?} \n^^^\n", M::NAME, &arg, &ret);
+        tracing::info!(
+            "vvv\ncall result method={} \n arg: {:#?} \nret: {:#?} \n^^^\n",
+            M::NAME,
+            &arg,
+            &ret
+        );
         ret?
     }
 

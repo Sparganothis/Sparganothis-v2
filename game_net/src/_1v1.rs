@@ -14,6 +14,8 @@ use game::{
     state_manager::GameStateManager,
     tet::{GameOverReason, GameState},
 };
+use protocol::server_chat_api::api_declarations::SendNewGameState;
+use protocol::server_chat_api::client_api_manager::ClientApiManager;
 use protocol::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     chat_ticket::ChatTicket,
@@ -44,7 +46,7 @@ impl IChatRoomType for Game1v1RoomType {
 pub struct Game1v1MatchChatController {
     _mm: GlobalMatchmaker,
     chat: ChatController<Game1v1RoomType>,
-    match_info: GameMatch<NodeIdentity>,
+    pub match_info: GameMatch<NodeIdentity>,
     opponent_id: NodeIdentity,
 }
 
@@ -256,6 +258,7 @@ pub fn get_1v1_player_state_manager(
     cc: Game1v1MatchChatController,
     settings: Arc<RwLock<GameSettings>>,
     player_input: UnboundedReceiver<GameInputEvent>,
+    api: ClientApiManager,
 ) -> GameStateManager {
     tracing::info!("get_1v1_player_state_manager");
     let mut game_state_manager =
@@ -268,6 +271,7 @@ pub fn get_1v1_player_state_manager(
     );
     game_state_manager.add_rule("callback_manager", Arc::new(callback_manager));
 
+    // THIS LOOPP WILL SEND TO CHAT
     let g2 = game_state_manager.clone();
     let cc2 = cc.clone();
     game_state_manager.add_loop(async move {
@@ -275,6 +279,19 @@ pub fn get_1v1_player_state_manager(
         pin_mut!(stream);
         while let Some(s) = stream.next().await {
             cc2.update_own_state(s).await?;
+        }
+        anyhow::Ok(())
+    });
+
+    // THIS LOOP WILL SEND TO DB
+    let g2 = game_state_manager.clone();
+    let match_info = cc.match_info.clone();
+    game_state_manager.add_loop(async move {
+        let stream = g2.read_state_stream();
+        pin_mut!(stream);
+        while let Some(s) = stream.next().await {
+            let arg = (match_info.clone(), s);
+            api.call_method::<SendNewGameState>(arg).await?;
         }
         anyhow::Ok(())
     });

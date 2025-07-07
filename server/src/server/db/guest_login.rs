@@ -24,11 +24,13 @@ struct GuestUserLoginEvent {
 
 pub fn serialize_base64<T: Serialize>(t: &T) -> anyhow::Result<String> {
     let vec = postcard::to_stdvec(t)?;
-    let v =  base64::prelude::BASE64_URL_SAFE.encode(vec);
+    let v = base64::prelude::BASE64_URL_SAFE.encode(vec);
     Ok(v)
 }
 
-pub fn deserialize_base64<T: for<'a> Deserialize<'a>>(base64: String) -> anyhow::Result<T> {
+pub fn deserialize_base64<T: for<'a> Deserialize<'a>>(
+    base64: String,
+) -> anyhow::Result<T> {
     let vec = base64::prelude::BASE64_URL_SAFE.decode(base64)?;
     let obj = postcard::from_bytes(&vec)?;
     Ok(obj)
@@ -83,5 +85,3 @@ pub async fn db_add_guest_login(
 
 use protocol::server_chat_api::api_declarations::LoginApiMethod;
 impl_api_method!(LoginApiMethod, db_add_guest_login);
-
-

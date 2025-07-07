@@ -19,6 +19,7 @@ use tokio::sync::RwLock;
 use crate::{
     comp::{game_display::GameDisplay, input::GameInputCaptureParent},
     localstorage::use_game_settings,
+    network::NetworkState,
 };
 
 #[component]
@@ -111,8 +112,13 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
     tracing::info!("Play1v1FullScreenWindowInner()");
     let (input_tx, input_rx) = futures_channel::mpsc::unbounded();
     let settings = Arc::new(RwLock::new(use_game_settings()));
+    let api = use_context::<NetworkState>().client_api_manager;
+    let api = api.read().clone();
+    let Some(api) = api else {
+        return rsx! {"no api/?"};
+    };
     let play_state_manager =
-        get_1v1_player_state_manager(cc.clone(), settings, input_rx);
+        get_1v1_player_state_manager(cc.clone(), settings, input_rx, api);
     let spectator_manager = get_spectator_state_manager(cc);
     let on_user_event = Callback::new(move |event: GameInputEvent| {
         let _ = input_tx.unbounded_send(event);

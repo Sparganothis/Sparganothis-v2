@@ -12,8 +12,8 @@ pub struct ServerInfo {
 
 pub trait ApiMethod {
     const NAME: &'static str;
-    type Arg: Clone+std::fmt::Debug+Serialize + for<'a> Deserialize<'a>;
-    type Ret: std::fmt::Debug+Serialize + for<'a> Deserialize<'a>;
+    type Arg: Clone + std::fmt::Debug + Serialize + for<'a> Deserialize<'a>;
+    type Ret: std::fmt::Debug + Serialize + for<'a> Deserialize<'a>;
 }
 
 pub struct ApiMethodInfoStatic {
