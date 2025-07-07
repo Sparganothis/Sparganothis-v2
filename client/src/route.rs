@@ -57,6 +57,12 @@ pub enum Route {
 
         #[route("/matchmaking")]
         MatchmakingPage {},
+
+        #[route("/replays")]
+        ReplayHomePage {},
+
+        #[route("/replays/1v1_match/:match_id")]
+        Replay1v1Match {match_id: String},
         
     #[end_nest]
 

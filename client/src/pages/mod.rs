@@ -24,3 +24,6 @@ pub use button_settings::*;
 
 mod play_game;
 pub use play_game::*;
+
+mod replay;
+pub use replay::*;

@@ -4,7 +4,7 @@ use protocol::{
     impl_api_method, server_chat_api::api_declarations::SendNewMatch,
     user_identity::NodeIdentity,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tracing::info;
 
 use crate::server::db::{
@@ -22,7 +22,7 @@ use crate::server::db::{
 // )
 // ENGINE = MergeTree ()
 // ORDER BY (game_type, start_time, user_ids,  game_seed)
-#[derive(Row, Serialize)]
+#[derive(Row, Serialize, Deserialize)]
 pub struct MatchRow {
     pub game_type: String,
     pub start_time: i64,

@@ -37,6 +37,12 @@ pub fn Nav() -> Element {
             }
             ul {
                 li {
+                    Link { to: Route::ReplayHomePage { }, small { "replay" } }
+                }
+            }
+
+            ul {
+                li {
                     NetworkConnectionStatusIcon {}
                 }
             }
