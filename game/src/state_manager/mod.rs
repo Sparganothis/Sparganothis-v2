@@ -76,7 +76,6 @@ impl GameStateManager {
         tracing::info!("GameManager(): main_loop() started");
 
         while !current_state.game_over() {
-            tracing::info!("GameManager(): main_loop() iteration");
             let mut fut = n0_future::FuturesUnordered::new();
             let state2 = current_state;
             for manager in self.rule_managers.iter() {
@@ -87,19 +86,15 @@ impl GameStateManager {
                 fut.push(next);
             }
             while let Some((rule_name, result)) = fut.next().await {
-                tracing::info!("GameManager(): GOT RULE REPLY FROM RULE {rule_name}!");
                 match result {
                     Ok(Some(result)) => {
-                        tracing::info!("GameManager(): GOT OK result!  \n WILL DROP FUT AFTER {rule_name}");
                         drop(fut);
-                        tracing::info!("GameManager(): DROP FUT FUT OK - {rule_name}");
 
                         current_state = result;
                         self._set_state_and_notify(result).await;
                         break;
                     }
                     Ok(None) => {
-                        tracing::info!("GameManager(): DO NOTHING for {rule_name}");
                         // do nothing
                     }
                     Err(err) => {

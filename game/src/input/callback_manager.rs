@@ -251,11 +251,11 @@ impl RuleManager for InputCallbackManagerRule {
         &self,
         _state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
-        tracing::info!("InputCallbackManagerRule before lock.");
+        // tracing::info!("InputCallbackManagerRule before lock.");
         let mut recv = self.action_receiver.lock().await;
 
         loop {
-            tracing::info!("InputCallbackManagerRule after lock.");
+            // tracing::info!("InputCallbackManagerRule after lock.");
             let Some(next_action) = recv.next().fuse().await else {
                 tracing::info!(
                     "InputCallbackManagerRule NO RECV NEXT TET ACTION - closed??."
