@@ -5,14 +5,14 @@ use protocol::{
     server_chat_api::api_declarations::{SendNewGameState, SendNewMatch},
     user_identity::NodeIdentity,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tracing::info;
 
 use crate::server::db::{
     clickhouse_client::get_clickhouse_client, guest_login::serialize_base64,
 };
 
-#[derive(Row, Serialize)]
+#[derive(Row, Serialize, Deserialize)]
 pub struct GameStateRow {
     pub game_type: String,
     pub user_id: String,

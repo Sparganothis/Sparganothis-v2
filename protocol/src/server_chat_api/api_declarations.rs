@@ -23,3 +23,20 @@ pub struct MatchRow2 {
 }
 
 declare_api_method!(GetReplayMatchList, (), Vec<MatchRow2>);
+
+declare_api_method!(GetReplayMatchDetail, String, MatchRow2);
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Serialize)]
+pub struct GameStateRow2 {
+    pub game_type: String,
+    pub user_id: String,
+    pub start_time: i64,
+    pub game_seed: String,
+    pub state_idx: i64,
+
+    pub data_version: i64,
+    pub last_action: String,
+    pub state_data: Option<GameState>,
+}
+
+declare_api_method!(GetGameStateRowsForMatch, MatchRow2, Vec<GameStateRow2>);
