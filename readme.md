@@ -1,6 +1,6 @@
 # install
 
-- dioxus-cli ver 0.7.0-alpha2
+- cargo binstall dioxus-cli@0.6.3 wasm-bindgen@0.2.99
 - clang
   - https://github.com/llvm/llvm-project/releases
   -  win64.exe 

@@ -63,7 +63,7 @@ jobs:
       uses: cargo-bins/cargo-binstall@main
 
     - name: Install dioxus-cli
-      run: cargo binstall dioxus-cli@0.6.3 --no-confirm --force || cargo install dioxus-cli@0.6.3
+      run: cargo binstall dioxus-cli@0.6.3 wasm-bindgen@0.2.99 --no-confirm --force || cargo install dioxus-cli@0.6.3 wasm-bindgen@0.2.99
 
     - name: Send Chat Message Started
       run: |
