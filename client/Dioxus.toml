@@ -4,7 +4,7 @@
 name = "client"
 
 [web.app]
-base_path = "Sparganothis-v2"
+# base_path = "Sparganothis-v2"
 # HTML title tag content
 title = "Sparganothis-v2"
 
