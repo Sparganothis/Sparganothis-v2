@@ -213,20 +213,23 @@ impl RuleManager for Game1v1RecvLinesFromOpponentRule {
         &self,
         my_state: GameState,
     ) -> anyhow::Result<Option<GameState>> {
-        let Some(opponent_state) = { self.0.lock().await.next().fuse() }.await
-        else {
-            anyhow::bail!("no oppoonent omves ???");
-        };
-        if my_state.game_over() || opponent_state.game_over() {
-            return Ok(None);
-        }
-        if opponent_state.total_garbage_sent == my_state.garbage_recv {
+        if my_state.game_over() {
             return Ok(None);
         }
 
-        let mut new_state = my_state;
-        new_state.apply_raw_received_garbage(opponent_state.total_garbage_sent);
-        Ok(Some(new_state))
+        while let Some(opponent_state) =
+            { self.0.lock().await.next().fuse() }.await
+        {
+            if opponent_state.total_garbage_sent == my_state.garbage_recv {
+                continue;
+            }
+
+            let mut new_state = my_state;
+            new_state
+                .apply_raw_received_garbage(opponent_state.total_garbage_sent);
+            return Ok(Some(new_state));
+        }
+        anyhow::bail!("out of opponent states!")
     }
 }
 
