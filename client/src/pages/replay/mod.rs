@@ -1,10 +1,17 @@
+use std::collections::HashMap;
+
 use dioxus::{html::elements, prelude::*};
+use game::tet::GameState;
 use protocol::server_chat_api::api_declarations::{
     GetGameStateRowsForMatch, GetReplayMatchDetail, GetReplayMatchList,
     MatchRow2,
 };
 
-use crate::{network::NetworkState, route::Route};
+use crate::{
+    comp::{game_display::GameDisplay, slider::Slider},
+    network::NetworkState,
+    route::Route,
+};
 
 #[component]
 pub fn ReplayHomePage() -> Element {
@@ -113,9 +120,10 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
     };
 
     let api2 = api.clone();
+    let m2 = match_info.clone();
     let _r = use_resource(move || {
         let api2 = api2.clone();
-        let match_id = match_info.clone();
+        let match_id = m2.clone();
         async move {
             let Ok(r) =
                 api2.call_method::<GetGameStateRowsForMatch>(match_id).await
@@ -128,20 +136,77 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
         }
     });
 
+    let match_info = match_info.clone();
+    let rows2 = use_memo(move || {
+        let rows1 = match_row.read().clone();
+        let mut rows2 = HashMap::<String, Vec<GameState>>::new();
+        for row in rows1 {
+            let ins = rows2.entry(row.user_id).or_default();
+            let Some(state) = &row.state_data else {
+                continue;
+            };
+            ins.push(state.clone());
+        }
+
+        rows2
+    });
+
     rsx! {
 
         if !err.read().is_empty()
         {
             {err}
         } else {
-            h1 {
-                "STATE LIST!"
+            div {
+                style: "width: 100%;
+                 height: 100%; flex-direction:row; display:flex;",
+                for x in rows2.read().iter() {
+                    GameStateBrowser {data: (x.1).clone()}
+                }
             }
-            for x in match_row.read().iter() {
-                li {
-                    pre {
-                        "{x:?}"
-                    }
+        }
+    }
+}
+
+#[component]
+pub fn GameStateBrowser(data: ReadOnlySignal<Vec<GameState>>) -> Element {
+    let idx = use_signal(move || 0);
+    let max = use_signal(move || {
+        let i = data.read().len() as i32;
+        tracing::warn!("\n \n\n MAXMAXMXAMX : {i} \n\n");
+        i
+    });
+
+    let state = use_memo(move || {
+        let idx = *idx.read();
+        let vec = data.read();
+        let max_idx = vec.len();
+        if max_idx == 0 {
+            return None;
+        }
+        let mut idx = idx as usize;
+        if idx >= max_idx {
+            idx = max_idx - 1;
+        }
+        vec.get(idx).cloned()
+    });
+
+    rsx! {
+        div {
+            style: "display:flex; width:40%;height:100%;flex-direction:column;",
+            Slider {
+                label: "SLIDER".to_string(),
+                m: idx,
+                default_value: 0,
+                min: 0,
+                max: {*max.read()}
+            }
+            "max: {*max.read()}"
+
+            div {
+                style: "width: 100%; height: 80%;border:1px solid black;",
+                if let Some(state) = state.read().as_ref() {
+                    GameDisplay {game_state: state.clone()}
                 }
             }
         }

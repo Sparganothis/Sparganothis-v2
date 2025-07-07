@@ -96,10 +96,24 @@ pub async fn db_get_game_states_for_match(
     let client = get_clickhouse_client();
 
     let all_matches = {
+        tracing::warn!(
+            " \n\n
+        SELECT * FROM game_states WHERE game_type = '{}'
+         AND start_time = '{}'
+          AND game_seed = '{}'
+           ORDER BY user_id, state_idx
+        \n\n",
+            _arg.game_type,
+            _arg.start_time,
+            _arg.game_seed
+        );
+
         let cursor = client
             .query("SELECT ?fields FROM ? WHERE game_type = ? AND start_time = ? AND game_seed = ? ORDER BY user_id, state_idx")
             .bind(Identifier("game_states"))
-            .bind(_arg.game_type).bind(_arg.start_time).bind(_arg.game_seed)
+            .bind(_arg.game_type)
+            .bind(_arg.start_time)
+            .bind(_arg.game_seed)
             .fetch_all::<GameStateRow>()
             .await?;
         let count = cursor;
