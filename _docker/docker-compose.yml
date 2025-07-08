@@ -56,7 +56,7 @@ services:
     volumes:
       - clickhouse_data3:/var/lib/clickhouse
       # - ./data:/var/lib/clickhouse/user_files
-      # - ./clickhouse-server-config-override.xml:/etc/clickhouse-server/config.d/clickhouse-server-config-override.xml
+      - ./clickhouse_log_disable.xml:/etc/clickhouse-server/config.d/z_log_disable.xml
     healthcheck:
       test: wget --no-verbose --tries=1 http://127.0.0.1:8123/ping || exit 1
       interval: 13s
@@ -65,6 +65,7 @@ services:
     memswap_limit: 2000M
     mem_limit: 2000M
     restart: unless-stopped
+    
   clickhouse-monitoring:
     image: ghcr.io/duyet/clickhouse-monitoring:2cc8058
     environment:
