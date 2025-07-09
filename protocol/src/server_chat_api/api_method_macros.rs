@@ -101,7 +101,7 @@ pub struct ApiMethodImpl {
 macro_rules! impl_api_method {
     ($name: tt, $func_name: tt) => { $crate::paste::paste! {
         #[allow(non_snake_case)]
-        async fn [< __ $name _wrapper1>] (from: NodeIdentity, arg: Vec<u8>) -> anyhow::Result<Vec<u8>> {
+        async fn [< __ $name _wrapper1>] (from: $crate::user_identity::NodeIdentity, arg: Vec<u8>) -> anyhow::Result<Vec<u8>> {
                 use $crate::server_chat_api::api_method_macros::ApiMethod;
                 type Arg = <$name as ApiMethod>::Arg;
                 type Ret = <$name as ApiMethod>::Ret;
@@ -111,12 +111,12 @@ macro_rules! impl_api_method {
                 Ok(ret)
         }
         #[allow(non_snake_case)]
-        async fn [< __ $name _wrapper2>] (from: NodeIdentity, arg: Vec<u8>) -> Result<Vec<u8>, String> {
+        async fn [< __ $name _wrapper2>] (from: $crate::user_identity::NodeIdentity, arg: Vec<u8>) -> Result<Vec<u8>, String> {
             let ret = [< __ $name _wrapper1>](from, arg).await.map_err(|e| format!("err: {e:#?}"));
             ret
         }
         #[allow(non_snake_case)]
-        pub fn [< __ $name _wrapper3>] (from: NodeIdentity, arg: Vec<u8>) -> std::pin::Pin<Box<dyn futures::Future<Output=Result<Vec<u8>, String>>+Send>> {
+        pub fn [< __ $name _wrapper3>] (from: $crate::user_identity::NodeIdentity, arg: Vec<u8>) -> std::pin::Pin<Box<dyn futures::Future<Output=Result<Vec<u8>, String>>+Send>> {
             let future = [< __ $name _wrapper2>](from, arg);
             use futures::FutureExt;
             future.boxed()

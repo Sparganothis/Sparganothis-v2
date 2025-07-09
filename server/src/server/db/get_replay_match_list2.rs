@@ -3,7 +3,7 @@ use base64::Engine;
 use game::{api::game_match::GameMatch, timestamp::get_timestamp_now_ms};
 use protocol::server_chat_api::api_declarations::GameStateRow2;
 use protocol::{
-    impl_api_method, postcard, server_chat_api::api_declarations::MatchRow2,
+    server_chat_api::api_declarations::MatchRow2,
     user_identity::NodeIdentity,
 };
 
@@ -49,8 +49,7 @@ pub async fn db_get_list_matches(
     Ok(all2)
 }
 
-use protocol::server_chat_api::api_declarations::GetReplayMatchList;
-impl_api_method!(GetReplayMatchList, db_get_list_matches); // INVENTORY OK
+
 
 pub async fn db_get_detail_match(
     from: NodeIdentity,
@@ -86,8 +85,7 @@ pub async fn db_get_detail_match(
     Ok(all2.clone())
 }
 
-use protocol::server_chat_api::api_declarations::GetReplayMatchDetail;
-impl_api_method!(GetReplayMatchDetail, db_get_detail_match); // INVENTORY OK
+
 
 pub async fn db_get_game_states_for_match(
     _from: NodeIdentity,
@@ -144,5 +142,3 @@ pub async fn db_get_game_states_for_match(
     Ok(all2)
 }
 
-use protocol::server_chat_api::api_declarations::GetGameStateRowsForMatch;
-impl_api_method!(GetGameStateRowsForMatch, db_get_game_states_for_match); // inventory ok

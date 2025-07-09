@@ -1,10 +1,6 @@
 use clickhouse::Row;
 use game::{api::game_match::GameMatch, tet::GameState};
-use protocol::{
-    impl_api_method,
-    server_chat_api::api_declarations::{SendNewGameState, SendNewMatch},
-    user_identity::NodeIdentity,
-};
+use protocol::user_identity::NodeIdentity;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -25,7 +21,7 @@ pub struct GameStateRow {
     pub state_data: String,
 }
 
-async fn db_send_new_game(
+pub async fn db_send_new_gamestate(
     _from: NodeIdentity,
     (_match, game_state): (GameMatch<NodeIdentity>, GameState),
 ) -> anyhow::Result<()> {
@@ -56,5 +52,3 @@ async fn db_send_new_game(
 
     Ok(())
 }
-
-impl_api_method!(SendNewGameState, db_send_new_game);

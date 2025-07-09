@@ -1,9 +1,6 @@
 use clickhouse::Row;
 use game::api::game_match::GameMatch;
-use protocol::{
-    impl_api_method, server_chat_api::api_declarations::SendNewMatch,
-    user_identity::NodeIdentity,
-};
+use protocol::user_identity::NodeIdentity;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -42,7 +39,7 @@ pub struct GameRow {
     pub match_info: Option<String>,
 }
 
-async fn db_send_new_game(
+pub async fn db_send_new_game(
     _from: NodeIdentity,
     _match: GameMatch<NodeIdentity>,
 ) -> anyhow::Result<()> {
@@ -112,4 +109,3 @@ pub async fn db_send_new_match(
     Ok(())
 }
 
-impl_api_method!(SendNewMatch, db_send_new_match);
