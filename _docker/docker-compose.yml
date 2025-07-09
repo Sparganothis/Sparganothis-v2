@@ -108,18 +108,14 @@ services:
     restart: unless-stopped
 
 
-  nf-data-explorer:
-    image: gesellix/nf-data-explorer@sha256:c1f36d28c00c5bb562fd275122e866b65e00a4df0c3046b35a7f3f8700c2a177
-    hostname: nf-data-explorer
-    container_name: nf-data-explorer
-    # ports:
-      # - '8086:80'
-    command: yarn start
-    environment:
-      - REDIS_HOST=redis
-      - DATA_EXPLORER_CONFIG_NAME=a
+  redis-insight:
+    image: redis/redisinsight:latest
+    hostname: redis-insight 
+    container_name: redis-insight
+    ports:
+      - 127.0.0.1:23000:5540
     volumes:
-      - /apps/nf-data-explorer/data
+      - /data
     memswap_limit: 1300M
     mem_limit: 1300M
     restart: unless-stopped
