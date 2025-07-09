@@ -108,4 +108,3 @@ pub async fn db_send_new_match(
 
     Ok(())
 }
-

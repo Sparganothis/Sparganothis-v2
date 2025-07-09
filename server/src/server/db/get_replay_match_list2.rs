@@ -3,8 +3,7 @@ use base64::Engine;
 use game::{api::game_match::GameMatch, timestamp::get_timestamp_now_ms};
 use protocol::server_chat_api::api_declarations::GameStateRow2;
 use protocol::{
-    server_chat_api::api_declarations::MatchRow2,
-    user_identity::NodeIdentity,
+    server_chat_api::api_declarations::MatchRow2, user_identity::NodeIdentity,
 };
 
 use crate::server::db::send_new_gamestate::GameStateRow;
@@ -49,8 +48,6 @@ pub async fn db_get_list_matches(
     Ok(all2)
 }
 
-
-
 pub async fn db_get_detail_match(
     from: NodeIdentity,
     _arg: String,
@@ -84,8 +81,6 @@ pub async fn db_get_detail_match(
     let all2 = all2.get(0).context("no result!")?;
     Ok(all2.clone())
 }
-
-
 
 pub async fn db_get_game_states_for_match(
     _from: NodeIdentity,
@@ -141,4 +136,3 @@ pub async fn db_get_game_states_for_match(
         .collect::<Vec<_>>();
     Ok(all2)
 }
-

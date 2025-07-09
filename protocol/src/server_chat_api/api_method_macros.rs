@@ -49,8 +49,6 @@ pub trait ApiMethod {
 //     }
 // }
 
-
-
 // pub struct LoginApiMethod;
 // #[async_trait]
 // impl ApiMethod for LoginApiMethod {
@@ -73,8 +71,6 @@ macro_rules! declare_api_method {
         // }
     } }
 }
-
-
 
 pub struct ApiMethodImpl {
     pub name: &'static str,
@@ -133,10 +129,12 @@ macro_rules! impl_api_method {
 
 #[macro_export]
 macro_rules! api_wrapper_fn {
-    ($name: tt) => { $crate::paste::paste! {
-         [< __ $name _wrapper3>] 
-    }
-}}
+    ($name: tt) => {
+        $crate::paste::paste! {
+             [< __ $name _wrapper3>]
+        }
+    };
+}
 
 // pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 1] = [
 //     ApiMethodImpl {
@@ -144,7 +142,6 @@ macro_rules! api_wrapper_fn {
 //         func: server::db::get_replay_match_list2::__GetReplayMatchList_wrapper3,
 //     }
 // ];
-
 
 // EXAMPLE IMPLEMENTAITON OF API METHOS
 // declare_api_method!(ListMethods, (), Vec<ApiMethodInfo>);

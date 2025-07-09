@@ -86,7 +86,7 @@ impl RedLock {
     pub fn get_unique_lock_id(&self) -> io::Result<Vec<u8>> {
         let mut v = vec![];
         for _i in 0..20 {
-            let b : u8 = (&mut rand::thread_rng()).gen();
+            let b: u8 = (&mut rand::thread_rng()).gen();
             v.push(b);
         }
         Ok(v)
@@ -139,7 +139,11 @@ impl RedLock {
     ///
     /// `Err(RedisError)` is returned on any Redis error, `None` is returned if the lock could
     /// not be acquired and the user should retry
-    pub fn lock(&self, resource: &[u8], ttl: usize) -> Result<Option<Lock>, RedisError> {
+    pub fn lock(
+        &self,
+        resource: &[u8],
+        ttl: usize,
+    ) -> Result<Option<Lock>, RedisError> {
         let val = self.get_unique_lock_id().unwrap();
 
         let mut rng = thread_rng();
@@ -203,7 +207,11 @@ impl RedLock {
         Ok(RedLockGuard { lock })
     }
 
-    pub fn acquire(&self, resource: &[u8], ttl: usize) -> Result<RedLockGuard<'_>, RedisError> {
+    pub fn acquire(
+        &self,
+        resource: &[u8],
+        ttl: usize,
+    ) -> Result<RedLockGuard<'_>, RedisError> {
         let lock;
         loop {
             if let Some(l) = self.lock(resource, ttl)? {
@@ -214,13 +222,19 @@ impl RedLock {
         Ok(RedLockGuard { lock })
     }
 
-    fn unlock_instance(&self, client: &redis::Client, resource: &[u8], val: &[u8]) -> bool {
+    fn unlock_instance(
+        &self,
+        client: &redis::Client,
+        resource: &[u8],
+        val: &[u8],
+    ) -> bool {
         let mut con = match client.get_connection() {
             Err(_containers) => return false,
             Ok(val) => val,
         };
         let script = redis::Script::new(UNLOCK_SCRIPT);
-        let result: RedisResult<i32> = script.key(resource).arg(val).invoke(&mut con);
+        let result: RedisResult<i32> =
+            script.key(resource).arg(val).invoke(&mut con);
         match result {
             Ok(val) => val == 1,
             Err(_containers) => false,

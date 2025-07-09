@@ -82,5 +82,3 @@ pub async fn db_add_guest_login(
 
     Ok(())
 }
-
-

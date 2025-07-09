@@ -6,10 +6,7 @@ use protocol::{
     global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
-        api_method_macros::{
-            ApiMethodImpl, ServerInfo,
-            SERVER_VERSION,
-        },
+        api_method_macros::{ApiMethodImpl, ServerInfo, SERVER_VERSION},
         join_chat::{
             server_join_server_chat, ServerChatMessageContent,
             ServerChatPresence, ServerChatRoomType,
