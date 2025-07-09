@@ -99,6 +99,13 @@ services:
       VITE_CLICKHOUSE_USER: "sparganothis"
       VITE_CLICKHOUSE_PASS: "sparganothis"
 
+  redis:
+    image: redis:8.0.3
+    ports:
+      - 127.0.0.1:6379:6379
+    memswap_limit: 300M
+    mem_limit: 300M
+    restart: unless-stopped
 
 
 volumes:
