@@ -7,7 +7,7 @@ use protocol::{
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
         api_method_macros::{
-            inventory_get_implementation_by_name, ApiMethodImpl, ServerInfo,
+            ApiMethodImpl, ServerInfo,
             SERVER_VERSION,
         },
         join_chat::{
@@ -20,6 +20,8 @@ use protocol::{
 };
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
+
+use crate::inventory_impl_list::inventory_get_implementation_by_name;
 
 pub async fn server_main_loop(
     global_mm: GlobalMatchmaker,

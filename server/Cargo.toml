@@ -20,6 +20,7 @@ game = { path = "../game" }
 
 serde = "1"
 clickhouse = "0.13.3"
+paste = "1"
 
 # [dev-dependencies]
 # clickhouse = { version = "0.13.3", features = ["test-util"] }

@@ -50,7 +50,7 @@ pub async fn db_get_list_matches(
 }
 
 use protocol::server_chat_api::api_declarations::GetReplayMatchList;
-impl_api_method!(GetReplayMatchList, db_get_list_matches);
+impl_api_method!(GetReplayMatchList, db_get_list_matches); // INVENTORY OK
 
 pub async fn db_get_detail_match(
     from: NodeIdentity,
@@ -87,7 +87,7 @@ pub async fn db_get_detail_match(
 }
 
 use protocol::server_chat_api::api_declarations::GetReplayMatchDetail;
-impl_api_method!(GetReplayMatchDetail, db_get_detail_match);
+impl_api_method!(GetReplayMatchDetail, db_get_detail_match); // INVENTORY OK
 
 pub async fn db_get_game_states_for_match(
     _from: NodeIdentity,
@@ -145,4 +145,4 @@ pub async fn db_get_game_states_for_match(
 }
 
 use protocol::server_chat_api::api_declarations::GetGameStateRowsForMatch;
-impl_api_method!(GetGameStateRowsForMatch, db_get_game_states_for_match);
+impl_api_method!(GetGameStateRowsForMatch, db_get_game_states_for_match); // inventory ok
