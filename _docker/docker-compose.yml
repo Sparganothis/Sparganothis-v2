@@ -107,12 +107,25 @@ services:
     mem_limit: 300M
     restart: unless-stopped
 
-  nf-data:
-    image: gesellix/nf-data-explorer:latest
-    ports:
-      - 127.0.0.1:23000:3000
-    memswap_limit: 1300M
-    mem_limit: 1300M
+
+  nf-data-explorer:
+    image: gesellix/nf-data-explorer@sha256:c1f36d28c00c5bb562fd275122e866b65e00a4df0c3046b35a7f3f8700c2a177
+    hostname: nf-data-explorer
+    container_name: nf-data-explorer
+    # ports:
+      # - '8086:80'
+    command: yarn start
+    environment:
+      - REDIS_HOST=redis
+      - DATA_EXPLORER_CONFIG_NAME=a
+    volumes:
+      - /apps/nf-data-explorer/data
+    deploy:
+      resources:
+        limits:
+          memory: 1000M
+        reservations:
+          memory: 400M
     restart: unless-stopped
 
 
