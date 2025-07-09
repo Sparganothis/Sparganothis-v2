@@ -5,8 +5,8 @@ use protocol::{impl_api_method, user_identity::NodeIdentity};
 
 use crate::server::db::clickhouse_client::get_clickhouse_client;
 
-    use serde::Serialize;
 use clickhouse::{sql::Identifier, Row};
+use serde::Serialize;
 
 #[derive(Row, Serialize)]
 struct GuestUser {
@@ -16,23 +16,22 @@ struct GuestUser {
     data_version: i64,
 }
 
-
 #[derive(Row, Serialize)]
 struct GuestUserLoginEvent {
     user_id: String,
     last_login: i64,
 }
 
-
-pub async fn db_add_guest_login(from: NodeIdentity, _arg: ()) -> anyhow::Result<()> {
+pub async fn db_add_guest_login(
+    from: NodeIdentity,
+    _arg: (),
+) -> anyhow::Result<()> {
     tracing::info!("DB ADD GUEST LOGIN for user = {:?}", from);
 
     let client = get_clickhouse_client();
 
     let user_id = *from.user_id().as_bytes();
     let user_id = base64::prelude::BASE64_URL_SAFE.encode(user_id);
-
-
 
     let new_guest_user = GuestUser {
         user_id: user_id.clone(),
@@ -47,12 +46,15 @@ pub async fn db_add_guest_login(from: NodeIdentity, _arg: ()) -> anyhow::Result<
 
     // select
     let user_count = {
-        let  cursor = client.query( "SELECT count() FROM ? WHERE user_id = ?",        ).bind(Identifier("guest_users"))
-        .bind(user_id.clone()).fetch_all::<u64>().await?;
+        let cursor = client
+            .query("SELECT count() FROM ? WHERE user_id = ?")
+            .bind(Identifier("guest_users"))
+            .bind(user_id.clone())
+            .fetch_all::<u64>()
+            .await?;
         let count = *cursor.get(0).context("no count row??")?;
         count
     };
-
 
     if user_count == 0 {
         let mut insert = client.insert("guest_users")?;
@@ -63,7 +65,6 @@ pub async fn db_add_guest_login(from: NodeIdentity, _arg: ()) -> anyhow::Result<
     let mut insert = client.insert("guest_user_login_events ")?;
     insert.write(&guest_login_event).await?;
     insert.end().await?;
-
 
     Ok(())
 }

@@ -12,11 +12,10 @@ pub struct ServerInfo {
     pub server_name: String,
 }
 
-
 pub trait ApiMethod {
     const NAME: &'static str;
-    type Arg: Serialize+for<'a> Deserialize<'a>;
-    type Ret: Serialize+for<'a> Deserialize<'a>;
+    type Arg: Serialize + for<'a> Deserialize<'a>;
+    type Ret: Serialize + for<'a> Deserialize<'a>;
 }
 
 struct ApiMethodInfoStatic {
@@ -32,9 +31,16 @@ pub struct ApiMethodInfo {
 }
 
 impl ApiMethodInfoStatic {
-    pub const fn new(name: &'static str, arg: &'static str, ret: &'static str) -> ApiMethodInfoStatic
-    {
-        ApiMethodInfoStatic { name: name, arg: arg, ret: ret }
+    pub const fn new(
+        name: &'static str,
+        arg: &'static str,
+        ret: &'static str,
+    ) -> ApiMethodInfoStatic {
+        ApiMethodInfoStatic {
+            name: name,
+            arg: arg,
+            ret: ret,
+        }
     }
     pub fn to_dynamic(&self) -> ApiMethodInfo {
         ApiMethodInfo {
@@ -53,7 +59,6 @@ fn list_api_methods() -> Vec<ApiMethodInfo> {
     }
     v
 }
-
 
 // pub struct LoginApiMethod;
 // #[async_trait]
@@ -78,17 +83,20 @@ macro_rules! declare_api_method {
 }
 pub struct ApiMethodImpl {
     pub name: &'static str,
-    pub func: fn (NodeIdentity, Vec<u8>) -> std::pin::Pin<Box<
-        dyn futures::Future<
-            Output = Result< Vec<u8>, String >
-        > + Send
-        >>,
+    pub func: fn(
+        NodeIdentity,
+        Vec<u8>,
+    ) -> std::pin::Pin<
+        Box<dyn futures::Future<Output = Result<Vec<u8>, String>> + Send>,
+    >,
 }
 inventory::collect!(ApiMethodImpl);
-pub fn inventory_get_implementation_by_name(name: &str) -> anyhow::Result<&'static ApiMethodImpl> {
+pub fn inventory_get_implementation_by_name(
+    name: &str,
+) -> anyhow::Result<&'static ApiMethodImpl> {
     for x in inventory::iter::<ApiMethodImpl> {
         if x.name == name {
-            return Ok(x)
+            return Ok(x);
         }
     }
     anyhow::bail!("method not found!")
@@ -131,7 +139,10 @@ macro_rules! impl_api_method {
 // EXAMPLE IMPLEMENTAITON OF API METHOS
 declare_api_method!(ListMethods, (), Vec<ApiMethodInfo>);
 impl_api_method!(ListMethods, _list_api_methods);
-async fn _list_api_methods(_from: NodeIdentity, _arg: ()) -> anyhow::Result<Vec<ApiMethodInfo>> {
+async fn _list_api_methods(
+    _from: NodeIdentity,
+    _arg: (),
+) -> anyhow::Result<Vec<ApiMethodInfo>> {
     Ok(list_api_methods())
 }
 

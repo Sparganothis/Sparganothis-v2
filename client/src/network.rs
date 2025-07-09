@@ -3,7 +3,15 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL, chat::{IChatController, IChatSender}, global_chat::{GlobalChatPresence, GlobalChatRoomType}, global_matchmaker::GlobalMatchmaker, server_chat_api::{api_methods::LoginApiMethod, client_api_manager::{connect_api_manager, ClientApiManager}}, user_identity::UserIdentitySecrets
+    _const::PRESENCE_INTERVAL,
+    chat::{IChatController, IChatSender},
+    global_chat::{GlobalChatPresence, GlobalChatRoomType},
+    global_matchmaker::GlobalMatchmaker,
+    server_chat_api::{
+        api_methods::LoginApiMethod,
+        client_api_manager::{connect_api_manager, ClientApiManager},
+    },
+    user_identity::UserIdentitySecrets,
 };
 use tracing::{info, warn};
 
@@ -187,11 +195,11 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         }
     });
 
-
     // clietn api manager
 
     let mut client_api_manager_w = use_signal(move || None);
-    let client_api_manager = use_memo(move || client_api_manager_w.read().clone());
+    let client_api_manager =
+        use_memo(move || client_api_manager_w.read().clone());
 
     let _ = use_resource(move || {
         let mm = mm_signal.read().clone();
@@ -202,7 +210,9 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
             let api = match connect_api_manager(mm).await {
                 Ok(api) => api,
                 Err(e) => {
-                    tracing::error!("FAILED TO CREATE ClientApiManager: {e:#?}!");
+                    tracing::error!(
+                        "FAILED TO CREATE ClientApiManager: {e:#?}!"
+                    );
                     return;
                 }
             };
@@ -211,8 +221,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         }
     });
 
-
-    let _  = use_resource(move || {
+    let _ = use_resource(move || {
         let api = client_api_manager.read().clone();
         async move {
             let Some(api) = api else {
@@ -228,7 +237,6 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
             }
         }
     });
-
 
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),

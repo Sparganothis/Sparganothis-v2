@@ -1312,6 +1312,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "client_inventory_test"
+version = "0.1.0"
+dependencies = [
+ "dioxus",
+ "game",
+ "inventory",
+ "protocol",
+]
+
+[[package]]
 name = "client_terminal"
 version = "0.1.0"
 dependencies = [

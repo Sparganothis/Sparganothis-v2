@@ -13,11 +13,11 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-        {
-                let sub =
-            tracing_subscriber::FmtSubscriber::builder().with_max_level(tracing::Level::INFO);
+    {
+        let sub = tracing_subscriber::FmtSubscriber::builder()
+            .with_max_level(tracing::Level::INFO);
 
-            tracing::subscriber::set_global_default(sub.finish()).unwrap();
+        tracing::subscriber::set_global_default(sub.finish()).unwrap();
     }
 
     info!("server START...");
@@ -34,14 +34,14 @@ async fn main() -> Result<()> {
         },
         async move {
             let _r = tokio::signal::ctrl_c().await;
-             tracing::info!("* ctrl-c received");
+            tracing::info!("* ctrl-c received");
         },
     )
     .await;
 
     global_mm.shutdown().await?;
 
-     tracing::info!("* shutdown OK");
+    tracing::info!("* shutdown OK");
     std::process::exit(0);
 
     // Ok(())
