@@ -107,6 +107,14 @@ services:
     mem_limit: 300M
     restart: unless-stopped
 
+  nf-data:
+    image: gesellix/nf-data-explorer:latest
+    ports:
+      - 127.0.0.1:23000:3000
+    memswap_limit: 1300M
+    mem_limit: 1300M
+    restart: unless-stopped
+
 
 volumes:
   clickhouse_data3:
