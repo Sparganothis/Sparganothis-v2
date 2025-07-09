@@ -120,12 +120,8 @@ services:
       - DATA_EXPLORER_CONFIG_NAME=a
     volumes:
       - /apps/nf-data-explorer/data
-    deploy:
-      resources:
-        limits:
-          memory: 1000M
-        reservations:
-          memory: 400M
+    memswap_limit: 1300M
+    mem_limit: 1300M
     restart: unless-stopped
 
 
