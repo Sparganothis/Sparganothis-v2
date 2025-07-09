@@ -1,9 +1,8 @@
-use std::{cell::OnceCell, sync::Arc, time::Duration};
+use std::{cell::OnceCell, collections::HashMap, sync::Arc, time::Duration};
 
 use game::timestamp::get_timestamp_now_ms;
 use rand::{thread_rng, Rng};
 use redis::Value;
-use server::server::redis::lock::RedLock;
 use tokio::sync::Mutex;
 use tracing::{info, warn};
 
@@ -29,7 +28,6 @@ struct Killer {
 
 const UNLOCK_KILLER: OnceCell<Killer> =
     OnceCell::new();
-
 
 fn get_killer() -> Killer {
 let killer = UNLOCK_KILLER
@@ -137,6 +135,66 @@ async fn drop_lock(key: String) -> anyhow::Result<bool> {
     Ok(_r)
 }
 
+
+
+
+const COMPLETE_MATCH_FEEDS: OnceCell<Killer> =
+    OnceCell::new();
+
+
+
+
+async fn get_lock_for_match(match_user_count: i32, match_type: String, timeout_ms: i32, user_id_value: String) -> anyhow::Result<(Vec<String>, LockGuard)>
+
+{
+    let mut lock_keys = vec![];
+    let mut lock_values = HashMap::new();
+    let mut possible_insert_keys = vec![];
+
+    for i in 1..=match_user_count {
+        let key = format!("{match_type}_user_{i}");
+        let val = get_lock_value(&key).await?;
+        if val.is_none() {
+            possible_insert_keys.push(key.clone());
+        }
+        lock_values.insert(key.clone(), val);
+        lock_keys.push(key);
+    }
+    if possible_insert_keys.is_empty() {
+        anyhow::bail!("full queue for this key. try again later.");
+    }
+    let idx = (&mut rand::thread_rng()).gen_range(0..{possible_insert_keys.len()});
+    let insert_key = possible_insert_keys[idx].clone();
+
+    let _lock = set_lock(&insert_key,
+    &user_id_value, timeout_ms as i64).await?;
+    let Some(_lock) = _lock else {
+        anyhow::bail!("someone else got my lock!");
+    };
+    lock_values.insert(insert_key.clone(), Some(user_id_value).clone());
+
+    const RETRY_COUNT: u64 = 16;
+    for _retry in 0..RETRY_COUNT {
+        tokio::time::sleep(
+            Duration::from_millis(timeout_ms as u64/RETRY_COUNT)
+        ).await;
+        for key in lock_keys.iter() {
+            let val = get_lock_value(&key).await?;
+            lock_values.insert(key.clone(), val);
+        }
+        // check if all are in
+        let all_in = lock_values.values().all(Option::is_some);
+        if all_in {
+            let mut values = lock_values.values().filter_map(|x| x.clone()).collect::<Vec<_>>();
+            values.sort();
+            return Ok((values, _lock))
+
+        }
+    }
+
+    anyhow::bail!("timed out {timeout_ms} no complete match making!")
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     {
@@ -148,17 +206,14 @@ async fn main() -> anyhow::Result<()> {
     let random: u128 = (&mut thread_rng()).gen();
     let random = format!("{}", random);
 
-    match set_lock("gigi", &random, 3000).await {
-        Ok(Some(_lock)) => {
-            info!("WE HAVE THE LOCK!");
-            let v = get_lock_value("gigi").await?;
-            println!("LOCK BEFORE SLEEP: {v:?}");
+    match get_lock_for_match(
+        2, "1v1".to_string(), 5000, random
+
+    ).await {
+        Ok((vals, _lock)) => {
+            info!("WE HAVE THE LOCK - PLAY GAME NOW !!!!!");
+            println!("PLAYER LIST: {vals:?}");
             tokio::time::sleep(Duration::from_millis(2000)).await;
-            let v = get_lock_value("gigi").await?;
-            println!("LOCK AFTER SLEEP: {v:?}");
-        }
-        Ok(None) => {
-            info!("WE DO NOT HAVE THE LOCK!");
         }
         Err(e) => {
             tracing::error!("ERROR GETTING LOCK: {e:#?}");

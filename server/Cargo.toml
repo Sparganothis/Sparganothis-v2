@@ -27,5 +27,6 @@ redis = {version="0.32", features=["tokio-comp"]}
 # clickhouse = { version = "0.13.3", features = ["test-util"] }
 bytes = "1"
 base64 = "0.22"
+async-broadcast = "0.7"
 
 uuid = { workspace = true }
