@@ -5,7 +5,11 @@ use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
 use game::timestamp::get_timestamp_now_ms;
 use rand::{thread_rng, Rng};
 use redis::Value;
-use tokio::{sync::Mutex, task::JoinHandle, time::{sleep, timeout}};
+use tokio::{
+    sync::Mutex,
+    task::JoinHandle,
+    time::{sleep, timeout},
+};
 use tracing::{info, warn};
 
 const REDIS_CLIENT: std::cell::OnceCell<redis::Client> =
@@ -21,80 +25,80 @@ async fn redis_connection() -> anyhow::Result<redis::aio::MultiplexedConnection>
     Ok(client.get_multiplexed_tokio_connection().await?)
 }
 
-#[derive(Clone)]
-struct Killer {
-    tx: tokio::sync::mpsc::UnboundedSender<Option<String>>,
-    _handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
-}
+// #[derive(Clone)]
+// struct Killer {
+//     tx: tokio::sync::mpsc::UnboundedSender<Option<String>>,
+//     _handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
+// }
 
-fn make_killer() -> Killer {
-    tracing::info!("SUPER DUPER CONSTRUCTOR>");
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-    let h = tokio::task::spawn(async move {
-        tracing::info!("START KILLER");
-        while let Some(Some(r)) = rx.recv().await {
-            tracing::info!(" KILLER MESSAGE = {r}");
-            if let Err(e) = drop_lock(r).await {
-                tracing::error!("cannot drop redis lock: {e:#?}");
-            }
-        }
-        info!("KILLER EXIT!");
-    });
-    Killer {
-        tx,
-        _handle: Arc::new(Mutex::new(Some(h))),
-    }
-}
+// fn make_killer() -> Killer {
+//     tracing::info!("SUPER DUPER CONSTRUCTOR>");
+//     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+//     let h = tokio::task::spawn(async move {
+//         tracing::info!("START KILLER");
+//         while let Some(Some(r)) = rx.recv().await {
+//             tracing::info!(" KILLER MESSAGE = {r}");
+//             if let Err(e) = drop_lock(r).await {
+//                 tracing::error!("cannot drop redis lock: {e:#?}");
+//             }
+//         }
+//         info!("KILLER EXIT!");
+//     });
+//     Killer {
+//         tx,
+//         _handle: Arc::new(Mutex::new(Some(h))),
+//     }
+// }
 
-lazy_static::lazy_static! {
-    static ref UNLOCK_KILLER: Killer = {
-        make_killer()
-    };
-}
+// lazy_static::lazy_static! {
+//     static ref UNLOCK_KILLER: Killer = {
+//         make_killer()
+//     };
+// }
 
-fn get_killer() -> &'static Killer {
-    &UNLOCK_KILLER
-}
+// fn get_killer() -> &'static Killer {
+//     &UNLOCK_KILLER
+// }
 
-fn send_to_kill(key: String) {
-    let key2 = key.clone();
-    let killer = get_killer();
-    if let Err(e) = killer.tx.send(Some(key2)) {
-        tracing::error!("cannot send to kill list: {:#?}", e);
-    }
-}
+// fn send_to_kill(key: String) {
+//     let key2 = key.clone();
+//     let killer = get_killer();
+//     if let Err(e) = killer.tx.send(Some(key2)) {
+//         tracing::error!("cannot send to kill list: {:#?}", e);
+//     }
+// }
 
-fn kill_killer() {
-    let killer = get_killer();
-    if let Err(e) = killer.tx.send(None) {
-        tracing::error!("cannot send to kill list: {:#?}", e);
-    }
-}
+// fn kill_killer() {
+//     let killer = get_killer();
+//     if let Err(e) = killer.tx.send(None) {
+//         tracing::error!("cannot send to kill list: {:#?}", e);
+//     }
+// }
 
-async fn wait_for_killer_to_die() {
-    info!("WAIT FOR KILLER TO DIE!");
-    kill_killer();
-    tokio::time::sleep(Duration::from_millis(20)).await;
-    let killer = get_killer();
-    let _x = { killer._handle.lock().await.take() };
-    if let Some(_x) = _x {
-        let _x = _x.await;
-    }
-}
+// async fn wait_for_killer_to_die() {
+//     info!("WAIT FOR KILLER TO DIE!");
+//     kill_killer();
+//     tokio::time::sleep(Duration::from_millis(20)).await;
+//     let killer = get_killer();
+//     let _x = { killer._handle.lock().await.take() };
+//     if let Some(_x) = _x {
+//         let _x = _x.await;
+//     }
+// }
 
 pub struct LockGuard {
     key: String,
 }
-impl Drop for LockGuard {
-    fn drop(&mut self) {
-        // if ts > self.expires_at {
-        //     return;
-        // }
-        info!("spawn drop lock guard XXXXXXX");
-        let key = self.key.clone();
-        send_to_kill(key);
-    }
-}
+// impl Drop for LockGuard {
+//     fn drop(&mut self) {
+//         // if ts > self.expires_at {
+//         //     return;
+//         // }
+//         info!("spawn drop lock guard XXXXXXX");
+//         let key = self.key.clone();
+//         send_to_kill(key);
+//     }
+// }
 
 // returns true if locked, false if not locked (already locked), error on error.
 async fn set_lock(
@@ -206,7 +210,7 @@ async fn get_lock_for_match(
     let user_id_value2 = user_id_value.clone();
     let fut_we_found_group = async move {
         const RETRY_COUNT: u64 = 16;
-        for _retry in 0..RETRY_COUNT {
+        for _retry in 0..RETRY_COUNT - 1 {
             tokio::time::sleep(Duration::from_millis(
                 timeout_ms as u64 / RETRY_COUNT,
             ))
@@ -234,6 +238,16 @@ async fn get_lock_for_match(
                         vals: values.clone().into(),
                     })
                     .await?;
+                for x in lock_keys.iter() {
+                    match drop_lock(x.clone()).await {
+                        Ok(_x) => {
+                            tracing::info!("DROP LOCK {x} OK {_x}");
+                        }
+                        Err(e) => {
+                            tracing::error!("DROP LOCK {x} ERR {e}");
+                        }
+                    }
+                }
                 tracing::warn!("MATCH! fut_we_found_group:  for  userid={user_id_value2} list={values:?}");
                 return Ok(values);
             }
@@ -278,6 +292,7 @@ async fn get_lock_for_match(
     fut.push(fut_we_found_group.boxed());
 
     let f1 = fut.next().await.context("fut")?;
+
     let f2 = fut.next().await.context("fut")?;
 
     let f3 = f1.or(f2);
@@ -307,14 +322,14 @@ async fn main() -> anyhow::Result<()> {
 
     main_run().await?;
 
-    wait_for_killer_to_die().await;
+    // wait_for_killer_to_die().await;
 
     Ok(())
 }
 
 async fn main_run() -> anyhow::Result<()> {
     const PLAYERS_PER_SECOND: usize = 1;
-    const PLAYER_COUNT: usize = 20;
+    const PLAYER_COUNT: usize = 10;
     const SLEEP_S: f64 = 1.0 / PLAYERS_PER_SECOND as f64;
 
     let mut fut = FuturesUnordered::new();
@@ -365,21 +380,26 @@ async fn main_run() -> anyhow::Result<()> {
     Ok(())
 }
 
-
 async fn player_matchmaking_run(
     random: String,
 ) -> anyhow::Result<(Vec<String>, LockGuard)> {
-    
-    const TOTAL_RETRY_INTERVAL_MS: i64 = 5000;
-    const ITERATION_TIMEOUT_MS: i32 = 1300;
-    for _i in 0..3 {
-        let _p = player_matchmaking_run1(random.clone(), TOTAL_RETRY_INTERVAL_MS, ITERATION_TIMEOUT_MS).await;
+    const MATCHMAKING_TIMEOUT: i64 = 30000;
+    const TOTAL_RETRY_INTERVAL_MS: i64 = 3333;
+    const ITERATION_TIMEOUT_MS: i32 = 1000;
+    for _i in 0..(MATCHMAKING_TIMEOUT / TOTAL_RETRY_INTERVAL_MS) {
+        let _p = player_matchmaking_run1(
+            random.clone(),
+            TOTAL_RETRY_INTERVAL_MS,
+            ITERATION_TIMEOUT_MS,
+        )
+        .await;
         if let Ok(r) = _p {
             return Ok(r);
         }
 
         let t0 = get_timestamp_now_ms();
-        let tnext = t0 - (t0%TOTAL_RETRY_INTERVAL_MS) + TOTAL_RETRY_INTERVAL_MS;
+        let tnext =
+            t0 - (t0 % TOTAL_RETRY_INTERVAL_MS) + TOTAL_RETRY_INTERVAL_MS;
         let diff_ms = tnext - t0;
         if diff_ms > 0 {
             sleep(Duration::from_millis(diff_ms as u64)).await;
@@ -389,24 +409,30 @@ async fn player_matchmaking_run(
 }
 
 async fn player_matchmaking_run1(
-    random: String, timeout_msz: i64, iter_timeout_ms: i32,
+    random: String,
+    timeout_msz: i64,
+    iter_timeout_ms: i32,
 ) -> anyhow::Result<(Vec<String>, LockGuard)> {
-
     let fut = async move {
-    let t0 = get_timestamp_now_ms();
-    while get_timestamp_now_ms() - t0 < timeout_msz {
-        let _r =
-            get_lock_for_match(2, "1v1".to_string(), iter_timeout_ms, random.clone()).await;
-        if let Ok(_r) = _r {
-            return Ok(_r);
+        let t0 = get_timestamp_now_ms();
+        while get_timestamp_now_ms() - t0 < timeout_msz {
+            let _r = get_lock_for_match(
+                2,
+                "1v1".to_string(),
+                iter_timeout_ms,
+                random.clone(),
+            )
+            .await;
+            if let Ok(_r) = _r {
+                return Ok(_r);
+            }
+
+            let random_sleep: i32 = (&mut rand::thread_rng())
+                .gen_range(iter_timeout_ms / 20..iter_timeout_ms / 10);
+
+            sleep(Duration::from_millis(random_sleep as u64)).await;
         }
-
-        let random_sleep: i32 = (&mut rand::thread_rng()).gen_range(iter_timeout_ms/20..iter_timeout_ms/10);
-        
-        sleep(Duration::from_millis(random_sleep as u64)).await;
-    }
-    anyhow::bail!("player matchmaking timeout.");
-
+        anyhow::bail!("player matchmaking timeout.");
     };
 
     let fut = timeout(Duration::from_millis(timeout_msz as u64), fut).await??;
