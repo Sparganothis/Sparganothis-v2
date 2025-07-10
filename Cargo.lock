@@ -8254,6 +8254,7 @@ dependencies = [
  "futures",
  "game",
  "iroh",
+ "lazy_static",
  "n0-future",
  "paste",
  "protocol",
