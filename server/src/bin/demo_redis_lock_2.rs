@@ -1,4 +1,4 @@
-use std::{cell::OnceCell, collections::HashMap, sync::Arc, time::Duration};
+use std::{cell::OnceCell, collections::{BTreeSet, HashMap, HashSet}, sync::Arc, time::Duration};
 
 use anyhow::Context;
 use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
@@ -145,7 +145,7 @@ async fn player_matchmaking_run1(
 
     let read_retry_count = 3;
     for _r in 0..read_retry_count {
-        let v = redis_get_values(interesting_ids.clone()).await;
+        let v = get_lock_values(interesting_ids.clone()).await?;
         if v.len() == interesting_ids.len() {
             let mut v = v;
             v.sort();
@@ -156,17 +156,23 @@ async fn player_matchmaking_run1(
     anyhow::bail!("timeout2");
 }
 
-async fn redis_get_values(keys: Vec<String>) -> Vec<String> {
-    let mut v = vec![];
-    for key in keys {
-        if let Ok(k) = get_lock_value(&key).await {
-            if let Some(k) = k {
-                v.push(k);
-            }
-        }
-    }
-    v
+
+
+async fn get_lock_values(keys: Vec<String>) -> anyhow::Result<Vec<String>> {
+    let t0 = get_timestamp_now_ms();
+    let mut conn = redis_connection().await?;
+    let _r = redis::cmd("MGET")
+        .arg(keys.clone())
+        .query_async::<Vec<Option<String>>>(&mut conn)
+        .await;
+
+    let _r: Vec<String> = _r?.iter().filter_map(|x| x.clone()).collect();
+    let dt = get_timestamp_now_ms() - t0;
+    info!("MGET {} keys -> {} vals took {}ms", keys.len(), _r.len(), dt);
+    Ok(_r)
 }
+
+
 
 fn make_key(game_type: &str, i: i32) -> String {
     format!("mm_lock_{game_type}_{i}")
@@ -179,16 +185,38 @@ async fn fetch_player_slot(
     ttl_ms: i64,
 ) -> anyhow::Result<(i32, String)> {
     let t0 = get_timestamp_now_ms();
+    let _rand_sleep2: i32 
+        = (&mut thread_rng()).gen_range(0.._fetch_time/5);
+    sleep(Duration::from_millis(_rand_sleep2 as u64)).await;
 
+    let mut all_keys = vec![];
+    let mut key_to_i = HashMap::new();
     for i in 0..100 {
         let key = make_key(&game_type, i);
+        all_keys.push(key.clone());
+        key_to_i.insert(key, i);
+    }
+
+    let already_present_keys = get_lock_values(all_keys.clone()).await?;
+    let all_keys = BTreeSet::from_iter(all_keys.iter().cloned());
+    let already_present_keys = BTreeSet::from_iter(already_present_keys.iter().cloned());
+    let mut all_keys = Vec::from_iter(all_keys.iter().cloned());
+    all_keys.sort_by_key(|x| key_to_i[x]);
+
+    for key in all_keys {
+        if already_present_keys.contains(&key) {
+            continue;
+        }
+        // we can check this lock !
+
         if let Ok(_l) = set_lock(&key, &user_id, ttl_ms).await {
-            return Ok((i, key));
+            return Ok((key_to_i[&key], key));
         }
         if get_timestamp_now_ms() - t0 > _fetch_time as i64 {
             break;
         }
     }
+
     anyhow::bail!("no more keys to check!");
 }
 
