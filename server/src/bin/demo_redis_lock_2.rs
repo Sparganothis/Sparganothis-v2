@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use n0_future::{FuturesUnordered, StreamExt};
 use rand::{thread_rng, Rng};
-use server::server::multiplayer_matchmaker::run_multiplayer_matchmaker;
+use server::server::multiplayer::matchmaker::run_multiplayer_matchmaker;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -21,8 +21,8 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn main_run() -> anyhow::Result<()> {
-    const PLAYERS_PER_SECOND: f32 = 10.0;
-    const PLAYER_COUNT: usize = 100;
+    const PLAYERS_PER_SECOND: f32 = 7.0;
+    const PLAYER_COUNT: usize = 400;
     const SLEEP_S: f64 = 1.0 / PLAYERS_PER_SECOND as f64;
 
     let mut fut = FuturesUnordered::new();
@@ -78,7 +78,7 @@ async fn main_run() -> anyhow::Result<()> {
     }
     for (pair, count) in result_count.iter() {
         if *count != 2 {
-            tracing::error!("NOT EXACTLY 2: {pair}");
+            tracing::error!("NOT EXACTLY 2: {pair} = {count}");
         }
     }
     Ok(())

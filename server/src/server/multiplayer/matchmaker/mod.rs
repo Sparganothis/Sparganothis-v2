@@ -1,0 +1,2 @@
+mod redis_matchmaker_basic;
+pub use redis_matchmaker_basic::run_multiplayer_matchmaker;

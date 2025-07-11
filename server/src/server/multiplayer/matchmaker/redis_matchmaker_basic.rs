@@ -1,21 +1,13 @@
 use std::{
-    cell::OnceCell,
-    collections::{BTreeSet, HashMap, HashSet},
-    sync::Arc,
+    collections::{BTreeSet, HashMap},
     time::Duration,
 };
 
-use anyhow::Context;
-use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
 use game::timestamp::get_timestamp_now_ms;
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use redis::Value;
-use tokio::{
-    sync::Mutex,
-    task::JoinHandle,
-    time::{sleep, timeout},
-};
-use tracing::{debug, info, warn};
+use tokio::time::{sleep, timeout};
+use tracing::{debug, info};
 
 const REDIS_CLIENT: std::cell::OnceCell<redis::Client> =
     std::cell::OnceCell::new();
@@ -27,7 +19,8 @@ async fn redis_connection() -> anyhow::Result<redis::aio::MultiplexedConnection>
             redis::Client::open("redis://127.0.0.1:6379").unwrap()
         })
         .clone();
-    Ok(client.get_multiplexed_tokio_connection().await?)
+    let timeout = Duration::from_millis(250);
+    Ok(client.get_multiplexed_tokio_connection_with_response_timeouts(timeout, timeout).await?)
 }
 
 struct LockGuard {
@@ -72,7 +65,7 @@ pub async fn run_multiplayer_matchmaker(
         .await?;
 
     const TOTAL_RETRY_INTERVAL_MS: i64 = 3000;
-    const ITERATION_TIMEOUT_MS: i32 = 1000;
+    const ITERATION_TIMEOUT_MS: i32 = 888;
     for _i in 0..(MATCHMAKING_TIMEOUT / TOTAL_RETRY_INTERVAL_MS) {
         let t0 = get_timestamp_now_ms();
         let tnext =
@@ -104,7 +97,7 @@ async fn _wait_through_matchmaking_global_limit(
     global_timeout: i64,
     game_type: &str,
 ) -> anyhow::Result<()> {
-    const GLOBAL_USERS_PER_SECOND_RATE_LIMIT: i64 = 10;
+    const GLOBAL_USERS_PER_SECOND_RATE_LIMIT: i64 = 14;
 
     let exp = 1000 / GLOBAL_USERS_PER_SECOND_RATE_LIMIT;
     let t0 = get_timestamp_now_ms();
