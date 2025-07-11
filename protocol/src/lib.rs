@@ -7,7 +7,6 @@ pub mod chat;
 pub mod chat_presence;
 pub mod chat_ticket;
 pub(crate) mod echo;
-pub mod game_matchmaker;
 pub mod global_chat;
 pub mod global_matchmaker;
 pub(crate) mod main_node;

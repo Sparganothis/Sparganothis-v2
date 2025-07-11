@@ -1,0 +1,4 @@
+
+pub const API_SERVER_VERSION: i64 = 7;
+pub const API_SERVER_TIMEOUT_SECS: f32 = 34.0;
+pub const API_METHOD_CLIENT_TIMEOUT_SECONDS: f32 = 36.0;

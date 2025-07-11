@@ -76,7 +76,7 @@ pub async fn db_add_guest_login(
         insert.end().await?;
     }
 
-    let mut insert = client.insert("guest_user_login_events ")?;
+    let mut insert = client.insert("guest_user_login_events")?;
     insert.write(&guest_login_event).await?;
     insert.end().await?;
 

@@ -1,13 +1,19 @@
 use dioxus::prelude::*;
 
 use crate::{
-    comp::multiplayer::matchmaking::MatchmakingWindow,
-    route::{Route, UrlParam},
+    comp::multiplayer::matchmaking::MatchmakingWindow, network::NetworkState, route::{Route, UrlParam}
 };
 
 #[component]
 pub fn MatchmakingPage() -> Element {
     let mut error = use_signal(move || None);
+    let NetworkState{client_api_manager, global_mm, ..} = use_context::<NetworkState>();
+    let (Some(api), Some(mm)) = (client_api_manager.read().clone(), global_mm.read().clone()) else {
+        return rsx!{
+            "loading..."
+        };
+    };
+
     rsx! {
         article {
             style: "
@@ -21,6 +27,8 @@ pub fn MatchmakingPage() -> Element {
 
             if error.read().is_none() {
                 MatchmakingWindow {
+                    mm,
+                    api,
                     user_match_type: game::api::game_match::GameMatchType::_1v1,
                     on_opponent_confirm: move |other: game::api::game_match::GameMatch<protocol::user_identity::NodeIdentity>| {
                         navigator().push(Route::Play1v1Page{game_match: UrlParam(other)});

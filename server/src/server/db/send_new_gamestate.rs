@@ -42,13 +42,13 @@ pub async fn db_send_new_gamestate(
         state_data,
     };
 
-    info!("INSERT NEW GAMESTTEA!");
+    // info!("INSERT NEW GAMESTTEA!");
     let client = get_clickhouse_client();
     let mut insert = client.insert("game_states")?;
     insert.write(&new_row).await?;
     insert.end().await?;
 
-    info!("INSRT GAMESTTEA OK!");
+    // info!("INSRT GAMESTTEA OK!");
 
     Ok(())
 }

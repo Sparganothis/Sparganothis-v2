@@ -26,6 +26,7 @@ use crate::server::db::get_replay_match_list2::*;
 use crate::server::db::guest_login::*;
 use crate::server::db::send_new_gamestate::*;
 use crate::server::db::send_new_match::*;
+use crate::server::multiplayer::matchmaker::matchmaker_api::*;
 
 use protocol::server_chat_api::api_declarations::*;
 
@@ -35,8 +36,10 @@ impl_api_method!(GetGameStateRowsForMatch, db_get_game_states_for_match); // inv
 impl_api_method!(SendNewGameState, db_send_new_gamestate);
 impl_api_method!(SendNewMatch, db_send_new_match);
 impl_api_method!(LoginApiMethod, db_add_guest_login); // inventory ok
+impl_api_method!(RunMultiplayerMatchmakerPhase1, run_multiplayer_matchmaker_1);
+impl_api_method!(RunMultiplayerMatchmakerPhase2, run_multiplayer_matchmaker_2);
 
-pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 6] = [
+pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 8] = [
     /*                         get_replay_match_list2           */
     /* ======================================================== */
     api_method_impl!(GetReplayMatchList),
@@ -51,6 +54,11 @@ pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 6] = [
     /*                         send_new_match           */
     /* ======================================================== */
     api_method_impl!(SendNewMatch),
+
+    /*                         matchmaker_api           */
+    /* ======================================================== */
+    api_method_impl!(RunMultiplayerMatchmakerPhase1),
+    api_method_impl!(RunMultiplayerMatchmakerPhase2),
 ];
 
 pub fn inventory_get_implementation_by_name(

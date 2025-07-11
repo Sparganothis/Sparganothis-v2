@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::user_identity::NodeIdentity;
 
-pub const SERVER_VERSION: i64 = 5;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, PartialOrd)]
 pub struct ServerInfo {
@@ -108,7 +107,7 @@ macro_rules! impl_api_method {
         }
         #[allow(non_snake_case)]
         async fn [< __ $name _wrapper2>] (from: $crate::user_identity::NodeIdentity, arg: Vec<u8>) -> Result<Vec<u8>, String> {
-            let ret = [< __ $name _wrapper1>](from, arg).await.map_err(|e| format!("err: {e:#?}"));
+            let ret = [< __ $name _wrapper1>](from, arg).await.map_err(|e| format!("api method error: {e:#?}"));
             ret
         }
         #[allow(non_snake_case)]

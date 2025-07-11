@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use anyhow::Context;
 use n0_future::task::AbortOnDropHandle;
 use rand::Rng;
 use tokio::sync::RwLock;
@@ -8,11 +9,10 @@ use crate::{
     chat::{ChatController, IChatController, IChatReceiver, IChatSender},
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
-        api_method_macros::ApiMethod,
-        join_chat::{
+        api_const::API_METHOD_CLIENT_TIMEOUT_SECONDS, api_method_macros::ApiMethod, join_chat::{
             client_join_server_chat, fetch_server_ids,
             ServerChatMessageContent, ServerChatRoomType,
-        },
+        }
     },
     user_identity::NodeIdentity,
 };
@@ -89,7 +89,6 @@ pub async fn connect_api_manager(
     })
 }
 
-pub const API_METHOD_TIMEOUT_SECONDS: f32 = 5.0;
 
 impl ClientApiManager {
     pub async fn call_method<M: ApiMethod>(
@@ -103,10 +102,10 @@ impl ClientApiManager {
         // );
 
         let ret = n0_future::time::timeout(
-            std::time::Duration::from_secs_f32(API_METHOD_TIMEOUT_SECONDS),
+            std::time::Duration::from_secs_f32(API_METHOD_CLIENT_TIMEOUT_SECONDS),
             self._do_call_method::<M>(arg.clone()),
         )
-        .await;
+        .await.context("timeout API_METHOD_TIMEOUT_SECONDS");
         // tracing::info!(
         //     "vvv\ncall result method={} \n arg: {:#?} \nret: {:#?} \n^^^\n",
         //     M::NAME,
@@ -161,7 +160,7 @@ impl ClientApiManager {
             let Ok(ret_bytes) = ret_bytes else {
                 let err = ret_bytes.unwrap_err();
                 tracing::warn!("error: {:?}", err);
-                anyhow::bail!("got error: {err}");
+                anyhow::bail!("ClientApiManager: _do_call_method(): got error: {err}");
             };
             tracing::info!("\n Got back message with reply for method: \n {method_name} {nonce} : length = {}", ret_bytes.len());
             let ret = postcard::from_bytes(&ret_bytes)?;

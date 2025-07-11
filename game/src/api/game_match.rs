@@ -100,7 +100,7 @@ impl GameMatchType {
         match item {
             None => 0,
             Some(Self::_40lines) => 1,
-            Some(Self::_1v1) => 1,
+            Some(Self::_1v1) => 2,
             Some(Self::Blitz) => 1,
             Some(Self::_4v4) => 8,
             Some(Self::_10v10) => 20,

@@ -79,9 +79,6 @@ async fn cli_chat_window(global_mm: GlobalMatchmaker) -> Result<()> {
                 GlobalChatMessageContent::TextMessage { text } => {
                     println!("<{user_id}@{node_id}> {nickname}: {text}");
                 }
-                GlobalChatMessageContent::MatchmakingMessage { .. } => {
-                    println!("{nickname} matchmaking: 1v1 message!");
-                }
                 _ => {
                     println!("<{user_id}@{node_id}> {nickname}: other message: {:#?}", message.message)
                 }

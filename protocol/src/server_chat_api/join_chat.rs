@@ -7,7 +7,7 @@ use crate::{
     chat::{ChatController, IChatController},
     chat_ticket::ChatTicket,
     global_matchmaker::GlobalMatchmaker,
-    server_chat_api::api_method_macros::SERVER_VERSION,
+    server_chat_api::api_const::API_SERVER_VERSION,
     user_identity::NodeIdentity,
     IChatRoomType,
 };
@@ -97,7 +97,7 @@ pub(crate) async fn fetch_server_ids(
         let Some(server_info) = payload.is_server.clone() else {
             continue;
         };
-        if server_info.server_version != SERVER_VERSION {
+        if server_info.server_version != API_SERVER_VERSION {
             continue;
         }
         server_nodes.push(node_id);

@@ -23,12 +23,12 @@ async fn redis_connection() -> anyhow::Result<redis::aio::MultiplexedConnection>
     Ok(client.get_multiplexed_tokio_connection_with_response_timeouts(timeout, timeout).await?)
 }
 
-struct LockGuard {
+pub struct LockGuard {
     _key: String,
 }
 
 // returns true if locked, false if not locked (already locked), error on error.
-async fn set_lock(
+pub async fn set_lock(
     key: &str,
     val: &str,
     ttl_ms: i64,
@@ -55,10 +55,10 @@ async fn set_lock(
     anyhow::bail!("lock fail.")
 }
 /// Takes one username, game type and match user count - and returns a sorted list of the usernames of all the players in the match (if matchmaking succeeded)
-pub async fn run_multiplayer_matchmaker(
+pub async fn run_basic_multiplayer_matchmaker(
     username_val: String,
     game_type: &str,
-    match_user_count: u8,
+    match_user_count: usize,
 ) -> anyhow::Result<Vec<String>> {
     const MATCHMAKING_TIMEOUT: i64 = 30000;
     _wait_through_matchmaking_global_limit(MATCHMAKING_TIMEOUT, game_type)
@@ -89,6 +89,9 @@ pub async fn run_multiplayer_matchmaker(
         if let Ok(Ok(r)) = _p {
             return Ok(r);
         }
+        if _i == (MATCHMAKING_TIMEOUT / TOTAL_RETRY_INTERVAL_MS)-1 {
+            _p??;
+        }
     }
     anyhow::bail!("matchmaking timouet")
 }
@@ -116,12 +119,11 @@ async fn _wait_through_matchmaking_global_limit(
     anyhow::bail!("global matchmaking for {game_type}: timeout!");
 }
 
-async fn _get_round_player_count(
-    game_type: &str,
+pub async fn increment_redis_counter(
+    key: &str,
     wait_time: i32,
 ) -> anyhow::Result<i32> {
     let t0 = get_timestamp_now_ms();
-    let key = format!("_matchmaking_round_player_count_{game_type}");
 
     // set lock
     let mut conn = redis_connection().await?;
@@ -164,10 +166,11 @@ async fn player_matchmaking_run1(
     // round_time: i64,
     fetch_time: i32,
     game_type: &str,
-    match_user_count: u8,
+    match_user_count: usize,
 ) -> anyhow::Result<Vec<String>> {
+    let _count_key =  format!("_matchmaking_round_player_count_{game_type}");
     let round_player_count =
-        _get_round_player_count(game_type, fetch_time / 2).await?;
+        increment_redis_counter(&_count_key, fetch_time / 2).await?;
     info!("{game_type}/{match_user_count}: Player {user_id}: Starting matchmaking round with {round_player_count} players.");
 
     let t0 = get_timestamp_now_ms();
@@ -220,7 +223,7 @@ async fn player_matchmaking_run1(
     Ok(fut2)
 }
 
-async fn get_lock_values(keys: Vec<String>) -> anyhow::Result<Vec<String>> {
+pub async fn get_lock_values(keys: Vec<String>) -> anyhow::Result<Vec<String>> {
     let t0 = get_timestamp_now_ms();
     let mut conn = redis_connection().await?;
     let _r = redis::cmd("MGET")

@@ -1,3 +1,4 @@
+use anyhow::Context;
 use futures::{FutureExt, StreamExt};
 use game::futures_util;
 use n0_future::FuturesUnordered;
@@ -6,7 +7,8 @@ use protocol::{
     global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     server_chat_api::{
-        api_method_macros::{ApiMethodImpl, ServerInfo, SERVER_VERSION},
+        api_const::{API_SERVER_TIMEOUT_SECS, API_SERVER_VERSION},
+        api_method_macros::{ApiMethodImpl, ServerInfo},
         join_chat::{
             server_join_server_chat, ServerChatMessageContent,
             ServerChatPresence, ServerChatRoomType,
@@ -37,9 +39,9 @@ pub async fn server_main_loop(
     global_sender
         .set_presence(&GlobalChatPresence {
             url: "".to_string(),
-            platform: format!("server v{SERVER_VERSION}"),
+            platform: format!("server v{API_SERVER_VERSION}"),
             is_server: Some(ServerInfo {
-                server_version: SERVER_VERSION,
+                server_version: API_SERVER_VERSION,
                 server_name,
             }),
         })
@@ -64,9 +66,6 @@ pub async fn server_main_loop(
             match message.message {
                 GlobalChatMessageContent::TextMessage { text } => {
                     tracing::info!("<{user_id}@{node_id}> {nickname}: {text}");
-                }
-                GlobalChatMessageContent::MatchmakingMessage { .. } => {
-                    tracing::info!("{nickname} matchmaking: 1v1 message!");
                 }
                 _ => {
                     tracing::info!("<{user_id}@{node_id}> {nickname}: other message: {:#?}", message.message)
@@ -166,7 +165,6 @@ async fn server_process_message(
     Some((from, reply))
 }
 
-pub const SERVER_TIMEOUT_SECS: f32 = 4.0;
 
 async fn server_compute_reply(
     from: NodeIdentity,
@@ -198,13 +196,13 @@ async fn server_run_method(
     from: NodeIdentity,
     req: Vec<u8>,
 ) -> anyhow::Result<Vec<u8>> {
-    let future = tokio::task::spawn(async move {
+    let future = async move {
         n0_future::time::timeout(
-            std::time::Duration::from_secs_f32(SERVER_TIMEOUT_SECS),
+            std::time::Duration::from_secs_f32(API_SERVER_TIMEOUT_SECS),
             (function.func)(from, req),
         )
-        .await
-    });
-    let ret = future.await??.map_err(|e| anyhow::anyhow!("{:?}", e));
+        .await.context(format!("server timeout seconds ({API_SERVER_TIMEOUT_SECS}?)"))
+    };
+    let ret = future.await?.map_err(|e| anyhow::anyhow!("server method call err: {:?}", e));
     ret
 }
