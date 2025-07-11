@@ -1,4 +1,4 @@
-use std::{cell::OnceCell, collections::HashMap, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use anyhow::Context;
 use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
@@ -6,11 +6,9 @@ use game::timestamp::get_timestamp_now_ms;
 use rand::{thread_rng, Rng};
 use redis::Value;
 use tokio::{
-    sync::Mutex,
-    task::JoinHandle,
     time::{sleep, timeout},
 };
-use tracing::{info, warn};
+use tracing::info;
 
 const REDIS_CLIENT: std::cell::OnceCell<redis::Client> =
     std::cell::OnceCell::new();
@@ -87,7 +85,7 @@ async fn redis_connection() -> anyhow::Result<redis::aio::MultiplexedConnection>
 // }
 
 pub struct LockGuard {
-    key: String,
+    _key: String,
 }
 // impl Drop for LockGuard {
 //     fn drop(&mut self) {
@@ -118,7 +116,7 @@ async fn set_lock(
     info!("_r: {:#?}", _r);
     if matches!(_r, Value::Okay) {
         return Ok(Some(LockGuard {
-            key: key.to_string(),
+            _key: key.to_string(),
         }));
     };
     Ok(None)

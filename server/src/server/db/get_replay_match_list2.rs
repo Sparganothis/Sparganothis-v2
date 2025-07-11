@@ -1,6 +1,4 @@
 use anyhow::Context;
-use base64::Engine;
-use game::{api::game_match::GameMatch, timestamp::get_timestamp_now_ms};
 use protocol::server_chat_api::api_declarations::GameStateRow2;
 use protocol::{
     server_chat_api::api_declarations::MatchRow2, user_identity::NodeIdentity,
@@ -12,8 +10,7 @@ use crate::server::db::{
     send_new_match::MatchRow,
 };
 
-use clickhouse::{sql::Identifier, Row};
-use serde::{Deserialize, Serialize};
+use clickhouse::sql::Identifier;
 
 pub async fn db_get_list_matches(
     from: NodeIdentity,

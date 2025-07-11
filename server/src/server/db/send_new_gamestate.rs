@@ -2,8 +2,6 @@ use clickhouse::Row;
 use game::{api::game_match::GameMatch, tet::GameState};
 use protocol::user_identity::NodeIdentity;
 use serde::{Deserialize, Serialize};
-use tracing::info;
-
 use crate::server::db::{
     clickhouse_client::get_clickhouse_client, guest_login::serialize_base64,
 };

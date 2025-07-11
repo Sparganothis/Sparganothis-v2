@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use game::api::game_match::GameMatchType;
 use n0_future::{FuturesUnordered, StreamExt};
-use protocol::user_identity::{self, NodeIdentity, UserIdentitySecrets};
-use rand::{thread_rng, Rng};
+use protocol::user_identity::{NodeIdentity, UserIdentitySecrets};
 use server::server::multiplayer::matchmaker::matchmaker_api::{
     run_multiplayer_matchmaker_1, run_multiplayer_matchmaker_2,
 };

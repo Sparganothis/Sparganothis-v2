@@ -2,13 +2,10 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use protocol::{
-    chat::{IChatController, IChatReceiver, IChatSender},
-    global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     user_identity::UserIdentitySecrets,
 };
 use server::server::main_loop::server_main_loop;
-use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
 
 #[tokio::main]

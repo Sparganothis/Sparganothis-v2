@@ -1,6 +1,5 @@
 use anyhow::Context;
 use futures::{FutureExt, StreamExt};
-use game::futures_util;
 use n0_future::FuturesUnordered;
 use protocol::{
     chat::{IChatController, IChatReceiver, IChatSender},

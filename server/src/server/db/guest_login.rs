@@ -1,7 +1,7 @@
 use anyhow::Context;
 use base64::Engine;
-use game::{api::game_match::GameMatch, timestamp::get_timestamp_now_ms};
-use protocol::{impl_api_method, postcard, user_identity::NodeIdentity};
+use game::timestamp::get_timestamp_now_ms;
+use protocol::{postcard, user_identity::NodeIdentity};
 
 use crate::server::db::clickhouse_client::get_clickhouse_client;
 

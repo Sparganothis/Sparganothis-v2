@@ -1,4 +1,3 @@
-use game::api::game_match::{GameMatch, GameMatchType};
 use serde::{Deserialize, Serialize};
 
 use crate::{
