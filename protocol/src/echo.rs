@@ -58,7 +58,9 @@ impl Echo {
             CONNECT_TIMEOUT,
             recv.read_exact(&mut recv_buf),
         )
-        .await.context("echo")?.context("echo")?;
+        .await
+        .context("echo")?
+        .context("echo")?;
         if recv_buf != connection.remote_node_id()?.as_bytes().to_vec() {
             return Err(anyhow::anyhow!("Invalid node id"));
         }

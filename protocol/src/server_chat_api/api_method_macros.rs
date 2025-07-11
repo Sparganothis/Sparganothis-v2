@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::user_identity::NodeIdentity;
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, PartialOrd)]
 pub struct ServerInfo {
     pub server_version: i64,

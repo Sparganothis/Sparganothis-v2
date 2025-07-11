@@ -20,7 +20,11 @@ async fn redis_connection() -> anyhow::Result<redis::aio::MultiplexedConnection>
         })
         .clone();
     let timeout = Duration::from_millis(250);
-    Ok(client.get_multiplexed_tokio_connection_with_response_timeouts(timeout, timeout).await?)
+    Ok(client
+        .get_multiplexed_tokio_connection_with_response_timeouts(
+            timeout, timeout,
+        )
+        .await?)
 }
 
 pub struct LockGuard {
@@ -89,7 +93,7 @@ pub async fn run_basic_multiplayer_matchmaker(
         if let Ok(Ok(r)) = _p {
             return Ok(r);
         }
-        if _i == (MATCHMAKING_TIMEOUT / TOTAL_RETRY_INTERVAL_MS)-1 {
+        if _i == (MATCHMAKING_TIMEOUT / TOTAL_RETRY_INTERVAL_MS) - 1 {
             _p??;
         }
     }
@@ -155,7 +159,9 @@ pub async fn increment_redis_counter(
     if dt < min_duration as i64 {
         sleep(Duration::from_millis((min_duration as i64 - dt) as u64)).await;
     }
-    let _r3 = redis::cmd("DEL").arg(&key) .query_async::<Value>(&mut conn)
+    let _r3 = redis::cmd("DEL")
+        .arg(&key)
+        .query_async::<Value>(&mut conn)
         .await?;
 
     Ok(_r)
@@ -168,7 +174,7 @@ async fn player_matchmaking_run1(
     game_type: &str,
     match_user_count: usize,
 ) -> anyhow::Result<Vec<String>> {
-    let _count_key =  format!("_matchmaking_round_player_count_{game_type}");
+    let _count_key = format!("_matchmaking_round_player_count_{game_type}");
     let round_player_count =
         increment_redis_counter(&_count_key, fetch_time / 2).await?;
     info!("{game_type}/{match_user_count}: Player {user_id}: Starting matchmaking round with {round_player_count} players.");

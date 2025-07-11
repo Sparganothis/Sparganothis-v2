@@ -54,7 +54,6 @@ pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 8] = [
     /*                         send_new_match           */
     /* ======================================================== */
     api_method_impl!(SendNewMatch),
-
     /*                         matchmaker_api           */
     /* ======================================================== */
     api_method_impl!(RunMultiplayerMatchmakerPhase1),

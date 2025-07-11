@@ -2,9 +2,8 @@ use game::api::game_match::{GameMatch, GameMatchType};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat_ticket::ChatTicket, 
-    server_chat_api::api_method_macros::ServerInfo,
-     IChatRoomType,
+    chat_ticket::ChatTicket, server_chat_api::api_method_macros::ServerInfo,
+    IChatRoomType,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -40,8 +39,6 @@ pub enum GlobalChatMessageContent {
         match_type: String,
     },
 }
-
-
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum MatchHandshakeType {

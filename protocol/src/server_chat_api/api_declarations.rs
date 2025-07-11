@@ -1,6 +1,9 @@
 //! DECLARATIONS OF API METHODS WITH SERVER IMPLEMENTATIONS
 
-use game::{api::game_match::{GameMatch, GameMatchType}, tet::GameState};
+use game::{
+    api::game_match::{GameMatch, GameMatchType},
+    tet::GameState,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::{declare_api_method, user_identity::NodeIdentity};
@@ -41,7 +44,14 @@ pub struct GameStateRow2 {
 
 declare_api_method!(GetGameStateRowsForMatch, MatchRow2, Vec<GameStateRow2>);
 
+declare_api_method!(
+    RunMultiplayerMatchmakerPhase1,
+    GameMatchType,
+    Vec<NodeIdentity>
+);
 
-declare_api_method!(RunMultiplayerMatchmakerPhase1, GameMatchType, Vec<NodeIdentity>);
-
-declare_api_method!(RunMultiplayerMatchmakerPhase2, (GameMatchType, Vec<NodeIdentity>), GameMatch<NodeIdentity>);
+declare_api_method!(
+    RunMultiplayerMatchmakerPhase2,
+    (GameMatchType, Vec<NodeIdentity>),
+    GameMatch<NodeIdentity>
+);

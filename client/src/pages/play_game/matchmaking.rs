@@ -1,15 +1,23 @@
 use dioxus::prelude::*;
 
 use crate::{
-    comp::multiplayer::matchmaking::MatchmakingWindow, network::NetworkState, route::{Route, UrlParam}
+    comp::multiplayer::matchmaking::MatchmakingWindow,
+    network::NetworkState,
+    route::{Route, UrlParam},
 };
 
 #[component]
 pub fn MatchmakingPage() -> Element {
     let mut error = use_signal(move || None);
-    let NetworkState{client_api_manager, global_mm, ..} = use_context::<NetworkState>();
-    let (Some(api), Some(mm)) = (client_api_manager.read().clone(), global_mm.read().clone()) else {
-        return rsx!{
+    let NetworkState {
+        client_api_manager,
+        global_mm,
+        ..
+    } = use_context::<NetworkState>();
+    let (Some(api), Some(mm)) =
+        (client_api_manager.read().clone(), global_mm.read().clone())
+    else {
+        return rsx! {
             "loading..."
         };
     };

@@ -4,7 +4,9 @@ use game::api::game_match::GameMatchType;
 use n0_future::{FuturesUnordered, StreamExt};
 use protocol::user_identity::{self, NodeIdentity, UserIdentitySecrets};
 use rand::{thread_rng, Rng};
-use server::server::multiplayer::matchmaker::matchmaker_api::{run_multiplayer_matchmaker_1,run_multiplayer_matchmaker_2};
+use server::server::multiplayer::matchmaker::matchmaker_api::{
+    run_multiplayer_matchmaker_1, run_multiplayer_matchmaker_2,
+};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -36,25 +38,33 @@ async fn main_run() -> anyhow::Result<()> {
             .await;
 
             let user_secrets = UserIdentitySecrets::generate();
-            let node_identity = NodeIdentity::new(*user_secrets.user_identity(), user_secrets.user_identity().user_id().clone(), None);
+            let node_identity = NodeIdentity::new(
+                *user_secrets.user_identity(),
+                user_secrets.user_identity().user_id().clone(),
+                None,
+            );
 
-            let r = run_multiplayer_matchmaker_1(node_identity, game::api::game_match::GameMatchType::_1v1).await;
+            let r = run_multiplayer_matchmaker_1(
+                node_identity,
+                game::api::game_match::GameMatchType::_1v1,
+            )
+            .await;
             let mut r2 = None;
             if let Ok(v) = r {
-                let t3 = run_multiplayer_matchmaker_2(node_identity, (GameMatchType::_1v1, v)).await;
+                let t3 = run_multiplayer_matchmaker_2(
+                    node_identity,
+                    (GameMatchType::_1v1, v),
+                )
+                .await;
                 if let Ok(t3) = t3 {
                     r2 = Some(t3);
                 }
             }
             let rf = match r2 {
                 Some(x) => Ok(x),
-                None => Err(anyhow::anyhow!("fail."))
+                None => Err(anyhow::anyhow!("fail.")),
             };
-            (
-                i,
-                node_identity.clone(),
-                rf,
-            )
+            (i, node_identity.clone(), rf)
         });
     }
     let mut ok_count = 0;

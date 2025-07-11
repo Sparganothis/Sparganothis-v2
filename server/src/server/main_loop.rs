@@ -165,7 +165,6 @@ async fn server_process_message(
     Some((from, reply))
 }
 
-
 async fn server_compute_reply(
     from: NodeIdentity,
     method_name: String,
@@ -201,8 +200,13 @@ async fn server_run_method(
             std::time::Duration::from_secs_f32(API_SERVER_TIMEOUT_SECS),
             (function.func)(from, req),
         )
-        .await.context(format!("server timeout seconds ({API_SERVER_TIMEOUT_SECS}?)"))
+        .await
+        .context(format!(
+            "server timeout seconds ({API_SERVER_TIMEOUT_SECS}?)"
+        ))
     };
-    let ret = future.await?.map_err(|e| anyhow::anyhow!("server method call err: {:?}", e));
+    let ret = future
+        .await?
+        .map_err(|e| anyhow::anyhow!("server method call err: {:?}", e));
     ret
 }
