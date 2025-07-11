@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use n0_future::{FuturesUnordered, StreamExt};
 use rand::{thread_rng, Rng};
 use server::server::multiplayer_matchmaker::run_multiplayer_matchmaker;
@@ -21,7 +23,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn main_run() -> anyhow::Result<()> {
-    const PLAYERS_PER_SECOND: usize = 4;
+    const PLAYERS_PER_SECOND: usize = 5;
     const PLAYER_COUNT: usize = 100;
     const SLEEP_S: f64 = 1.0 / PLAYERS_PER_SECOND as f64;
 
@@ -68,8 +70,18 @@ async fn main_run() -> anyhow::Result<()> {
         err_count + ok_count
     );
     result_list.sort_by_key(|f| f.2.clone());
-    for (i, random, list) in result_list {
+    for (i, random, list) in result_list.clone() {
         tracing::info!("OK i={i:04} random={random} list={list:?}");
+    }
+    let mut result_count = HashMap::new();
+    for l in result_list {
+        let entry = result_count.entry(format!("{:?}", l.2)).or_insert(0);
+        *entry += 1;
+    }
+    for (pair, count) in result_count.iter() {
+        if *count != 2 {
+            tracing::error!("NOT EXACTLY 2: {pair}");
+        }
     }
     Ok(())
 }

@@ -60,7 +60,9 @@ pub async fn run_multiplayer_matchmaker(
     match_user_count: u8,
 ) -> anyhow::Result<Vec<String>> {
     const MATCHMAKING_TIMEOUT: i64 = 30000;
-    const TOTAL_RETRY_INTERVAL_MS: i64 = 3333;
+    _wait_through_matchmaking_global_limit(MATCHMAKING_TIMEOUT, game_type).await?;
+
+    const TOTAL_RETRY_INTERVAL_MS: i64 = 3000;
     const ITERATION_TIMEOUT_MS: i32 = 1000;
     for _i in 0..(MATCHMAKING_TIMEOUT / TOTAL_RETRY_INTERVAL_MS) {
         let t0 = get_timestamp_now_ms();
@@ -71,19 +73,42 @@ pub async fn run_multiplayer_matchmaker(
             sleep(Duration::from_millis(diff_ms as u64)).await;
         }
 
-        let _p = player_matchmaking_run1(
+        let _p = timeout(
+            std::time::Duration::from_millis(3 * ITERATION_TIMEOUT_MS as u64),
+            player_matchmaking_run1(
             username_val.clone(),
             // TOTAL_RETRY_INTERVAL_MS,
             ITERATION_TIMEOUT_MS,
             game_type,
             match_user_count,
         )
-        .await;
-        if let Ok(r) = _p {
+    ).await;
+        if let Ok(Ok(r)) = _p {
             return Ok(r);
         }
     }
     anyhow::bail!("matchmaking timouet")
+}
+
+
+async fn _wait_through_matchmaking_global_limit(global_timeout: i64, game_type: &str) -> anyhow::Result<()> {
+    const GLOBAL_USERS_PER_SECOND_RATE_LIMIT: i64 = 3;
+
+    let exp = 1000 / GLOBAL_USERS_PER_SECOND_RATE_LIMIT;
+    let t0 = get_timestamp_now_ms();
+    let key = format!("_ratelimit_global_{game_type}");
+
+    while get_timestamp_now_ms() - t0 < global_timeout {
+        if let Ok(_l) = set_lock(&key, "1", exp).await {
+            info!("Matchmaking global limit for {game_type}: pass!");
+            return Ok(())
+        }
+        
+        let _rand_sleep2            = (&mut thread_rng()).gen_range(exp/20..exp/2);
+        sleep(Duration::from_millis(_rand_sleep2 as u64)).await;
+    }
+    tracing::error!("Matchmaking global limit for {game_type}: FAIL TIMEOUT!");
+    anyhow::bail!("global matchmaking for {game_type}: timeout!");
 }
 
 async fn player_matchmaking_run1(
@@ -113,23 +138,30 @@ async fn player_matchmaking_run1(
     // we are now sync again!
     sleep(Duration::from_millis(fetch_time as u64/20)).await;
 
-    let mut interesting_ids = vec![];
-    let root_id = player_lot.0 - player_lot.0 % match_user_count as i32;
-    for i in root_id..(root_id + match_user_count as i32) {
-        interesting_ids.push(make_key(&game_type, i))
-    }
-
-    let read_retry_count = 3;
-    for _r in 0..read_retry_count {
-        let v = get_lock_values(interesting_ids.clone()).await?;
-        if v.len() == interesting_ids.len() {
-            let mut v = v;
-            v.sort();
-            return Ok(v)
+    let fut2 = async move {
+        let mut interesting_ids = vec![];
+        let root_id = player_lot.0 - player_lot.0 % match_user_count as i32;
+        for i in root_id..(root_id + match_user_count as i32) {
+            interesting_ids.push(make_key(&game_type, i))
         }
-        sleep(Duration::from_millis(fetch_time as u64 / (read_retry_count  as u64 + 1))).await;
-    }
-    anyhow::bail!("timeout2");
+
+        let read_retry_count = 3;
+        for _r in 0..read_retry_count {
+            let v = get_lock_values(interesting_ids.clone()).await?;
+            if v.len() == interesting_ids.len() {
+                let mut v = v;
+                v.sort();
+                return Ok(v)
+            }
+            sleep(Duration::from_millis(fetch_time as u64 / (read_retry_count  as u64 + 1))).await;
+        }
+        anyhow::bail!("timeout2");
+    };
+
+    let fut2 =
+        timeout(Duration::from_millis(fetch_time as u64), fut2).await??;
+
+    Ok(fut2)
 }
 
 
@@ -162,7 +194,7 @@ async fn fetch_player_slot(
 ) -> anyhow::Result<(i32, String)> {
     let t0 = get_timestamp_now_ms();
     let _rand_sleep2: i32 
-        = (&mut thread_rng()).gen_range(0.._fetch_time/5);
+        = (&mut thread_rng()).gen_range(_fetch_time/33.._fetch_time/15);
     sleep(Duration::from_millis(_rand_sleep2 as u64)).await;
 
     let mut all_keys = vec![];
@@ -174,10 +206,7 @@ async fn fetch_player_slot(
     }
 
     let already_present_keys = get_lock_values(all_keys.clone()).await?;
-    let all_keys = BTreeSet::from_iter(all_keys.iter().cloned());
     let already_present_keys = BTreeSet::from_iter(already_present_keys.iter().cloned());
-    let mut all_keys = Vec::from_iter(all_keys.iter().cloned());
-    all_keys.sort_by_key(|x| key_to_i[x]);
 
     for key in all_keys {
         if already_present_keys.contains(&key) {
