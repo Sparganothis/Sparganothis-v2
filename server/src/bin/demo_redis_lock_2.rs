@@ -239,8 +239,8 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn main_run() -> anyhow::Result<()> {
-    const PLAYERS_PER_SECOND: usize = 4;
-    const PLAYER_COUNT: usize = 100;
+    const PLAYERS_PER_SECOND: usize = 200;
+    const PLAYER_COUNT: usize = 1000;
     const SLEEP_S: f64 = 1.0 / PLAYERS_PER_SECOND as f64;
 
     let mut fut = FuturesUnordered::new();
@@ -257,7 +257,7 @@ async fn main_run() -> anyhow::Result<()> {
             (
                 i,
                 random.clone(),
-                player_matchmaking_run(random.clone(), "1v1", 2).await,
+                player_matchmaking_run(random.clone(), "100p", 100).await,
             )
         });
     }
