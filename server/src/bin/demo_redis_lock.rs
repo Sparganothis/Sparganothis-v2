@@ -5,9 +5,7 @@ use futures::{stream::FuturesUnordered, FutureExt, StreamExt};
 use game::timestamp::get_timestamp_now_ms;
 use rand::{thread_rng, Rng};
 use redis::Value;
-use tokio::{
-    time::{sleep, timeout},
-};
+use tokio::time::{sleep, timeout};
 use tracing::info;
 
 const REDIS_CLIENT: std::cell::OnceCell<redis::Client> =

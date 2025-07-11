@@ -2,8 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use protocol::{
-    global_matchmaker::GlobalMatchmaker,
-    user_identity::UserIdentitySecrets,
+    global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
 };
 use server::server::main_loop::server_main_loop;
 use tracing::info;
