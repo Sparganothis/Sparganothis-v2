@@ -53,9 +53,9 @@ async fn set_lock(
     };
     anyhow::bail!("lock fail.")
 }
-
-pub async fn player_matchmaking_run(
-    random: String,
+/// Takes one username, game type and match user count - and returns a sorted list of the usernames of all the players in the match (if matchmaking succeeded)
+pub async fn run_multiplayer_matchmaker(
+    username_val: String,
     game_type: &str,
     match_user_count: u8,
 ) -> anyhow::Result<Vec<String>> {
@@ -72,7 +72,7 @@ pub async fn player_matchmaking_run(
         }
 
         let _p = player_matchmaking_run1(
-            random.clone(),
+            username_val.clone(),
             // TOTAL_RETRY_INTERVAL_MS,
             ITERATION_TIMEOUT_MS,
             game_type,

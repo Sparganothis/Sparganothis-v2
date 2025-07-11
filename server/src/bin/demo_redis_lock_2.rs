@@ -1,6 +1,6 @@
 use n0_future::{FuturesUnordered, StreamExt};
 use rand::{thread_rng, Rng};
-use server::server::multiplayer_matchmaker::player_matchmaking_run;
+use server::server::multiplayer_matchmaker::run_multiplayer_matchmaker;
 
 
 
@@ -39,7 +39,7 @@ async fn main_run() -> anyhow::Result<()> {
             (
                 i,
                 random.clone(),
-                player_matchmaking_run(random.clone(), "1v1", 2).await,
+                run_multiplayer_matchmaker(random.clone(), "1v1", 2).await,
             )
         });
     }
