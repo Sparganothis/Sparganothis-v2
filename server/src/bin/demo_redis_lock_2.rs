@@ -4,8 +4,6 @@ use n0_future::{FuturesUnordered, StreamExt};
 use rand::{thread_rng, Rng};
 use server::server::multiplayer_matchmaker::run_multiplayer_matchmaker;
 
-
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     {
@@ -23,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn main_run() -> anyhow::Result<()> {
-    const PLAYERS_PER_SECOND: usize = 5;
+    const PLAYERS_PER_SECOND: usize = 7;
     const PLAYER_COUNT: usize = 100;
     const SLEEP_S: f64 = 1.0 / PLAYERS_PER_SECOND as f64;
 
