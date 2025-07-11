@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn main_run() -> anyhow::Result<()> {
-    const PLAYERS_PER_SECOND: usize = 7;
+    const PLAYERS_PER_SECOND: f32 = 10.0;
     const PLAYER_COUNT: usize = 100;
     const SLEEP_S: f64 = 1.0 / PLAYERS_PER_SECOND as f64;
 
