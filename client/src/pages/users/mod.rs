@@ -2,8 +2,12 @@ use dioxus::prelude::*;
 use protocol::user_identity::UserIdentity;
 
 use crate::{
-    comp::users::{top_players_tables::PlayersWithMostMatchesTable, user_profile_display::UserProfileDisplay},
-    network::NetworkState, route::UrlParam,
+    comp::users::{
+        top_players_tables::PlayersWithMostMatchesTable,
+        user_profile_display::UserProfileDisplay,
+    },
+    network::NetworkState,
+    route::UrlParam,
 };
 
 #[component]

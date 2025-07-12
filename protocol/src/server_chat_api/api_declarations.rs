@@ -70,7 +70,6 @@ pub struct FriendInfo {
     pub added_on: i64,
 }
 
-
 declare_api_method!(GetUsersWithTopGameCounts, (), Vec<UserProfileListItem>);
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct UserProfileListItem {
@@ -81,7 +80,11 @@ pub struct UserProfileListItem {
     pub game_count: u64,
 }
 
-declare_api_method!(GetUserProfileAndStatistics, UserIdentity, UserProfileInfo2);
+declare_api_method!(
+    GetUserProfileAndStatistics,
+    UserIdentity,
+    UserProfileInfo2
+);
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct UserProfileInfo2 {
     pub info0: UserProfileListItem,

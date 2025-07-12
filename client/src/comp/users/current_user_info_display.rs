@@ -2,7 +2,9 @@ use dioxus::prelude::*;
 use protocol::user_identity::{NodeIdentity, UserIdentity};
 
 use crate::{
-    localstorage::LocalStorageContext, network::NetworkState, route::{Route, UrlParam},
+    localstorage::LocalStorageContext,
+    network::NetworkState,
+    route::{Route, UrlParam},
 };
 
 #[component]
@@ -19,7 +21,7 @@ pub fn CurrentUserInfoDisplay() -> Element {
         }
     });
     let node_id: ReadOnlySignal<Option<NodeIdentity>> = node_id.into();
-    
+
     rsx! {
         article {
             style: "

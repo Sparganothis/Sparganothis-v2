@@ -1,10 +1,14 @@
 use clickhouse::Row;
 use iroh::PublicKey;
-use protocol::{server_chat_api::api_declarations::UserProfileListItem, user_identity::{NodeIdentity, UserIdentity}};
+use protocol::{
+    server_chat_api::api_declarations::UserProfileListItem,
+    user_identity::{NodeIdentity, UserIdentity},
+};
 use serde::Deserialize;
 
-use crate::server::db::{clickhouse_client::get_clickhouse_client, guest_login::deserialize_base64};
-
+use crate::server::db::{
+    clickhouse_client::get_clickhouse_client, guest_login::deserialize_base64,
+};
 
 const SELECT_TOP_PLAYERS_BY_GAMES: &'static str = r#"
 
@@ -26,12 +30,18 @@ struct TopPlayersRow {
     nickname: String,
     first_login: i64,
     last_login: i64,
-    game_count:u64,
+    game_count: u64,
 }
 
-pub async fn get_users_with_top_game_counts(_from: NodeIdentity, _arg: ()) -> anyhow::Result<Vec<UserProfileListItem>> {
+pub async fn get_users_with_top_game_counts(
+    _from: NodeIdentity,
+    _arg: (),
+) -> anyhow::Result<Vec<UserProfileListItem>> {
     let client = get_clickhouse_client();
-    let users = client.query(SELECT_TOP_PLAYERS_BY_GAMES).fetch_all::<TopPlayersRow>().await?;
+    let users = client
+        .query(SELECT_TOP_PLAYERS_BY_GAMES)
+        .fetch_all::<TopPlayersRow>()
+        .await?;
     let mut v = vec![];
     for u in users {
         let b: [u8; 32] = deserialize_base64(u.user_id.clone())?;

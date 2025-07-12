@@ -14,7 +14,7 @@ pub fn UserProfileDisplay(
     let nickname = user_id.read().nickname();
 
     rsx! {
-        
+
         h1 {
             "User \"{nickname}\""
         }
