@@ -8,14 +8,14 @@
 
 
 ## todo
-- crackhouse + migrations https://docs.bytebase.com/get-started/self-host
-- spectate: anyone any game anytime
-- chat: direct message (pink like wow; button mute msg from some peer)
-- invite to party
+- invite to room
+  - room link
   - party options?
     - invite to 1v1, other gamemode
     - group spectate (stream spectate to party like twitch)
     - kick people
+- spectate: anyone any game anytime
+- chat: direct message (pink like wow; button mute msg from some peer)
 
 - public matchmaking 1v1
 - ladder match + envy watch

@@ -1308,6 +1308,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "wasm-streams",
+ "web-sys",
  "web-time",
 ]
 

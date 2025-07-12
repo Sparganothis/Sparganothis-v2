@@ -1,7 +1,8 @@
 use dioxus::prelude::*;
+use uuid::Uuid;
 
 use crate::{
-    comp::multiplayer::matchmaking::MatchmakingWindow,
+    comp::{cosmetic::Hline, multiplayer::matchmaking::MatchmakingWindow},
     network::NetworkState,
     route::{Route, UrlParam},
 };
@@ -21,6 +22,7 @@ pub fn MatchmakingPage() -> Element {
             "loading..."
         };
     };
+    let own_node = mm.own_node_identity();
 
     rsx! {
         article {
@@ -61,6 +63,18 @@ pub fn MatchmakingPage() -> Element {
                     "Reset"
                 }
             }
+            Hline {  }
+            h1 {
+                "Create Private 1v1 Room"
+            }
+            button {
+                onclick: move |_| {
+                    navigator().push(Route::Private1v1RoomLobbyPage { owner_id: UrlParam(own_node), room_uuid: Uuid::new_v4() });
+                    
+                },
+                "Create private room!"
+            }
+
         }
     }
 }
