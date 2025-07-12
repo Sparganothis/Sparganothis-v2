@@ -1,4 +1,6 @@
 {
     "terminal.integrated.shellIntegration.enabled": false,
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "workbench.editor.showTabs": "multiple",
+    "workbench.editor.enablePreview": false ,
 } 

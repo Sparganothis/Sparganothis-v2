@@ -6,7 +6,7 @@ use game::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{declare_api_method, user_identity::NodeIdentity};
+use crate::{declare_api_method, user_identity::{NodeIdentity, UserIdentity}};
 
 declare_api_method!(LoginApiMethod, (), ());
 
@@ -55,3 +55,27 @@ declare_api_method!(
     (GameMatchType, Vec<NodeIdentity>),
     GameMatch<NodeIdentity>
 );
+
+
+declare_api_method!(
+    UserAddFriend,
+    UserIdentity,
+    ()
+);
+
+declare_api_method!(
+    UserDeleteFriend,
+    UserIdentity,
+    ()
+);
+
+declare_api_method!(
+    UserGetFriends,
+    (),
+    Vec<FriendInfo>
+);
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct FriendInfo {
+    pub friend_id: UserIdentity,
+    pub added_on: i64,
+}

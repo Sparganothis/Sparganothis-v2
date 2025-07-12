@@ -27,6 +27,7 @@ use crate::server::db::guest_login::*;
 use crate::server::db::send_new_gamestate::*;
 use crate::server::db::send_new_match::*;
 use crate::server::multiplayer::matchmaker::matchmaker_api::*;
+use crate::server::db::user_friends::*;
 
 use protocol::server_chat_api::api_declarations::*;
 
@@ -36,10 +37,15 @@ impl_api_method!(GetGameStateRowsForMatch, db_get_game_states_for_match); // inv
 impl_api_method!(SendNewGameState, db_send_new_gamestate);
 impl_api_method!(SendNewMatch, db_send_new_match);
 impl_api_method!(LoginApiMethod, db_add_guest_login); // inventory ok
+//  ======================= multiplayer ====================================
 impl_api_method!(RunMultiplayerMatchmakerPhase1, run_multiplayer_matchmaker_1);
 impl_api_method!(RunMultiplayerMatchmakerPhase2, run_multiplayer_matchmaker_2);
+//  ======================= user_friends ====================================
+impl_api_method!(UserAddFriend, user_add_friend);
+impl_api_method!(UserDeleteFriend, user_delete_friend);
+impl_api_method!(UserGetFriends, user_list_friends);
 
-pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 8] = [
+pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 11] = [
     /*                         get_replay_match_list2           */
     /* ======================================================== */
     api_method_impl!(GetReplayMatchList),
@@ -58,6 +64,12 @@ pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 8] = [
     /* ======================================================== */
     api_method_impl!(RunMultiplayerMatchmakerPhase1),
     api_method_impl!(RunMultiplayerMatchmakerPhase2),
+    
+    /*                         user_friends           */
+    /* ======================================================== */
+    api_method_impl!(UserAddFriend),
+    api_method_impl!(UserDeleteFriend),
+    api_method_impl!(UserGetFriends),
 ];
 
 pub fn inventory_get_implementation_by_name(
