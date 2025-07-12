@@ -76,7 +76,6 @@ pub fn Private1v1RoomLobbyPage(owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>,
                     }
                 }
             }
-            hline{}
             article {
                 h3 {"Chat"}
             }
