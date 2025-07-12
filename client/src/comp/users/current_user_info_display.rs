@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use protocol::user_identity::{NodeIdentity, UserIdentity};
 
 use crate::{
-    localstorage::LocalStorageContext, network::NetworkState, route::Route,
+    localstorage::LocalStorageContext, network::NetworkState, route::{Route, UrlParam},
 };
 
 #[component]
@@ -19,6 +19,7 @@ pub fn CurrentUserInfoDisplay() -> Element {
         }
     });
     let node_id: ReadOnlySignal<Option<NodeIdentity>> = node_id.into();
+    
     rsx! {
         article {
             style: "
@@ -38,12 +39,18 @@ pub fn CurrentUserInfoDisplay() -> Element {
                     "Button Settings"
                 }
             }
+            h1 {
+                Link {
+                    to: Route::UsersProfilePage { user_id: UrlParam(user_id.read().clone()) },
+                    "Your Public Profile"
+                }
+            }
         }
     }
 }
 
 #[component]
-pub fn UserInfoDisplay(
+fn UserInfoDisplay(
     info: UserIdentity,
     node_id: ReadOnlySignal<Option<NodeIdentity>>,
 ) -> Element {
@@ -62,9 +69,4 @@ pub fn UserInfoDisplay(
             }
         }
     }
-}
-
-#[component]
-pub fn UserProfileLink() -> Element {
-    rsx! {}
 }

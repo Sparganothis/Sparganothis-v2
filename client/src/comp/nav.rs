@@ -24,18 +24,12 @@ pub fn Nav() -> Element {
                 li {
                     Link { to: Route::PlaySingleplayerPage { }, small { "singleplayer" } }
                 }
-            }
-            ul {
                 li {
                     Link { to: Route::IAmARobotSingleplayer { }, small { "robot" } }
                 }
-            }
-            ul {
                 li {
                     Link { to: Route::MatchmakingPage { }, small { "1v1 matchmaking" } }
                 }
-            }
-            ul {
                 li {
                     Link { to: Route::ReplayHomePage { }, small { "replay" } }
                 }
@@ -52,6 +46,9 @@ pub fn Nav() -> Element {
                 }
                 li {
                     Link { to: Route::GlobalChatPage { }, "Chat" }
+                }
+                li {
+                    Link { to: Route::UsersRootDirectoryPage { }, "Top Players" }
                 }
             }
             ul {

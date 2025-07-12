@@ -6,7 +6,7 @@ use base64::Engine;
 use dioxus::prelude::*;
 use game::api::game_match::GameMatch;
 use iroh::NodeId;
-use protocol::user_identity::NodeIdentity;
+use protocol::user_identity::{NodeIdentity, UserIdentity};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -31,6 +31,13 @@ pub enum Route {
         
         #[route("/my-button-settings")]
         MyButtonSettings {},
+    #[end_nest]
+
+    #[nest("/users")]
+        #[route("/")]
+        UsersRootDirectoryPage {},
+        #[route("/user/:user_id")]
+        UsersProfilePage {user_id: UrlParam<UserIdentity>},
     #[end_nest]
 
     #[nest("/chat")]

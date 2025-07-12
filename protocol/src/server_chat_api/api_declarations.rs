@@ -6,7 +6,10 @@ use game::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{declare_api_method, user_identity::{NodeIdentity, UserIdentity}};
+use crate::{
+    declare_api_method,
+    user_identity::{NodeIdentity, UserIdentity},
+};
 
 declare_api_method!(LoginApiMethod, (), ());
 
@@ -56,26 +59,31 @@ declare_api_method!(
     GameMatch<NodeIdentity>
 );
 
+declare_api_method!(UserAddFriend, UserIdentity, ());
 
-declare_api_method!(
-    UserAddFriend,
-    UserIdentity,
-    ()
-);
+declare_api_method!(UserDeleteFriend, UserIdentity, ());
 
-declare_api_method!(
-    UserDeleteFriend,
-    UserIdentity,
-    ()
-);
-
-declare_api_method!(
-    UserGetFriends,
-    (),
-    Vec<FriendInfo>
-);
+declare_api_method!(UserGetFriends, (), Vec<FriendInfo>);
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct FriendInfo {
     pub friend_id: UserIdentity,
     pub added_on: i64,
+}
+
+
+declare_api_method!(GetUsersWithTopGameCounts, (), Vec<UserProfileListItem>);
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct UserProfileListItem {
+    pub user: UserIdentity,
+    pub nickname: String,
+    pub first_login: i64,
+    pub last_login: i64,
+    pub game_count: u64,
+}
+
+declare_api_method!(GetUserProfileAndStatistics, UserIdentity, UserProfileInfo2);
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+pub struct UserProfileInfo2 {
+    pub info0: UserProfileListItem,
+    pub is_friend: bool,
 }

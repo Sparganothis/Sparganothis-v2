@@ -11,4 +11,4 @@ pub mod nav;
 pub mod settings_form;
 pub mod singleplayer;
 pub mod slider;
-pub mod user_info_display;
+pub mod users;

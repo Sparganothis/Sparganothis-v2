@@ -27,3 +27,6 @@ pub use play_game::*;
 
 mod replay;
 pub use replay::*;
+
+mod users;
+pub use users::*;

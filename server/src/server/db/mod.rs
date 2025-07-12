@@ -4,3 +4,4 @@ pub mod guest_login;
 pub mod send_new_gamestate;
 pub mod send_new_match;
 pub mod user_friends;
+pub mod get_user_profiles;

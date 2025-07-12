@@ -1,18 +1,27 @@
 use clickhouse::{sql::Identifier, Row};
 use game::timestamp::get_timestamp_now_ms;
 use iroh::PublicKey;
-use protocol::{server_chat_api::api_declarations::FriendInfo, user_identity::{NodeIdentity, UserIdentity}};
+use protocol::{
+    server_chat_api::api_declarations::FriendInfo,
+    user_identity::{NodeIdentity, UserIdentity},
+};
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
-use crate::server::db::{clickhouse_client::get_clickhouse_client, guest_login::{deserialize_base64, serialize_base64}};
+use crate::server::db::{
+    clickhouse_client::get_clickhouse_client,
+    guest_login::{deserialize_base64, serialize_base64},
+};
 
-pub async fn user_add_friend(_from: NodeIdentity, _arg: UserIdentity) -> anyhow::Result<()> {
+pub async fn user_add_friend(
+    _from: NodeIdentity,
+    _arg: UserIdentity,
+) -> anyhow::Result<()> {
     let userid_str = _from.user_id().as_bytes().clone();
     let userid_str = serialize_base64(&userid_str)?;
 
     let arg_userid = _arg.user_id().as_bytes().clone();
-    let arg_userid =serialize_base64(&arg_userid)?;
+    let arg_userid = serialize_base64(&arg_userid)?;
 
     let friend_exists = friend_exists(&userid_str, &arg_userid).await?;
     if friend_exists {
@@ -33,12 +42,15 @@ pub async fn user_add_friend(_from: NodeIdentity, _arg: UserIdentity) -> anyhow:
 
     Ok(())
 }
-pub async fn user_delete_friend(_from: NodeIdentity, _arg: UserIdentity) -> anyhow::Result<()> {
+pub async fn user_delete_friend(
+    _from: NodeIdentity,
+    _arg: UserIdentity,
+) -> anyhow::Result<()> {
     let userid_str = _from.user_id().as_bytes().clone();
     let userid_str = serialize_base64(&userid_str)?;
 
     let arg_userid = _arg.user_id().as_bytes().clone();
-    let arg_userid =serialize_base64(&arg_userid)?;
+    let arg_userid = serialize_base64(&arg_userid)?;
 
     let friend_exists = friend_exists(&userid_str, &arg_userid).await?;
     if !friend_exists {
@@ -46,8 +58,11 @@ pub async fn user_delete_friend(_from: NodeIdentity, _arg: UserIdentity) -> anyh
     }
 
     let client = get_clickhouse_client();
-    let q = client.query("ALTER TABLE ? DELETE WHERE user_id = ? AND friend_id = ?")
-    .bind(Identifier("user_friends")).bind(userid_str).bind(arg_userid);
+    let q = client
+        .query("ALTER TABLE ? DELETE WHERE user_id = ? AND friend_id = ?")
+        .bind(Identifier("user_friends"))
+        .bind(userid_str)
+        .bind(arg_userid);
     q.execute().await?;
 
     Ok(())
@@ -66,17 +81,20 @@ async fn friend_exists(user_id: &str, friend_id: &str) -> anyhow::Result<bool> {
     };
     Ok(user_count == 1)
 }
-pub async fn user_list_friends(_from: NodeIdentity, _arg: ()) -> anyhow::Result<Vec<FriendInfo>> {
+pub async fn user_list_friends(
+    _from: NodeIdentity,
+    _arg: (),
+) -> anyhow::Result<Vec<FriendInfo>> {
     let userid_str = _from.user_id().as_bytes().clone();
     let userid_str = serialize_base64(&userid_str)?;
-    
-    let client = get_clickhouse_client();    
+
+    let client = get_clickhouse_client();
     let all = client
-            .query("SELECT ?fields FROM ? WHERE user_id = ?")
-            .bind(Identifier("user_friends"))
-            .bind(userid_str)
-            .fetch_all::<UserFriendRow>()
-            .await?;
+        .query("SELECT ?fields FROM ? WHERE user_id = ?")
+        .bind(Identifier("user_friends"))
+        .bind(userid_str)
+        .fetch_all::<UserFriendRow>()
+        .await?;
 
     let mut v = vec![];
     for x in all {

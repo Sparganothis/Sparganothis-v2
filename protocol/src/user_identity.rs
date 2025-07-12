@@ -20,10 +20,8 @@ impl UserIdentity {
     pub fn nickname(&self) -> String {
         crate::_random_word::get_nickname_from_pubkey(self.user_id.clone())
     }
-    pub const fn from_userid(user_id: PublicKey) -> Self{
-        Self {
-            user_id
-        }
+    pub const fn from_userid(user_id: PublicKey) -> Self {
+        Self { user_id }
     }
     pub fn user_id(&self) -> &PublicKey {
         &self.user_id
