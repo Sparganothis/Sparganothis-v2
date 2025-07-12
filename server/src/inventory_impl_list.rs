@@ -23,6 +23,7 @@ use protocol::impl_api_method;
 use protocol::server_chat_api::api_method_macros::ApiMethodImpl;
 
 use crate::server::db::get_replay_match_list2::*;
+use crate::server::db::get_user_profiles;
 use crate::server::db::get_user_profiles::*;
 use crate::server::db::guest_login::*;
 use crate::server::db::send_new_gamestate::*;
@@ -45,9 +46,10 @@ impl_api_method!(UserAddFriend, user_add_friend);
 impl_api_method!(UserDeleteFriend, user_delete_friend);
 impl_api_method!(UserGetFriends, user_list_friends);
 // ================== user_profiles ====================
-impl_api_method!(GetUsersWithTopGameCounts, get_users_with_top_game_counts);
+impl_api_method!(GetUsersWithTopGameCounts, db_get_users_with_top_game_counts);
+impl_api_method!(GetUserProfile, db_get_user_profile);
 
-pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 12] = [
+pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 13] = [
     /*                         get_replay_match_list2           */
     /* ======================================================== */
     api_method_impl!(GetReplayMatchList),
@@ -74,6 +76,7 @@ pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 12] = [
     /*                         user_profiles           */
     /* ======================================================== */
     api_method_impl!(GetUsersWithTopGameCounts),
+    api_method_impl!(GetUserProfile),
 ];
 
 pub fn inventory_get_implementation_by_name(

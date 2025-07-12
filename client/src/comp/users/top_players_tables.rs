@@ -48,7 +48,7 @@ pub fn PlayersWithMostMatchesTable(
 }
 
 #[component]
-fn DisplayUserProfileCard(item: UserProfileListItem) -> Element {
+pub fn DisplayUserProfileCard(item: UserProfileListItem) -> Element {
     let nickname = item.user.nickname();
     let color = item.user.html_color();
     let now = get_timestamp_now_ms();

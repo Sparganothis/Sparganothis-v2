@@ -81,12 +81,7 @@ pub struct UserProfileListItem {
 }
 
 declare_api_method!(
-    GetUserProfileAndStatistics,
+    GetUserProfile,
     UserIdentity,
-    UserProfileInfo2
+    UserProfileListItem
 );
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
-pub struct UserProfileInfo2 {
-    pub info0: UserProfileListItem,
-    pub is_friend: bool,
-}
