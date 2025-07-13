@@ -74,21 +74,15 @@ jobs:
     - name: Build Web Release
       run: chmod +x ./build_web_release.sh && ./build_web_release.sh
 
-    - name: Send Chat Message Finished
-      run: |
-        text=$(git log -1 --no-merges --pretty=%B)
-        sha=$(git rev-parse --short HEAD)
-        ( echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh ) || true
+    # - name: Upload artifact - dist
+    #   uses: actions/upload-pages-artifact@v3
+    #   with:
+    #     path: "./dist"
 
-    - name: Upload artifact - dist
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: "./dist"
-
-    - name: Upload artifact - dist_server
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: "./dist_server"
+    # - name: Upload artifact - dist_server
+    #   uses: actions/upload-pages-artifact@v3
+    #   with:
+    #     path: "./dist_server"
 
     - name: Github Release
       uses: ncipollo/release-action@v1
@@ -100,7 +94,7 @@ jobs:
         artifacts: "{dist,dist_server}/**/*"
         bodyFile: ".github/release_template.md"
 
-    - name: Create SSH key
+    - name: Install server SSH key
       run: |
         set -ex
         mkdir -p ~/.ssh/
@@ -113,17 +107,26 @@ jobs:
         SSH_KNOWN_HOSTS: ${{secrets.SSH_KNOWN_HOSTS}}
         SSH_KEY_PATH: ${{ github.workspace }}/../private.key
 
-    - name: SSH - upload artifacts
+    - name: SSH - upload artifacts to server
       run: |
         set -ex
         ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist || true ; rm -rf dist_server || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master"
         scp -av -i $SSH_KEY_PATH dist_server $SSH_USERNAME@$SSH_TARGET:dist_server
         scp -av -i $SSH_KEY_PATH dist $SSH_USERNAME@$SSH_TARGET:dist
+        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET sudo systemctl restart sparganothis-server.service
       shell: bash
       env:
         SSH_KEY_PATH: ${{ github.workspace }}/../private.key
         SSH_USERNAME: ${{secrets.SSH_USERNAME}}
         SSH_TARGET: ${{secrets.SSH_TARGET}}
+
+
+    - name: Send Chat Message Finished
+      run: |
+        text=$(git log -1 --no-merges --pretty=%B)
+        sha=$(git rev-parse --short HEAD)
+        ( echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh ) || true
+
 
   # release_pages:
   #   name: Release Github Pages
