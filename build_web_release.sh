@@ -16,3 +16,8 @@ rm -rf dist_server || true
 mkdir -p dist_server
 cp -av ./target/release/server dist_server
 cp -av ./target/release/echo_cli dist_server
+
+rm -rf dist2 || true
+mkdir -p dist2
+mv dist dist2
+mv dist_server dist2

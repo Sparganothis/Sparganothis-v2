@@ -91,7 +91,7 @@ jobs:
         commit: "${{ github.sha }}"
         tag: "latest"
         makeLatest: true
-        artifacts: "{dist,dist_server}/**/*"
+        artifacts: "dist2/**/*"
         bodyFile: ".github/release_template.md"
 
     - name: Upload artifact
@@ -99,8 +99,7 @@ jobs:
       with:
         name: builds
         path: |
-          dist
-          dist_server
+          dist2
 
   deploy_server:
     runs-on: ubuntu-latest
@@ -124,9 +123,9 @@ jobs:
     - name: SSH - upload artifacts to server
       run: |
         set -ex
-        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist dist_server || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master"
-        scp -rv -i $SSH_KEY_PATH dist_server/ $SSH_USERNAME@$SSH_TARGET:dist_server/
-        scp -rv -i $SSH_KEY_PATH dist/ $SSH_USERNAME@$SSH_TARGET:dist/
+        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist2  || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master; bash ./migrate_clickhouse.sh";
+        ls -alh dist2
+        scp -rv -i $SSH_KEY_PATH dist2/ $SSH_USERNAME@$SSH_TARGET:dist2/
         ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET sudo systemctl restart sparganothis-server.service
       shell: bash
       env:

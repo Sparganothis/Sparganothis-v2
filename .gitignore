@@ -8,4 +8,5 @@ target
 /dist
 /dist_server
 /release.zip
+/dist2
 rustc-ice-*.txt
