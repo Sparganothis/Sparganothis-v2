@@ -102,11 +102,17 @@ jobs:
           dist2
 
   deploy_server:
+    name: "Deploy Server using SSH"
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v4
-
+    - name: Check downloaded artifacts
+      run: |
+        set -ex
+        ls -alh dist2
+      shell: bash
     - name: Install server SSH key
       run: |
         set -ex
@@ -123,7 +129,7 @@ jobs:
     - name: SSH - upload artifacts to server
       run: |
         set -ex
-        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist2  || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master; bash ./migrate_clickhouse.sh";
+        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist2  || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master; . ~/.profile; bash ./migrate_clickhouse.sh";
         ls -alh dist2
         scp -rv -i $SSH_KEY_PATH dist2/ $SSH_USERNAME@$SSH_TARGET:dist2/
         ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET sudo systemctl restart sparganothis-server.service
