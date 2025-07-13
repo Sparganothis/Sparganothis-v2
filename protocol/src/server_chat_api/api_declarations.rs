@@ -80,8 +80,4 @@ pub struct UserProfileListItem {
     pub game_count: u64,
 }
 
-declare_api_method!(
-    GetUserProfile,
-    UserIdentity,
-    UserProfileListItem
-);
+declare_api_method!(GetUserProfile, UserIdentity, UserProfileListItem);

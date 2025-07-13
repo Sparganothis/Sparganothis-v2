@@ -8,9 +8,7 @@ use protocol::{
     },
 };
 
-use crate::{
-    route::{Route, UrlParam},
-};
+use crate::route::{Route, UrlParam};
 
 #[component]
 pub fn PlayersWithMostMatchesTable(

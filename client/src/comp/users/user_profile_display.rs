@@ -1,7 +1,9 @@
 use dioxus::prelude::*;
 use protocol::{
     global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{api_declarations::GetUserProfile, client_api_manager::ClientApiManager},
+    server_chat_api::{
+        api_declarations::GetUserProfile, client_api_manager::ClientApiManager,
+    },
     user_identity::UserIdentity,
 };
 
@@ -20,7 +22,8 @@ pub fn UserProfileDisplay(
         let api = api.read().clone();
         let user_id = user_id.read().clone();
         async move {
-            let x = api.call_method::<GetUserProfile>(user_id)
+            let x = api
+                .call_method::<GetUserProfile>(user_id)
                 .await
                 .map_err(|e| format!("{e:#?}"));
             if let Err(ref e) = x {
