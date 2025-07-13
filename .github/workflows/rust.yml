@@ -111,8 +111,12 @@ jobs:
     - name: Check downloaded artifacts
       run: |
         set -ex
+        ls -alh builds
+        mv builds/* .
+        mv dist2/* .
+        rmdir builds
+        rmdir dist2
         ls -alh .
-        ls -alh dist2
       shell: bash
     - name: Install server SSH key
       run: |
