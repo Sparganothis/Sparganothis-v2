@@ -31,12 +31,12 @@ pub fn retrieve_href() -> JsValue {
 }
 
 #[component]
-pub fn Private1v1RoomLobbyPage(owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>, room_uuid: ReadOnlySignal<uuid::Uuid>) -> Element {
+pub fn PrivateLobbyPage(owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>, room_uuid: ReadOnlySignal<uuid::Uuid>) -> Element {
 
     let url = use_memo(move || {
         let owner_id  = owner_id.read().clone();
         let room_uuid = room_uuid.read().clone();
-        let _u1 = Route::Private1v1RoomLobbyPage {
+        let _u1 = Route::PrivateLobbyPage {
             room_uuid,owner_id,
         }.to_string();
         let u2 = retrieve_href().as_string();

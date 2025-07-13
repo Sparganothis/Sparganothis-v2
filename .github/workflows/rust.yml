@@ -135,13 +135,6 @@ jobs:
         SSH_TARGET: ${{secrets.SSH_TARGET}}
 
 
-    - name: Send Chat Message Finished
-      run: |
-        text=$(git log -1 --no-merges --pretty=%B)
-        sha=$(git rev-parse --short HEAD)
-        ( echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh ) || true
-
-
   # release_pages:
   #   name: Release Github Pages
   #   environment:

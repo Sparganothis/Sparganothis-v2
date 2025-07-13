@@ -69,7 +69,7 @@ pub fn MatchmakingPage() -> Element {
             }
             button {
                 onclick: move |_| {
-                    navigator().push(Route::Private1v1RoomLobbyPage { owner_id: UrlParam(own_node), room_uuid: Uuid::new_v4() });
+                    navigator().push(Route::PrivateLobbyPage { owner_id: UrlParam(own_node), room_uuid: Uuid::new_v4() });
                     
                 },
                 "Create private room!"

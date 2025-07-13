@@ -72,8 +72,8 @@ pub enum Route {
         Replay1v1Match {match_id: String},
 
 
-        #[route("/private_room/1v1/:owner_id/:room_uuid")]
-        Private1v1RoomLobbyPage{owner_id: UrlParam<NodeIdentity>, room_uuid: uuid::Uuid},
+        #[route("/private_lobby/:owner_id/:room_uuid")]
+        PrivateLobbyPage{owner_id: UrlParam<NodeIdentity>, room_uuid: uuid::Uuid},
         
     #[end_nest]
 
