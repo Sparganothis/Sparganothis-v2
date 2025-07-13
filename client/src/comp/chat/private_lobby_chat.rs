@@ -22,9 +22,9 @@ pub struct PrivateLobyRoomType;
 
 impl ChatMessageType2 for PrivateLobyRoomType {
     type M = PrivateLobbyMessage;
-    type P = ();
+    type P = bool;
     fn default_presence() -> Self::P {
-        ()
+        false
     }
 }
 

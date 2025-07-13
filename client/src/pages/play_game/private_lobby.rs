@@ -46,7 +46,7 @@ pub fn PrivateLobbyPage(owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>, room_u
     let mut copied = use_signal(move || false);
 
     rsx! {
-        article {
+        div {
             class:"container",
             
             h1 {
@@ -78,7 +78,10 @@ pub fn PrivateLobbyPage(owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>, room_u
                     }
                 }
             }
+            RoomControlComponent {owner_id: owner_id.read().clone(), room_uuid: room_uuid.read().clone()}
+
             article {
+                style:"padding:10px;margin:10px; width: 90%; height: 50vh;",
                 h3 {"Chat"}
                 PrivateLobbyChatBox {owner_id: owner_id.read().clone(), room_uuid: room_uuid.read().clone()}
             }
@@ -102,3 +105,22 @@ fn write_to_clipboard(string: String) {
     });
 }
 
+#[component]
+fn RoomControlComponent(owner_id: NodeIdentity, room_uuid: uuid::Uuid) -> Element {
+    rsx! {
+
+            article {
+                style:"padding:10px;margin:10px;",
+                button {
+                    "Spectate"
+                }
+                button {
+                    "Ready to Play"
+                }
+                button {
+                    disabled: true,
+                    "Start Game!",
+                }
+            }
+    }
+}
