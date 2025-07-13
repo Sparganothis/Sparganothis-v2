@@ -4,7 +4,7 @@ use dioxus::prelude::*;
 use protocol::user_identity::NodeIdentity;
 use tracing::info;
 use wasm_bindgen::prelude::*;
-use crate::route::{Route, UrlParam};
+use crate::{comp::chat::private_lobby_chat::PrivateLobbyChatBox, route::{Route, UrlParam}};
 
 
 #[wasm_bindgen]
@@ -80,6 +80,7 @@ pub fn PrivateLobbyPage(owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>, room_u
             }
             article {
                 h3 {"Chat"}
+                PrivateLobbyChatBox {owner_id: owner_id.read().clone(), room_uuid: room_uuid.read().clone()}
             }
         }
     }
