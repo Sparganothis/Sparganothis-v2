@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::{comp::{
     chat::{
-        chat_signals_hook::use_chat_signals,
+        chat_signals_hook::{use_chat_signals, ChatSignals},
         chat_traits::{FromUserInput, RenderElement},
         chat_window_fullscreen::FullscreenChatRoom,
     },
@@ -73,7 +73,7 @@ impl RenderElement for PrivateLobyRoomType {
 }
 
 #[component]
-pub fn PrivateLobbyChatBox(owner_id: NodeIdentity, room_uuid: uuid::Uuid) -> Element {
+pub fn PrivateLobbyChatBox(owner_id: NodeIdentity, room_uuid: uuid::Uuid, children: Element) -> Element {
     let chat = use_chat_signals(
         true,
         Callback::new(move |mm: GlobalMatchmaker| async move {
@@ -92,7 +92,14 @@ pub fn PrivateLobbyChatBox(owner_id: NodeIdentity, room_uuid: uuid::Uuid) -> Ele
         }),
     );
 
+
     rsx! {
-        FullscreenChatRoom<PrivateLobyRoomType> { chat }
+        {children}
+        
+        article {
+                style:"padding:10px;margin:10px; width: 90%; height: 50vh;",
+                h3 {"Chat"}
+            FullscreenChatRoom<PrivateLobyRoomType> { chat }
+        }
     }
 }
