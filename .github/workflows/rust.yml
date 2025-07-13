@@ -124,9 +124,9 @@ jobs:
     - name: SSH - upload artifacts to server
       run: |
         set -ex
-        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist2  || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master; . ~/.profile; bash ./migrate_clickhouse.sh";
+        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master; . ~/.profile; bash ./migrate_clickhouse.sh; echo OK1";
         ls -alh dist2
-        scp -rv -i $SSH_KEY_PATH dist2/ $SSH_USERNAME@$SSH_TARGET:dist2/
+        scp -rv -i $SSH_KEY_PATH dist2/* $SSH_USERNAME@$SSH_TARGET:dist2/
         ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET sudo systemctl restart sparganothis-server.service
       shell: bash
       env:
