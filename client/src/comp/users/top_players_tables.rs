@@ -9,7 +9,6 @@ use protocol::{
 };
 
 use crate::{
-    pages::UsersProfilePage,
     route::{Route, UrlParam},
 };
 

@@ -25,6 +25,7 @@ LIMIT 100
 "#;
 
 #[derive(Row, Deserialize, Debug)]
+#[allow(dead_code)]
 struct TopPlayersRow {
     user_id: String,
     nickname: String,

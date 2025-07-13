@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use dioxus::{html::elements, prelude::*};
+use dioxus::prelude::*;
 use game::tet::GameState;
 use protocol::server_chat_api::api_declarations::{
     GetGameStateRowsForMatch, GetReplayMatchDetail, GetReplayMatchList,
@@ -136,7 +136,6 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
         }
     });
 
-    let match_info = match_info.clone();
     let rows2 = use_memo(move || {
         let rows1 = match_row.read().clone();
         let mut rows2 = HashMap::<String, Vec<GameState>>::new();
@@ -199,7 +198,7 @@ pub fn GameStateBrowser(data: ReadOnlySignal<Vec<GameState>>) -> Element {
                 m: idx,
                 default_value: 0,
                 min: 0,
-                max: {*max.read()}
+                max: *max.read()
             }
             "max: {*max.read()}"
 

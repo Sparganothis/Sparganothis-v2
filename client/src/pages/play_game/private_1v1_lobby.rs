@@ -1,9 +1,11 @@
+#![allow(deprecated)]
+
 use dioxus::prelude::*;
 use protocol::user_identity::NodeIdentity;
-use tracing::{info, warn};
-use wasm_bindgen_futures::js_sys;
+use tracing::info;
 use wasm_bindgen::prelude::*;
 use crate::route::{Route, UrlParam};
+
 
 #[wasm_bindgen]
 extern "C" {

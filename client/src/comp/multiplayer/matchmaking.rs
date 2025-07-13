@@ -20,7 +20,7 @@ use protocol::{
 };
 use tracing::{info, warn};
 
-use crate::network::{GlobalChatClientContext, NetworkState};
+use crate::network::NetworkState;
 
 async fn run_matchmaker_once(
     api: ClientApiManager,
@@ -48,6 +48,9 @@ async fn run_matchmaker(
         if let Ok(r) = r {
             return Ok(r);
         };
+        if xx > 5 {
+            break;
+        }
         mm.sleep(Duration::from_millis(500)).await;
     }
     anyhow::bail!("Matchmaker timed out!")

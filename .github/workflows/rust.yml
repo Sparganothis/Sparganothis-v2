@@ -71,8 +71,8 @@ jobs:
         sha=$(git rev-parse --short HEAD)
         ( echo "Github Action: STARTED: $sha '$text' ... " | bash start_cli.sh ) || true
 
-    # - name: Build Web Release
-    #   run: chmod +x ./build_web_release.sh && ./build_web_release.sh
+    - name: Build Web Release
+      run: chmod +x ./build_web_release.sh && ./build_web_release.sh
 
     - name: Send Chat Message Finished
       run: |
@@ -80,28 +80,50 @@ jobs:
         sha=$(git rev-parse --short HEAD)
         ( echo "Github Action: FINISHED: $sha '$text'." |  bash start_cli.sh ) || true
 
-    # - name: Upload artifact
-    #   uses: actions/upload-pages-artifact@v3
-    #   with:
-    #     path: "./dist"
+    - name: Upload artifact - dist
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: "./dist"
 
-    # - name: Zip website and exe
-    #   run: |
-    #     set -ex
-    #     mkdir -p release_exes/
-    #     zip -r website.zip ./dist
-    #     mv website.zip release_exes/
-    #     cp target/debug/echo_cli release_exes/echo_cli_linux_x64
+    - name: Upload artifact - dist_server
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: "./dist_server"
 
-    # - name: Github Release
-    #   uses: ncipollo/release-action@v1
-    #   with:
-    #     allowUpdates: true
-    #     commit: "${{ github.sha }}"
-    #     tag: "latest"
-    #     makeLatest: true
-    #     artifacts: "release_exes/**/*"
-    #     bodyFile: ".github/release_template.md"
+    - name: Github Release
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true
+        commit: "${{ github.sha }}"
+        tag: "latest"
+        makeLatest: true
+        artifacts: "{dist,dist_server}/**/*"
+        bodyFile: ".github/release_template.md"
+
+    - name: Create SSH key
+      run: |
+        set -ex
+        mkdir -p ~/.ssh/
+        echo "$SSH_PRIVATE_KEY" > ../private.key
+        sudo chmod 600 ../private.key
+        echo "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      shell: bash
+      env:
+        SSH_PRIVATE_KEY: ${{secrets.SSH_PRIVATE_KEY}}
+        SSH_KNOWN_HOSTS: ${{secrets.SSH_KNOWN_HOSTS}}
+        SSH_KEY_PATH: ${{ github.workspace }}/../private.key
+
+    - name: SSH - upload artifacts
+      run: |
+        set -ex
+        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist || true ; rm -rf dist_server || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master"
+        scp -av -i $SSH_KEY_PATH dist_server $SSH_USERNAME@$SSH_TARGET:dist_server
+        scp -av -i $SSH_KEY_PATH dist $SSH_USERNAME@$SSH_TARGET:dist
+      shell: bash
+      env:
+        SSH_KEY_PATH: ${{ github.workspace }}/../private.key
+        SSH_USERNAME: ${{secrets.SSH_USERNAME}}
+        SSH_TARGET: ${{secrets.SSH_TARGET}}
 
   # release_pages:
   #   name: Release Github Pages
