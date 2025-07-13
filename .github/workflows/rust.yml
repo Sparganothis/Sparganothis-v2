@@ -89,7 +89,7 @@ jobs:
       with:
         allowUpdates: true
         commit: "${{ github.sha }}"
-        tag: "${{ github.sha }}"
+        tag: "live"
         makeLatest: true
         artifacts: "dist2/**/*"
         bodyFile: ".github/release_template.md"
