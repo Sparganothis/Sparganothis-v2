@@ -75,21 +75,21 @@ pub async fn server_main_loop(
         anyhow::Ok(())
     });
 
-    let global_send = tokio::task::spawn(async move {
-        let mut input = BufReader::new(tokio::io::stdin()).lines();
-        while let Some(line) = input.next_line().await? {
-            let line = line.trim();
-            if line.is_empty() {
-                continue;
-            }
-            tracing::info!("* sending message: {line}");
-            global_sender
-                .broadcast_message(line.to_string().into())
-                .await?;
-        }
-        tracing::info!("* sender closed.");
-        anyhow::Ok(())
-    });
+    // let global_send = tokio::task::spawn(async move {
+    //     let mut input = BufReader::new(tokio::io::stdin()).lines();
+    //     while let Some(line) = input.next_line().await? {
+    //         let line = line.trim();
+    //         if line.is_empty() {
+    //             continue;
+    //         }
+    //         tracing::info!("* sending message: {line}");
+    //         global_sender
+    //             .broadcast_message(line.to_string().into())
+    //             .await?;
+    //     }
+    //     tracing::info!("* sender closed.");
+    //     anyhow::Ok(())
+    // });
 
     // /////////////////////////
     //
@@ -135,7 +135,8 @@ pub async fn server_main_loop(
     //    INIT
 
     let _r1 = n0_future::future::race(
-        n0_future::future::race(global_receive, global_send),
+        // n0_future::future::race(global_receive, global_send),
+        global_receive,
         server_recv_thread,
     )
     .await?;
