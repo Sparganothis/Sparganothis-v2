@@ -110,9 +110,9 @@ jobs:
     - name: SSH - upload artifacts to server
       run: |
         set -ex
-        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist || true ; rm -rf dist_server || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master"
-        scp -av -i $SSH_KEY_PATH dist_server $SSH_USERNAME@$SSH_TARGET:dist_server
-        scp -av -i $SSH_KEY_PATH dist $SSH_USERNAME@$SSH_TARGET:dist
+        ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET bash -c "rm -rf dist dist_server || true; cd Sparganothis-v2; git fetch -ap; git pull || git reset --hard origin/master"
+        scp -rv -i $SSH_KEY_PATH dist_server/ $SSH_USERNAME@$SSH_TARGET:dist_server/
+        scp -rv -i $SSH_KEY_PATH dist/ $SSH_USERNAME@$SSH_TARGET:dist/
         ssh -i $SSH_KEY_PATH $SSH_USERNAME@$SSH_TARGET sudo systemctl restart sparganothis-server.service
       shell: bash
       env:
