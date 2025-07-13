@@ -113,9 +113,7 @@ jobs:
         set -ex
         ls -alh builds
         mv builds/* .
-        mv dist2/* .
         rmdir builds
-        rmdir dist2
         ls -alh .
       shell: bash
     - name: Install server SSH key
