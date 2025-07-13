@@ -16,7 +16,6 @@ use protocol::{
     user_identity::NodeIdentity,
     ReceivedMessage,
 };
-use tokio::io::{AsyncBufReadExt, BufReader};
 use tracing::info;
 
 use crate::inventory_impl_list::inventory_get_implementation_by_name;
