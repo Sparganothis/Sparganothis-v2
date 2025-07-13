@@ -1,1 +1,1 @@
-pub const APP_TITLE: &'static str = "Sparganothis-V2";
+pub const APP_TITLE: &'static str = "Sparganothis";
