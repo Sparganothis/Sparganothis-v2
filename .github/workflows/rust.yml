@@ -111,6 +111,7 @@ jobs:
     - name: Check downloaded artifacts
       run: |
         set -ex
+        ls -alh .
         ls -alh dist2
       shell: bash
     - name: Install server SSH key
