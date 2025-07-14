@@ -148,7 +148,7 @@ pub fn MatchmakingWindow(
     }
 }
 
-async fn send_new_match(m: GameMatch<NodeIdentity>) {
+pub async fn send_new_match(m: GameMatch<NodeIdentity>) {
     let api = use_context::<NetworkState>()
         .client_api_manager
         .peek()

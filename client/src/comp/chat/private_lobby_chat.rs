@@ -67,7 +67,7 @@ impl RenderElement for PrivateLobyRoomType {
                 }
             }
             PrivateLobbyMessage::ReadyToPlay(ready) => {
-                rsx!{
+                rsx! {
                     "clicked ready = {ready}"
                 }
             }
@@ -111,7 +111,6 @@ pub fn PrivateLobbyChatBox(
     );
     let chat2 = chat.clone();
     use_context_provider(|| chat2);
-
 
     rsx! {
         {children}

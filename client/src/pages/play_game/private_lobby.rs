@@ -3,13 +3,27 @@
 use std::{collections::BTreeSet, time::Duration};
 
 use crate::{
-    comp::chat::{chat_signals_hook::ChatSignals, private_lobby_chat::{PrivateLobbyChatBox, PrivateLobbyMessage, PrivateLobyRoomType}},
+    comp::{
+        chat::{
+            chat_signals_hook::ChatSignals,
+            private_lobby_chat::{
+                PrivateLobbyChatBox, PrivateLobbyMessage, PrivateLobyRoomType,
+            },
+        },
+        multiplayer::matchmaking::send_new_match,
+    },
     network::NetworkState,
     route::{Route, UrlParam},
 };
 use dioxus::prelude::*;
-use game::{api::game_match::GameMatch, tet::get_random_seed, timestamp::get_timestamp_now_ms};
-use protocol::{chat::{IChatController, IChatReceiver, IChatSender}, user_identity::NodeIdentity};
+use game::{
+    api::game_match::GameMatch, tet::get_random_seed,
+    timestamp::get_timestamp_now_ms,
+};
+use protocol::{
+    chat::{IChatController, IChatReceiver, IChatSender},
+    user_identity::NodeIdentity,
+};
 use tracing::info;
 use wasm_bindgen::prelude::*;
 
@@ -129,8 +143,7 @@ fn RoomControlComponent(
         };
     };
     let our_id = mm.own_node_identity();
-    let chat = use_context::< ChatSignals<PrivateLobyRoomType> >();
-    
+    let chat = use_context::<ChatSignals<PrivateLobyRoomType>>();
 
     rsx! {
 
@@ -151,12 +164,14 @@ fn RoomControlAdmin(
     our_id: ReadOnlySignal<NodeIdentity>,
     owner_id: ReadOnlySignal<NodeIdentity>,
     room_uuid: ReadOnlySignal<uuid::Uuid>,
-    chat:  ChatSignals<PrivateLobyRoomType> ,
+    chat: ChatSignals<PrivateLobyRoomType>,
 ) -> Element {
     let mut ready_users = use_signal(BTreeSet::new);
 
     let chat = chat.chat.read().clone();
-    let Some(chat) = chat else {return rsx!{"no chat"}};
+    let Some(chat) = chat else {
+        return rsx! {"no chat"};
+    };
     let chat2 = chat.clone();
     let _r = use_resource(move || {
         let chat2 = chat2.clone();
@@ -165,7 +180,8 @@ fn RoomControlAdmin(
             while let Some(msg) = rx.next_message().await {
                 let _from = msg.from;
                 let msg_content = &msg.message;
-                let PrivateLobbyMessage::ReadyToPlay(ready) = msg_content else {
+                let PrivateLobbyMessage::ReadyToPlay(ready) = msg_content
+                else {
                     continue;
                 };
                 let ready = *ready;
@@ -186,7 +202,9 @@ fn RoomControlAdmin(
     let chat3_send = chat.sender();
     let mm = use_context::<NetworkState>().global_mm;
     let mm = mm.read().clone();
-    let Some(mm) = mm else {return rsx!{"loading"}};
+    let Some(mm) = mm else {
+        return rsx! {"loading"};
+    };
 
     rsx! {
         h1 {"Admin"}
@@ -203,15 +221,18 @@ fn RoomControlAdmin(
                 let mm = mm.clone();
 
                 async move {
-                    let _match = GameMatch { 
-                        match_id: uuid::Uuid::new_v4(), 
+                    let _match = GameMatch {
+                        match_id: uuid::Uuid::new_v4(),
                         seed: get_random_seed(),
                          time: get_timestamp_now_ms(),
                           users,
-                           title: "Private 1v1 {room_id}".to_string(), 
+                           title: "Private 1v1 {room_id}".to_string(),
                            type_: game::api::game_match::GameMatchType::_1v1,
                     };
-                    let _ = chat3_send.broadcast_message(PrivateLobbyMessage::StartPlaying(_match.clone())).await;
+                    if let Err(e) = chat3_send.broadcast_message(PrivateLobbyMessage::StartPlaying(_match.clone())).await {
+                        tracing::error!("failed to send start playing message: {e:?}");
+                    }
+                    let _ = send_new_match(_match.clone()).await;
                     let url = Route::Play1v1Page {
                         game_match: UrlParam(_match),
                     }.to_string();
@@ -227,7 +248,7 @@ fn RoomControlAdmin(
                li {
                     style:"color:{x.html_color()}",
                     "{x.nickname()}"
-               } 
+               }
             }
         }
 
@@ -239,18 +260,20 @@ fn RoomControlPlayer(
     our_id: ReadOnlySignal<NodeIdentity>,
     owner_id: ReadOnlySignal<NodeIdentity>,
     room_uuid: ReadOnlySignal<uuid::Uuid>,
-    chat:  ChatSignals<PrivateLobyRoomType> ,
+    chat: ChatSignals<PrivateLobyRoomType>,
 ) -> Element {
     let mut clicked_ready = use_signal(|| false);
     let chat = chat.chat.read().clone();
-    let Some(chat) = chat else {return rsx!{"no chat"}};
+    let Some(chat) = chat else {
+        return rsx! {"no chat"};
+    };
     let chat_send = chat.sender();
 
     if our_id.read().user_id().clone() == owner_id.read().user_id().clone() {
         return rsx! {
             h1 {"Player (also you)"}
             "You have opened your own link. It works. Please share it with another user."
-        }
+        };
     }
 
     let chat2 = chat.clone();
@@ -261,13 +284,15 @@ fn RoomControlPlayer(
             while let Some(msg) = rx.next_message().await {
                 let _from = msg.from;
                 let msg_content = &msg.message;
-                let PrivateLobbyMessage::StartPlaying(_match) = msg_content else {
+                let PrivateLobbyMessage::StartPlaying(_match) = msg_content
+                else {
                     continue;
                 };
                 let _match = _match.clone();
                 let url = Route::Play1v1Page {
-                        game_match: UrlParam(_match),
-                    }.to_string();
+                    game_match: UrlParam(_match),
+                }
+                .to_string();
                 navigator().replace(url);
             }
         }
