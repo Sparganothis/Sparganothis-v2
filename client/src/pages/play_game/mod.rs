@@ -6,6 +6,9 @@ pub use matchmaking::*;
 mod private_lobby;
 pub use private_lobby::*;
 
+mod _1v1_outcome;
+pub use _1v1_outcome::*;
+
 use dioxus::prelude::*;
 
 #[component]

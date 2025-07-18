@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use dioxus::prelude::*;
-use futures_util::pin_mut;
+use futures_util::{pin_mut, FutureExt};
 use game::{
     api::game_match::GameMatch, futures_channel, input::events::GameInputEvent,
     state_manager::GameStateManager, tet::GameState,
@@ -20,6 +20,7 @@ use crate::{
     comp::{game_display::GameDisplay, input::GameInputCaptureParent},
     localstorage::use_game_settings,
     network::NetworkState,
+    route::{Route, UrlParam},
 };
 
 #[component]
@@ -49,6 +50,23 @@ pub fn Spectate1v1WindowTitle(
     rsx! {
         div {
             "spectate 1v1: "
+            TitleUsernameSpan { node: game_match.users[0], is_current_user: our_node == game_match.users[0]}
+            " vs. "
+            TitleUsernameSpan { node: game_match.users[1], is_current_user: our_node == game_match.users[1]}
+        }
+    }
+}
+
+#[component]
+pub fn Outcome1v1WindowTitle(
+    mm: GlobalMatchmaker,
+    game_match: GameMatch<NodeIdentity>,
+) -> Element {
+    let our_node = mm.own_node_identity();
+
+    rsx! {
+        div {
+            "Outcome 1v1: "
             TitleUsernameSpan { node: game_match.users[0], is_current_user: our_node == game_match.users[0]}
             " vs. "
             TitleUsernameSpan { node: game_match.users[1], is_current_user: our_node == game_match.users[1]}
@@ -119,9 +137,54 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
     };
     let play_state_manager =
         get_1v1_player_state_manager(cc.clone(), settings, input_rx, api);
-    let spectator_manager = get_spectator_state_manager(cc);
+    let spectator_manager = get_spectator_state_manager(cc.clone());
     let on_user_event = Callback::new(move |event: GameInputEvent| {
         let _ = input_tx.unbounded_send(event);
+    });
+
+    // ============ ON GAME OVER REDIRECT TO 1v1 OUTCOME PAGE
+    let play_state2 = play_state_manager.clone();
+    let spectator_state2 = spectator_manager.clone();
+    let match_info2 = (&cc.match_info).clone();
+    let _c = use_coroutine(move |_: UnboundedReceiver<()>| {
+        let play_state2 = play_state2.clone();
+        let spectator_state2 = spectator_state2.clone();
+        let match_info2 = match_info2.clone();
+
+        async move {
+            let play_stream = play_state2.read_state_stream();
+            pin_mut!(play_stream);
+            let opponent_stream = spectator_state2.read_state_stream();
+            pin_mut!(opponent_stream);
+
+            let mut we_finish = false;
+            let mut opponent_finish = false;
+            while !we_finish || !opponent_finish {
+                tokio::select! {
+                    our_state = (play_stream.next().fuse()) => {
+                        let Some(our_state) = our_state else {
+                            we_finish = true;
+                            break;
+                        };
+                        we_finish = we_finish || our_state.game_over();
+                    }
+                    opp_state = (opponent_stream.next().fuse()) => {
+                        let Some(opp_state) = opp_state else {
+                            opponent_finish = true;
+                            break;
+                        };
+                        opponent_finish = opponent_finish || opp_state.game_over();
+                    }
+                }
+            }
+            let finish = we_finish || opponent_finish;
+            if !finish {
+                tracing::warn!("no one finished but we redirect to outcome??");
+            }
+            navigator().replace(Route::Game1v1OutcomePage {
+                game_match: UrlParam(match_info2),
+            });
+        }
     });
 
     rsx! {
@@ -145,6 +208,10 @@ pub fn Spectate1v1FullScreenWindow(
     mm: GlobalMatchmaker,
     game_match: GameMatch<NodeIdentity>,
 ) -> Element {
+    navigator().replace(Route::Game1v1OutcomePage {
+        game_match: UrlParam(game_match),
+    });
+
     rsx! {
         h1 {
             "TODO : SPECTATE plz wait for impl"

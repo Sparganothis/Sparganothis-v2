@@ -32,6 +32,7 @@ fn OverlayInner(children: Element) -> Element {
                 style: "
                     width: 100%;
                     height: 100%;
+                    container-type:size;
                 ",
                 {children}
             }

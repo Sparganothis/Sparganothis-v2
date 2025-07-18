@@ -62,6 +62,9 @@ pub enum Route {
         #[route("/1v1/:game_match")]
         Play1v1Page {game_match: UrlParam<GameMatch<NodeIdentity>>},
 
+        #[route("/1v1-outcome/:game_match")]
+        Game1v1OutcomePage {game_match: UrlParam<GameMatch<NodeIdentity>>},
+
         #[route("/matchmaking")]
         MatchmakingPage {},
 
@@ -146,6 +149,7 @@ fn NavbarLayout() -> Element {
                 style: "
                     overflow: auto;
                     height: calc(100% - (max(7%, 80px)));
+                    container-type: size;
                 ",
                 GlobalMiniChatOverlayParent {
                     Outlet::<Route> {}
