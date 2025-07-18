@@ -14,6 +14,7 @@ use crate::{
 declare_api_method!(LoginApiMethod, (), ());
 
 declare_api_method!(SendNewMatch, (GameMatch<NodeIdentity>,), ());
+declare_api_method!(GetLastGameStatesForMatch, GameMatch<NodeIdentity>, Vec<GameState>);
 
 declare_api_method!(SendNewGameState, (GameMatch<NodeIdentity>, GameState), ());
 
@@ -38,7 +39,8 @@ pub struct GameStateRow2 {
     pub user_id: String,
     pub start_time: i64,
     pub game_seed: String,
-    pub state_idx: i64,
+    pub score: i64,
+    pub recv_time: i64,
 
     pub data_version: i64,
     pub last_action: String,

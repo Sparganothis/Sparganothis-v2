@@ -44,7 +44,7 @@ impl IChatRoomType for Game1v1RoomType {
 
 #[derive(Debug, Clone)]
 pub struct Game1v1MatchChatController {
-    _mm: GlobalMatchmaker,
+    pub _mm: GlobalMatchmaker,
     chat: ChatController<Game1v1RoomType>,
     pub match_info: GameMatch<NodeIdentity>,
     opponent_id: NodeIdentity,
@@ -295,6 +295,8 @@ pub fn get_1v1_player_state_manager(
         while let Some(s) = stream.next().await {
             let arg = (match_info.clone(), s);
             api.call_method::<SendNewGameState>(arg).await?;
+            let finish = s.game_over();
+            tracing::info!("game_state_manager SEND TO DB game_finish={finish}");
         }
         anyhow::Ok(())
     });

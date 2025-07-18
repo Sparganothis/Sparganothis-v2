@@ -2,7 +2,7 @@ use crate::server::db::{
     clickhouse_client::get_clickhouse_client, guest_login::serialize_base64,
 };
 use clickhouse::Row;
-use game::{api::game_match::GameMatch, tet::GameState};
+use game::{api::game_match::GameMatch, tet::GameState, timestamp::get_timestamp_now_ms};
 use protocol::user_identity::NodeIdentity;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +12,8 @@ pub struct GameStateRow {
     pub user_id: String,
     pub start_time: i64,
     pub game_seed: String,
-    pub state_idx: i64,
+    pub score: i64,
+    pub recv_time: i64,
 
     pub data_version: i64,
     pub last_action: String,
@@ -35,7 +36,8 @@ pub async fn db_send_new_gamestate(
         user_id,
         game_seed,
         data_version: 0,
-        state_idx: game_state.score as i64,
+        score: game_state.score as i64,
+        recv_time: get_timestamp_now_ms(),
         last_action: game_state.last_action.name(),
         state_data,
     };

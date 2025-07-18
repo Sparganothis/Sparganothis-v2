@@ -146,10 +146,12 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
     let play_state2 = play_state_manager.clone();
     let spectator_state2 = spectator_manager.clone();
     let match_info2 = (&cc.match_info).clone();
+    let mm2 = (&cc._mm).clone();
     let _c = use_coroutine(move |_: UnboundedReceiver<()>| {
         let play_state2 = play_state2.clone();
         let spectator_state2 = spectator_state2.clone();
         let match_info2 = match_info2.clone();
+        let mm2 = mm2.clone();
 
         async move {
             let play_stream = play_state2.read_state_stream();
@@ -181,6 +183,7 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
             if !finish {
                 tracing::warn!("no one finished but we redirect to outcome??");
             }
+            let _ = mm2.sleep(std::time::Duration::from_secs(1)).await;
             navigator().replace(Route::Game1v1OutcomePage {
                 game_match: UrlParam(match_info2),
             });

@@ -18,14 +18,15 @@ CREATE TABLE game_states
     user_id String,
     start_time BigInt,
     game_seed String,
-    state_idx BigInt,
+    recv_time BigInt,
+    score BigInt,
 
     data_version BigInt,
     last_action BLOB,
     state_data BLOB,
 )
 ENGINE = MergeTree ()
-ORDER BY (game_type, user_id, start_time, game_seed, state_idx)
+ORDER BY (game_type, user_id, start_time, game_seed, recv_time, score)
 COMMENT 'all states in all games';
 
 

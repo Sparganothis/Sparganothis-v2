@@ -34,6 +34,8 @@ use protocol::server_chat_api::api_declarations::*;
 impl_api_method!(GetReplayMatchList, db_get_list_matches); // INVENTORY OK
 impl_api_method!(GetReplayMatchDetail, db_get_detail_match); // INVENTORY OK
 impl_api_method!(GetGameStateRowsForMatch, db_get_game_states_for_match); // inventory ok
+
+impl_api_method!(GetLastGameStatesForMatch, get_last_game_states_for_match);
 impl_api_method!(SendNewGameState, db_send_new_gamestate);
 impl_api_method!(SendNewMatch, db_send_new_match);
 impl_api_method!(LoginApiMethod, db_add_guest_login); // inventory ok
@@ -48,12 +50,13 @@ impl_api_method!(UserGetFriends, user_list_friends);
 impl_api_method!(GetUsersWithTopGameCounts, db_get_users_with_top_game_counts);
 impl_api_method!(GetUserProfile, db_get_user_profile);
 
-pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 13] = [
+pub const INVENTORY_FUNCTIONS_IMPL: [ApiMethodImpl; 14] = [
     /*                         get_replay_match_list2           */
     /* ======================================================== */
     api_method_impl!(GetReplayMatchList),
     api_method_impl!(GetReplayMatchDetail),
     api_method_impl!(GetGameStateRowsForMatch),
+    api_method_impl!(GetLastGameStatesForMatch),
     /*                         get_replay_match_list2           */
     /* ======================================================== */
     api_method_impl!(LoginApiMethod),
