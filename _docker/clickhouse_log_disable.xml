@@ -12,4 +12,22 @@
     <crash_log remove="1"/>
     <opentelemetry_span_log remove="1"/>
     <zookeeper_log remove="1"/>
+
+
+    <!-- https://clickhouse.com/docs/operations/tips#using-less-than-16gb-of-ram -->
+    <!--  https://github.com/ClickHouse/ClickHouse/blob/master/programs/server/config.xml -->
+    <mark_cache_size>536870912</mark_cache_size>
+    <concurrent_threads_soft_limit_num>2</concurrent_threads_soft_limit_num>
+    <max_concurrent_queries>512</max_concurrent_queries>
+    <max_thread_pool_size>1024</max_thread_pool_size>
+    <!-- usersxml -->
+    
+    <profiles><default>
+        <max_block_size>8192</max_block_size>
+        <max_download_threads>1</max_download_threads>
+        <input_format_parallel_parsing>0</input_format_parallel_parsing>
+        <output_format_parallel_formatting>0</output_format_parallel_formatting>
+
+    </default></profiles>
+
 </clickhouse>
