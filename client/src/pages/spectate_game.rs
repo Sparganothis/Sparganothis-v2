@@ -12,7 +12,7 @@ use dioxus::prelude::*;
 use game::tet::GameState;
 use iroh::NodeId;
 use protocol::{
-    chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
+    chat::chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
     IChatRoomType as ChatMessageType2,
 };
 use serde::{Deserialize, Serialize};

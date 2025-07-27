@@ -1,9 +1,9 @@
 use dioxus::prelude::*;
 use protocol::{
-    global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{
+    api::{
         api_declarations::GetUserProfile, client_api_manager::ClientApiManager,
     },
+    global_matchmaker::GlobalMatchmaker,
     user_identity::UserIdentity,
 };
 

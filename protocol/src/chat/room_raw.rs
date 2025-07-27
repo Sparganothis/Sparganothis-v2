@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use super::{ChatDirectMessage, DirectMessageProtocol, IChatRoomRaw};
+use crate::chat::chat_controller::IChatRoomRaw;
+use crate::chat::direct_message::{ChatDirectMessage, DirectMessageProtocol};
 use crate::{
-    _const::CONNECT_TIMEOUT, chat_ticket::ChatTicket, main_node::MainNode,
-    user_identity::NodeIdentity,
+    chat::chat_const::CONNECT_TIMEOUT, chat::chat_ticket::ChatTicket,
+    main_node::MainNode, user_identity::NodeIdentity,
 };
 use anyhow::{Context, Result};
 use futures::{FutureExt, StreamExt};

@@ -2,7 +2,7 @@ use clickhouse::{sql::Identifier, Row};
 use game::timestamp::get_timestamp_now_ms;
 use iroh::PublicKey;
 use protocol::{
-    server_chat_api::api_declarations::FriendInfo,
+    api::api_declarations::FriendInfo,
     user_identity::{NodeIdentity, UserIdentity},
 };
 use serde::{Deserialize, Serialize};

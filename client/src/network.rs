@@ -3,14 +3,14 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    _const::PRESENCE_INTERVAL,
-    chat::{IChatController, IChatSender},
-    global_chat::{GlobalChatPresence, GlobalChatRoomType},
-    global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{
+    api::{
         api_declarations::LoginApiMethod,
         client_api_manager::{connect_api_manager, ClientApiManager},
     },
+    chat::chat_const::PRESENCE_INTERVAL,
+    chat::chat_controller::{IChatController, IChatSender},
+    chat::global_chat::{GlobalChatPresence, GlobalChatRoomType},
+    global_matchmaker::GlobalMatchmaker,
     user_identity::UserIdentitySecrets,
 };
 use tracing::{info, warn};
@@ -286,10 +286,10 @@ pub fn NetworkConnectionStatusIcon() -> Element {
                 return;
             };
             let presence = chat.chat_presence();
-            peer_w.set(presence.get_presence_list().await.len());
+            peer_w.set(presence.get_presence_list().await.0.len());
             loop {
                 presence.notified().await;
-                peer_w.set(presence.get_presence_list().await.len());
+                peer_w.set(presence.get_presence_list().await.0.len());
             }
         }
     });

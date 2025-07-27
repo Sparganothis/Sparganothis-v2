@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use crate::_const::PRESENCE_EXPIRATION;
+use crate::chat::chat_const::PRESENCE_EXPIRATION;
 use crate::{
-    _const::CONNECT_TIMEOUT, signed_message::AcceptableType,
+    chat::chat_const::CONNECT_TIMEOUT, signed_message::AcceptableType,
     sleep::SleepManager,
 };
 use anyhow::Context;

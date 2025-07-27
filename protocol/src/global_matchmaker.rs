@@ -13,17 +13,26 @@ use tracing::{error, info, warn};
 
 use crate::{
     _bootstrap_keys::BOOTSTRAP_SECRET_KEYS,
-    _const::{
-        CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID, GLOBAL_PERIODIC_TASK_INTERVAL,
+    chat::{
+        chat_const::{
+            CONNECT_TIMEOUT, GLOBAL_CHAT_TOPIC_ID,
+            GLOBAL_PERIODIC_TASK_INTERVAL,
+        },
+        chat_controller::{
+            ChatController, IChatController, IChatReceiver, IChatSender,
+        },
+        chat_ticket::ChatTicket,
+        global_chat::{
+            GlobalChatBootstrapQuery, GlobalChatMessageContent,
+            GlobalChatPresence, GlobalChatRoomType,
+        },
     },
-    chat::{ChatController, IChatController, IChatSender},
-    chat_ticket::ChatTicket,
     datetime_now,
     echo::Echo,
-    global_chat::{GlobalChatPresence, GlobalChatRoomType},
     main_node::MainNode,
     sleep::SleepManager,
     user_identity::{NodeIdentity, UserIdentity, UserIdentitySecrets},
+    // ReceivedMessage,
 };
 
 #[derive(Debug, Clone)]
@@ -43,6 +52,7 @@ struct GlobalMatchmakerInner {
     _periodic_task: Option<AbortOnDropHandle<()>>,
     global_chat_controller: Option<ChatController<GlobalChatRoomType>>,
     bs_global_chat_controller: Option<ChatController<GlobalChatRoomType>>,
+    bs_global_chat_task: Option<AbortOnDropHandle<()>>,
 }
 
 impl GlobalMatchmakerInner {
@@ -148,7 +158,7 @@ impl GlobalMatchmaker {
             .await
             .map(|c| c.chat_presence());
         let chat_presence_count = if let Some(chat_presence) = chat_presence {
-            chat_presence.get_presence_list().await.len()
+            chat_presence.get_presence_list().await.0.len()
         } else {
             0
         };
@@ -177,6 +187,7 @@ impl GlobalMatchmaker {
                 _periodic_task: None,
                 global_chat_controller: None,
                 bs_global_chat_controller: None,
+                bs_global_chat_task: None,
             })),
             sleep_manager: SleepManager::new(),
         };
@@ -345,7 +356,24 @@ impl GlobalMatchmaker {
                     })
                     .await;
                 let mut i = mm.inner.write().await;
-                i.bs_global_chat_controller = Some(c1);
+                i.bs_global_chat_controller = Some(c1.clone());
+                let c1 = c1.clone();
+                i.bs_global_chat_task = Some(AbortOnDropHandle::new(
+                    n0_future::task::spawn(async move {
+                        match run_bs_global_chat_task(c1).await {
+                            Ok(_) => {
+                                tracing::warn!(
+                                    "run_bs_global_chat_task exited!"
+                                );
+                            }
+                            Err(e) => {
+                                tracing::error!(
+                                    "run_bs_global_chat_task ERROR: {e:?}"
+                                );
+                            }
+                        };
+                    }),
+                ));
 
                 Ok(())
             }
@@ -463,7 +491,7 @@ impl GlobalMatchmaker {
         Ok(true)
     }
 
-    pub async fn connect_to_bootstrap(&self, exit_early: bool) -> Result<()> {
+    async fn connect_to_bootstrap(&self, exit_early: bool) -> Result<()> {
         let mut fut = FuturesUnordered::new();
         let endpoint = self
             .own_endpoint()
@@ -561,6 +589,7 @@ impl GlobalMatchmaker {
             .chat_presence()
             .get_presence_list()
             .await
+            .0
             .iter()
             .map(|p| *p.identity.node_id())
             .collect::<HashSet<_>>();
@@ -641,4 +670,43 @@ async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
     mm.join_global_chats_into_new_bootstrap().await?;
 
     Ok(())
+}
+
+async fn run_bs_global_chat_task(
+    bs_cc: ChatController<GlobalChatRoomType>,
+) -> anyhow::Result<()> {
+    let rx = bs_cc.receiver().await;
+    let presence = bs_cc.chat_presence();
+    while let Some(msg1) = rx.next_message().await {
+        let msg = msg1.message;
+        let from = msg1.from;
+
+        let GlobalChatMessageContent::BootstrapQuery(
+            GlobalChatBootstrapQuery::PlzSendServerList,
+        ) = msg
+        else {
+            continue;
+        };
+
+        let mut list = presence.get_presence_list().await;
+        list.0 = list
+            .0
+            .into_iter()
+            .filter(|x| {
+                x.payload.is_some()
+                    && x.payload.as_ref().unwrap().is_server.is_some()
+            })
+            .collect();
+        let response = GlobalChatMessageContent::BootstrapQuery(
+            GlobalChatBootstrapQuery::ServerList { v: list },
+        );
+        if let Err(e) = bs_cc.sender().direct_message(from, response).await {
+            tracing::warn!(
+                "Failed to replyu with presence list to peer {from:?}: {e:#?}"
+            );
+            continue;
+        }
+    }
+
+    anyhow::bail!("ran out of chat messages for bootstrap chat!");
 }

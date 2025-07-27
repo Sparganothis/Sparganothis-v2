@@ -14,14 +14,19 @@ use game::{
     state_manager::GameStateManager,
     tet::{GameOverReason, GameState},
 };
-use protocol::server_chat_api::api_declarations::SendNewGameState;
-use protocol::server_chat_api::client_api_manager::ClientApiManager;
+use protocol::api::api_declarations::SendNewGameState;
+use protocol::api::client_api_manager::ClientApiManager;
+use protocol::chat::chat_controller::{
+    ChatController, IChatController, IChatReceiver, IChatSender,
+};
+use protocol::chat::chat_ticket::ChatTicket;
 use protocol::{
-    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
-    chat_ticket::ChatTicket,
+    // chat::{ChatController, IChatController, IChatReceiver, IChatSender},
+    // chat_ticket::ChatTicket,
     global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
-    IChatRoomType, ReceivedMessage,
+    IChatRoomType,
+    ReceivedMessage,
 };
 use serde::{Deserialize, Serialize};
 
@@ -296,7 +301,9 @@ pub fn get_1v1_player_state_manager(
             let arg = (match_info.clone(), s);
             api.call_method::<SendNewGameState>(arg).await?;
             let finish = s.game_over();
-            tracing::info!("game_state_manager SEND TO DB game_finish={finish}");
+            tracing::info!(
+                "game_state_manager SEND TO DB game_finish={finish}"
+            );
         }
         anyhow::Ok(())
     });

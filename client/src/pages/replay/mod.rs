@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use dioxus::prelude::*;
 use game::tet::GameState;
-use protocol::server_chat_api::api_declarations::{
+use protocol::api::api_declarations::{
     GetGameStateRowsForMatch, GetReplayMatchDetail, GetReplayMatchList,
     MatchRow2,
 };

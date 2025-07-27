@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
 use game::timestamp::get_timestamp_now_ms;
 use protocol::{
-    global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{
+    api::{
         api_declarations::{GetUsersWithTopGameCounts, UserProfileListItem},
         client_api_manager::ClientApiManager,
     },
+    global_matchmaker::GlobalMatchmaker,
 };
 
 use crate::route::{Route, UrlParam};

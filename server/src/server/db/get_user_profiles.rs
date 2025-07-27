@@ -1,7 +1,7 @@
 use clickhouse::Row;
 use iroh::PublicKey;
 use protocol::{
-    server_chat_api::api_declarations::UserProfileListItem,
+    api::api_declarations::UserProfileListItem,
     user_identity::{NodeIdentity, UserIdentity},
 };
 use serde::Deserialize;

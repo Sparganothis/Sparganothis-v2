@@ -2,7 +2,9 @@ use crate::server::db::{
     clickhouse_client::get_clickhouse_client, guest_login::serialize_base64,
 };
 use clickhouse::Row;
-use game::{api::game_match::GameMatch, tet::GameState, timestamp::get_timestamp_now_ms};
+use game::{
+    api::game_match::GameMatch, tet::GameState, timestamp::get_timestamp_now_ms,
+};
 use protocol::user_identity::NodeIdentity;
 use serde::{Deserialize, Serialize};
 

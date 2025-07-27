@@ -6,9 +6,7 @@ use rand::Rng;
 use tokio::sync::RwLock;
 
 use crate::{
-    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
-    global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{
+    api::{
         api_const::API_METHOD_CLIENT_TIMEOUT_SECONDS,
         api_method_macros::ApiMethod,
         join_chat::{
@@ -16,6 +14,10 @@ use crate::{
             ServerChatMessageContent, ServerChatRoomType,
         },
     },
+    chat::chat_controller::{
+        ChatController, IChatController, IChatReceiver, IChatSender,
+    },
+    global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
 };
 

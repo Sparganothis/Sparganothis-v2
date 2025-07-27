@@ -8,14 +8,14 @@ use game::{
 };
 use n0_future::StreamExt;
 use protocol::{
-    global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{
+    api::{
         api_declarations::{
             RunMultiplayerMatchmakerPhase1, RunMultiplayerMatchmakerPhase2,
             SendNewMatch,
         },
         client_api_manager::ClientApiManager,
     },
+    global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
 };
 use tracing::{info, warn};

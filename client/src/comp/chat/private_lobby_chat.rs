@@ -15,7 +15,7 @@ use dioxus::prelude::*;
 use game::{api::game_match::GameMatch, tet::GameState};
 use iroh::NodeId;
 use protocol::{
-    chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
+    chat::chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity, IChatRoomType as ChatMessageType2,
 };
 use serde::{Deserialize, Serialize};

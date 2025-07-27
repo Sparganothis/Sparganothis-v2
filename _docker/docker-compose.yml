@@ -16,6 +16,11 @@ services:
           memory: 600M
     volumes:
       - ./iroh-relay.toml:/config/iroh-relay.toml
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
 
   iroh-dns:
     container_name: iroh-dns
@@ -33,6 +38,11 @@ services:
       resources:
         limits:
           memory: 420M
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
 
   clickhouse:
     container_name: clickhouse
@@ -65,7 +75,11 @@ services:
     memswap_limit: 2000M
     mem_limit: 2000M
     restart: unless-stopped
-    
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
   clickhouse-monitoring:
     image: ghcr.io/duyet/clickhouse-monitoring:2cc8058
     environment:
@@ -82,6 +96,11 @@ services:
     memswap_limit: 1000M
     mem_limit: 1000M
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
 
 
   ch-ui:
@@ -98,6 +117,11 @@ services:
       VITE_CLICKHOUSE_URL: "http://localhost:8123"
       VITE_CLICKHOUSE_USER: "sparganothis"
       VITE_CLICKHOUSE_PASS: "sparganothis"
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
 
   redis:
     image: redis:8.0.3
@@ -106,6 +130,11 @@ services:
     memswap_limit: 300M
     mem_limit: 300M
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
 
 
   redis-insight:
@@ -119,6 +148,11 @@ services:
     memswap_limit: 1300M
     mem_limit: 1300M
     restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "1m"
+          max-file: "10"
 
 
 volumes:

@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use protocol::{
-    chat::{IChatController, IChatReceiver, IChatSender},
-    global_chat::{GlobalChatMessageContent, GlobalChatPresence},
+    chat::chat_controller::{IChatController, IChatReceiver, IChatSender},
+    chat::global_chat::{GlobalChatMessageContent, GlobalChatPresence},
     global_matchmaker::GlobalMatchmaker,
     user_identity::UserIdentitySecrets,
 };

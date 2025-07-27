@@ -57,17 +57,19 @@ pub trait ApiMethod {
 
 #[macro_export]
 macro_rules! declare_api_method {
-    ($name:tt, $arg:ty, $ret:ty) => { paste::paste! {
-        pub struct $name;
-        impl $crate::server_chat_api::api_method_macros::ApiMethod for $name {
-            const NAME: &str = stringify!($name);
-            type Arg = $arg;
-            type Ret = $ret;
+    ($name:tt, $arg:ty, $ret:ty) => {
+        paste::paste! {
+            pub struct $name;
+            impl $crate::api::api_method_macros::ApiMethod for $name {
+                const NAME: &str = stringify!($name);
+                type Arg = $arg;
+                type Ret = $ret;
+            }
+            // inventory::submit!{
+            //     $crate::server_chat_api::api_method_macros::ApiMethodInfoStatic::new(stringify!($name), stringify!($arg), stringify!($ret))
+            // }
         }
-        // inventory::submit!{
-        //     $crate::server_chat_api::api_method_macros::ApiMethodInfoStatic::new(stringify!($name), stringify!($arg), stringify!($ret))
-        // }
-    } }
+    };
 }
 
 pub struct ApiMethodImpl {
@@ -96,7 +98,7 @@ macro_rules! impl_api_method {
     ($name: tt, $func_name: tt) => { $crate::paste::paste! {
         #[allow(non_snake_case)]
         async fn [< __ $name _wrapper1>] (from: $crate::user_identity::NodeIdentity, arg: Vec<u8>) -> anyhow::Result<Vec<u8>> {
-                use $crate::server_chat_api::api_method_macros::ApiMethod;
+                use $crate::api::api_method_macros::ApiMethod;
                 type Arg = <$name as ApiMethod>::Arg;
                 type Ret = <$name as ApiMethod>::Ret;
                 let arg: Arg = $crate::postcard::from_bytes(&arg)?;

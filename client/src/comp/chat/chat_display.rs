@@ -1,3 +1,4 @@
+use game::timestamp::get_timestamp_now_ms;
 use n0_future::time::Instant;
 use std::time::Duration;
 
@@ -5,7 +6,7 @@ use crate::network::NetworkState;
 use dioxus::prelude::*;
 use iroh::PublicKey;
 use protocol::{
-    chat_presence::{PresenceFlag, PresenceList, PresenceListItem},
+    chat::chat_presence::{PresenceFlag, PresenceList, PresenceListItem},
     datetime_now,
     user_identity::NodeIdentity,
     ReceivedMessage,
@@ -16,11 +17,11 @@ use super::{chat_signals_hook::ChatHistory, chat_traits::ChatMessageType};
 
 #[component]
 pub fn ChatPresenceDisplay<T: ChatMessageType>(
-    presence: ReadOnlySignal<PresenceList<T>>,
+    presence: ReadOnlySignal<PresenceList<T::P>>,
 ) -> Element {
     rsx! {
         ul {
-            for PresenceListItem{presence_flag,last_seen, identity, payload, rtt} in presence.read().iter() {
+            for PresenceListItem{presence_flag,last_seen, identity, payload, rtt} in presence.read().0.iter() {
                 ChatPresenceDisplayItem::<T> {
                     presence_flag: presence_flag.clone(),
                     last_seen: last_seen.clone(),
@@ -29,7 +30,7 @@ pub fn ChatPresenceDisplay<T: ChatMessageType>(
                     rtt: rtt.clone(),
                 }
             }
-            if presence.read().is_empty() {
+            if presence.read().0.is_empty() {
                 i {
                     "No presence data."
                 }
@@ -41,7 +42,7 @@ pub fn ChatPresenceDisplay<T: ChatMessageType>(
 #[component]
 fn ChatPresenceDisplayItem<T: ChatMessageType>(
     presence_flag: ReadOnlySignal<PresenceFlag>,
-    last_seen: ReadOnlySignal<Instant>,
+    last_seen: ReadOnlySignal<i64>,
     identity: ReadOnlySignal<NodeIdentity>,
     payload: ReadOnlySignal<Option<T::P>>,
     rtt: ReadOnlySignal<Option<u16>>,
@@ -58,7 +59,9 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
             };
             own_node_id.set(Some(mm.own_node_identity().node_id().clone()));
             loop {
-                let elapsed = 1 + last_seen.peek().elapsed().as_secs();
+                let elapsed = (1
+                    + (get_timestamp_now_ms() - *last_seen.peek()) / 1000)
+                    .max(0) as u64;
                 let elapsed_txt = pretty_duration::pretty_duration(
                     &Duration::from_secs(elapsed),
                     None,

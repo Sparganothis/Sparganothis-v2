@@ -21,7 +21,7 @@ use game::{
     timestamp::get_timestamp_now_ms,
 };
 use protocol::{
-    chat::{IChatController, IChatReceiver, IChatSender},
+    chat::chat_controller::{IChatController, IChatReceiver, IChatSender},
     user_identity::NodeIdentity,
 };
 use tracing::info;

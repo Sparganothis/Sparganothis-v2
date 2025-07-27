@@ -11,12 +11,15 @@ use iroh_gossip::{net::Gossip, ALPN as GOSSIP_ALPN};
 use tracing::{info, warn};
 
 use crate::{
-    _const::get_relay_domain,
+    chat::chat_ticket::ChatTicket,
     chat::{
-        ChatController, ChatDirectMessage, DirectMessageProtocol,
-        GossipChatRoom, CHAT_DIRECT_MESSAGE_ALPN,
+        chat_const::get_relay_domain,
+        chat_controller::ChatController,
+        direct_message::{
+            ChatDirectMessage, DirectMessageProtocol, CHAT_DIRECT_MESSAGE_ALPN,
+        },
+        room_raw::GossipChatRoom,
     },
-    chat_ticket::ChatTicket,
     echo::Echo,
     signed_message::{IChatRoomType, MessageSigner},
     sleep::SleepManager,

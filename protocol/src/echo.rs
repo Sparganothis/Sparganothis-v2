@@ -3,7 +3,7 @@ use iroh::{endpoint::Connection, protocol::ProtocolHandler, NodeId};
 use n0_future::boxed::BoxFuture;
 use tracing::warn;
 
-use crate::{_const::CONNECT_TIMEOUT, sleep::SleepManager};
+use crate::{chat::chat_const::CONNECT_TIMEOUT, sleep::SleepManager};
 
 #[derive(Debug, Clone)]
 pub struct Echo {

@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    chat_ticket::ChatTicket, server_chat_api::api_method_macros::ServerInfo,
-    IChatRoomType,
+    api::api_method_macros::ServerInfo, chat::chat_presence::PresenceList,
+    chat::chat_ticket::ChatTicket, IChatRoomType,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ pub struct GlobalChatPresence {
 }
 
 #[non_exhaustive]
-#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum GlobalChatMessageContent {
     TextMessage {
         text: String,
@@ -37,6 +37,14 @@ pub enum GlobalChatMessageContent {
         ticket: ChatTicket,
         match_type: String,
     },
+    BootstrapQuery(GlobalChatBootstrapQuery),
+}
+
+#[non_exhaustive]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub enum GlobalChatBootstrapQuery {
+    PlzSendServerList,
+    ServerList { v: PresenceList<GlobalChatPresence> },
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]

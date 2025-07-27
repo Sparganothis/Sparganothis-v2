@@ -9,9 +9,9 @@ use tokio_stream::StreamExt;
 use tracing::{info, warn};
 
 use crate::{
-    _const::{CONNECT_TIMEOUT, PRESENCE_INTERVAL},
-    chat_presence::ChatPresence,
-    chat_ticket::ChatTicket,
+    chat::chat_const::{CONNECT_TIMEOUT, PRESENCE_INTERVAL},
+    chat::chat_presence::ChatPresence,
+    chat::chat_ticket::ChatTicket,
     datetime_now,
     signed_message::{IChatRoomType, MessageSigner, SignedMessage},
     sleep::SleepManager,
@@ -233,6 +233,7 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
             let presence_list = p
                 .get_presence_list()
                 .await
+                .0
                 .into_iter()
                 .map(|p| *p.identity.node_id())
                 .collect::<Vec<_>>();

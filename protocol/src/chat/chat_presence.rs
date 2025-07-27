@@ -1,10 +1,11 @@
+use game::timestamp::get_timestamp_now_ms;
 use iroh::NodeId;
-use n0_future::time::Instant;
-use std::{collections::BTreeMap, sync::Arc};
+use serde::{Deserialize, Serialize};
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use tokio::sync::{Notify, RwLock};
 
 use crate::{
-    _const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
+    chat::chat_const::{PRESENCE_EXPIRATION, PRESENCE_IDLE},
     signed_message::IChatRoomType,
     user_identity::NodeIdentity,
 };
@@ -15,7 +16,7 @@ pub struct ChatPresence<T: IChatRoomType> {
     notify: Arc<Notify>,
 }
 
-#[derive(Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub enum PresenceFlag {
     ACTIVE,
     IDLE,
@@ -24,8 +25,10 @@ pub enum PresenceFlag {
 }
 
 impl PresenceFlag {
-    pub fn from_instant(instant: Instant) -> Self {
-        let duration = instant.elapsed();
+    pub fn from_instant(instant: i64) -> Self {
+        let duration = get_timestamp_now_ms() - instant;
+        let duration = if duration < 0 { 1 } else { duration } as u64;
+        let duration = Duration::from_millis(duration);
         if duration < PRESENCE_IDLE {
             Self::ACTIVE
         } else if duration < PRESENCE_EXPIRATION {
@@ -35,14 +38,22 @@ impl PresenceFlag {
         }
     }
 }
-pub type PresenceList<T> = Vec<PresenceListItem<T>>;
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct PresenceListItem<T: IChatRoomType> {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct PresenceList<P>(pub Vec<PresenceListItem<P>>);
+
+impl<P> Default for PresenceList<P> {
+    fn default() -> Self {
+        Self(Default::default())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PresenceListItem<P> {
     pub presence_flag: PresenceFlag,
-    pub last_seen: Instant,
+    pub last_seen: i64,
     pub identity: NodeIdentity,
-    pub payload: Option<<T as IChatRoomType>::P>,
+    pub payload: Option<P>,
     pub rtt: Option<u16>,
 }
 
@@ -63,7 +74,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
         payload: &Option<T::P>,
     ) -> bool {
         let identity = identity.clone();
-        let now = Instant::now();
+        let now = get_timestamp_now_ms();
         let mut w = self.presence.write().await;
         let old_value = w.clone();
         let old_ping = w
@@ -79,7 +90,15 @@ impl<T: IChatRoomType> ChatPresence<T> {
             )
             .is_none();
         w.map.retain(|_, (last_seen, _, _, _)| {
-            now.duration_since(*last_seen) < PRESENCE_EXPIRATION
+            let duration = now - *last_seen;
+            let duration = if duration < 0 {
+                *last_seen = now;
+                0
+            } else {
+                duration
+            };
+            let duration = std::time::Duration::from_millis(duration as u64);
+            duration < PRESENCE_EXPIRATION
         });
         let new_value = w.clone();
         if old_value != new_value {
@@ -95,7 +114,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
         };
         entry.3 = Some(rtt);
     }
-    pub async fn get_presence_list(&self) -> PresenceList<T> {
+    pub async fn get_presence_list(&self) -> PresenceList<T::P> {
         let p_map = self.presence.read().await.map.clone();
         let p = p_map.clone();
         let mut p = p.into_iter().collect::<Vec<_>>();
@@ -118,7 +137,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
             })
             .collect();
 
-        v
+        PresenceList(v)
     }
     pub async fn remove_presence(&self, identity: &NodeIdentity) {
         let identity = identity.clone();
@@ -131,7 +150,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
 
 #[derive(Clone, Debug, PartialEq)]
 struct ChatPresenceData<T: IChatRoomType> {
-    map: BTreeMap<NodeId, (Instant, NodeIdentity, Option<T::P>, Option<u16>)>,
+    map: BTreeMap<NodeId, (i64, NodeIdentity, Option<T::P>, Option<u16>)>,
 }
 impl<T: IChatRoomType> Default for ChatPresenceData<T> {
     fn default() -> Self {

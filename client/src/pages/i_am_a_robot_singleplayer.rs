@@ -12,7 +12,7 @@ use crate::{
 use dioxus::prelude::*;
 use game::tet::GameState;
 use protocol::{
-    chat::IChatController, chat_ticket::ChatTicket,
+    chat::chat_controller::IChatController, chat::chat_ticket::ChatTicket,
     global_matchmaker::GlobalMatchmaker,
 };
 use tracing::{info, warn};

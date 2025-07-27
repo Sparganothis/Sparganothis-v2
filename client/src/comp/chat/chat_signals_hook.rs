@@ -5,8 +5,10 @@ use crate::network::NetworkState;
 use dioxus::prelude::*;
 use n0_future::StreamExt;
 use protocol::{
-    chat::{ChatController, IChatController, IChatReceiver, IChatSender},
-    chat_presence::PresenceList,
+    chat::chat_controller::{
+        ChatController, IChatController, IChatReceiver, IChatSender,
+    },
+    chat::chat_presence::PresenceList,
     global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
     IChatRoomType, ReceivedMessage,
@@ -75,7 +77,7 @@ pub type ChatControllerSignal<T> = ReadOnlySignal<Option<ChatController<T>>>;
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChatSignals<T: ChatMessageType> {
     pub chat: ChatControllerSignal<T>,
-    pub presence: ReadOnlySignal<PresenceList<T>>,
+    pub presence: ReadOnlySignal<PresenceList<T::P>>,
     pub history: Signal<ChatHistory<T>>,
     pub send_broadcast_user_message: Callback<T::M>,
     pub send_direct_user_message: Callback<(NodeIdentity, T::M)>,
@@ -132,8 +134,9 @@ fn use_chat_controller_signal<
 
 fn use_chat_presence_signal<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
-) -> ReadOnlySignal<PresenceList<T>> {
-    let mut presence_list_w = use_signal(move || PresenceList::<T>::default());
+) -> ReadOnlySignal<PresenceList<T::P>> {
+    let mut presence_list_w =
+        use_signal(move || PresenceList::<T::P>::default());
     let presence_list = use_memo(move || presence_list_w.read().clone());
     let _poll_presence = use_resource(move || {
         let cc = chat.read().clone();

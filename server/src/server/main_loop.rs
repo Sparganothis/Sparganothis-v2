@@ -2,10 +2,7 @@ use anyhow::Context;
 use futures::{FutureExt, StreamExt};
 use n0_future::FuturesUnordered;
 use protocol::{
-    chat::{IChatController, IChatReceiver, IChatSender},
-    global_chat::{GlobalChatMessageContent, GlobalChatPresence},
-    global_matchmaker::GlobalMatchmaker,
-    server_chat_api::{
+    api::{
         api_const::{API_SERVER_TIMEOUT_SECS, API_SERVER_VERSION},
         api_method_macros::{ApiMethodImpl, ServerInfo},
         join_chat::{
@@ -13,6 +10,9 @@ use protocol::{
             ServerChatPresence, ServerChatRoomType,
         },
     },
+    chat::chat_controller::{IChatController, IChatReceiver, IChatSender},
+    chat::global_chat::{GlobalChatMessageContent, GlobalChatPresence},
+    global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity,
     ReceivedMessage,
 };

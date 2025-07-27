@@ -14,7 +14,7 @@ use crate::{
 };
 use dioxus::prelude::*;
 use dioxus_free_icons::icons::bs_icons::BsMessenger;
-use protocol::chat_presence::PresenceList;
+use protocol::chat::chat_presence::PresenceList;
 use serde::{Deserialize, Serialize};
 use tracing::info;
 
@@ -113,7 +113,7 @@ fn MiniChatRoomOverlayButton(onclick: Callback<()>) -> Element {
 #[component]
 fn MiniChatImpl<T: ChatMessageType>(
     tabs_select: Signal<MiniChatTabSelection>,
-    presence: ReadOnlySignal<PresenceList<T>>,
+    presence: ReadOnlySignal<PresenceList<T::P>>,
     history: ReadOnlySignal<ChatHistory<T>>,
     on_user_message: Callback<T::M>,
 ) -> Element {
@@ -241,7 +241,7 @@ fn MiniChatTopBar(selected: Signal<MiniChatTabSelection>) -> Element {
 #[component]
 fn MiniChatContent<T: ChatMessageType>(
     selected: Signal<MiniChatTabSelection>,
-    presence: ReadOnlySignal<PresenceList<T>>,
+    presence: ReadOnlySignal<PresenceList<T::P>>,
     history: ReadOnlySignal<ChatHistory<T>>,
 ) -> Element {
     match *selected.read() {
