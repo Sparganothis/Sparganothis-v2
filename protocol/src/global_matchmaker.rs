@@ -342,6 +342,7 @@ impl GlobalMatchmaker {
     }
 
     async fn connect_bootstrap_chat(&self) -> Result<()> {
+        tracing::info!("connect_bootstrap_chat()");
         let Some(bs) = self.bs_node().await else {
             return Ok(());
         };
@@ -676,13 +677,18 @@ async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
 async fn run_bs_global_chat_task(
     bs_cc: ChatController<GlobalChatRoomType>,
 ) -> anyhow::Result<()> {
-    let answer_ratelimit_ms = 30000;
+    tracing::info!("run_bs_global_chat_task");
+    let answer_ratelimit_ms = 130000;
     let rx = bs_cc.receiver().await;
     let presence = bs_cc.chat_presence();
     let mut last_sent = std::collections::HashMap::new();
     while let Some(msg1) = rx.next_message().await {
         let msg = msg1.message;
         let from = msg1.from;
+        if from.bootstrap_idx().is_some() {
+            // don't answer to other bootstrap chats
+            continue;
+        }
 
         let GlobalChatMessageContent::BootstrapQuery(
             GlobalChatBootstrapQuery::PlzSendServerList,
@@ -714,6 +720,7 @@ async fn run_bs_global_chat_task(
         let response = GlobalChatMessageContent::BootstrapQuery(
             GlobalChatBootstrapQuery::ServerList { v: list.clone() },
         );
+        tracing::info!("Sending server list to {from:?}");
         if let Err(e) = bs_cc.sender().direct_message(from, response).await {
             tracing::warn!(
                 "Failed to reply with presence list to peer {from:?}: {e:#?}"
@@ -725,7 +732,7 @@ async fn run_bs_global_chat_task(
         }
         last_sent = last_sent
             .into_iter()
-            .filter(|(k, v)| {
+            .filter(|(_k, v)| {
                 (get_timestamp_now_ms() - *v) < answer_ratelimit_ms
             })
             .collect()
