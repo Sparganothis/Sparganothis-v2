@@ -120,10 +120,10 @@ pub(crate) async fn fetch_server_ids(
     let mut server_nodes: Vec<_> = vec![];
     for _retry in 0..10 {
         mm.sleep(Duration::from_millis(16 + _retry)).await;
-        if _retry == 2 {
-            tracing::info!("Broadcasting request for server list!");
-            let _ = global.sender().broadcast_message(req.clone()).await;
-        }
+        // if _retry == 2 {
+        //     tracing::info!("Broadcasting request for server list!");
+        //     let _ = global.sender().broadcast_message(req.clone()).await;
+        // }
 
         let presence_list = presence.get_presence_list().await;
         for p in presence_list.0 {
@@ -132,11 +132,12 @@ pub(crate) async fn fetch_server_ids(
             };
             let node_id = p.identity;
             if let Some(_idx) = node_id.bootstrap_idx() {
+                if _retry == 0 {
+                    continue;
+                }
                 if !bs_sent_to.contains(&node_id) {
                     bs_sent_to.insert(node_id);
-                    tracing::info!(
-                        "Sending individual message for server list!"
-                    );
+                    tracing::info!("Sending direct message for server list!");
                     let _ = global
                         .sender()
                         .direct_message(node_id, req.clone())
