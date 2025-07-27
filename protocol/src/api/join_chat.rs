@@ -90,6 +90,7 @@ async fn client_join_server_chat_with_server_ids(
 pub(crate) async fn fetch_server_ids(
     mm: GlobalMatchmaker,
 ) -> anyhow::Result<Vec<NodeIdentity>> {
+    tracing::info!("fetch_server_ids()");
     let global = mm
         .global_chat_controller()
         .await
@@ -120,6 +121,7 @@ pub(crate) async fn fetch_server_ids(
     for _retry in 0..10 {
         mm.sleep(Duration::from_millis(16 + _retry)).await;
         if _retry == 2 {
+            tracing::info!("Broadcasting request for server list!");
             let _ = global.sender().broadcast_message(req.clone()).await;
         }
 
@@ -132,6 +134,9 @@ pub(crate) async fn fetch_server_ids(
             if let Some(_idx) = node_id.bootstrap_idx() {
                 if !bs_sent_to.contains(&node_id) {
                     bs_sent_to.insert(node_id);
+                    tracing::info!(
+                        "Sending individual message for server list!"
+                    );
                     let _ = global
                         .sender()
                         .direct_message(node_id, req.clone())

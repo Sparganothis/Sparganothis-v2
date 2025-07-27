@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use game::timestamp::get_timestamp_now_ms;
 use iroh::{endpoint::VarInt, Endpoint, NodeId, PublicKey, SecretKey};
 use n0_future::{task::AbortOnDropHandle, FuturesUnordered, StreamExt};
 use rand::Rng;
@@ -675,8 +676,10 @@ async fn global_periodic_task_iteration_2(mm: GlobalMatchmaker) -> Result<()> {
 async fn run_bs_global_chat_task(
     bs_cc: ChatController<GlobalChatRoomType>,
 ) -> anyhow::Result<()> {
+    let answer_ratelimit_ms = 30000;
     let rx = bs_cc.receiver().await;
     let presence = bs_cc.chat_presence();
+    let mut last_sent = std::collections::HashMap::new();
     while let Some(msg1) = rx.next_message().await {
         let msg = msg1.message;
         let from = msg1.from;
@@ -688,6 +691,13 @@ async fn run_bs_global_chat_task(
             continue;
         };
 
+        if last_sent.contains_key(&from)
+            && (get_timestamp_now_ms() - last_sent[&from]) < answer_ratelimit_ms
+        {
+            tracing::info!("skipping repeated request by {from:?}");
+            continue;
+        }
+
         let mut list = presence.get_presence_list().await;
         list.0 = list
             .0
@@ -697,15 +707,28 @@ async fn run_bs_global_chat_task(
                     && x.payload.as_ref().unwrap().is_server.is_some()
             })
             .collect();
+        if list.0.len() == 0 {
+            tracing::info!("cannot answer as there are no servers found by this bootstrap. ");
+            continue;
+        }
         let response = GlobalChatMessageContent::BootstrapQuery(
-            GlobalChatBootstrapQuery::ServerList { v: list },
+            GlobalChatBootstrapQuery::ServerList { v: list.clone() },
         );
         if let Err(e) = bs_cc.sender().direct_message(from, response).await {
             tracing::warn!(
-                "Failed to replyu with presence list to peer {from:?}: {e:#?}"
+                "Failed to reply with presence list to peer {from:?}: {e:#?}"
             );
             continue;
         }
+        if list.0.len() > 0 {
+            last_sent.insert(from, get_timestamp_now_ms());
+        }
+        last_sent = last_sent
+            .into_iter()
+            .filter(|(k, v)| {
+                (get_timestamp_now_ms() - *v) < answer_ratelimit_ms
+            })
+            .collect()
     }
 
     anyhow::bail!("ran out of chat messages for bootstrap chat!");
