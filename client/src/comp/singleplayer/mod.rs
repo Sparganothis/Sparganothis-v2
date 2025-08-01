@@ -17,6 +17,7 @@ use tracing::warn;
 use crate::{
     comp::{game_display::GameDisplay, input::GameInputCaptureParent},
     localstorage::use_game_settings,
+    network::NetworkState,
 };
 
 /// Basic single player implementation with default rules.
@@ -78,11 +79,17 @@ pub fn GameBoardInputAndDisplay(
     let on_user_event = Callback::new(move |event: GameInputEvent| {
         ticket_manager.send(event);
     });
+    let _net = use_context::<NetworkState>();
+    let _user = _net.current_node_id;
+    let Some(_user) = _user.read().clone() else {
+        return rsx! { "loading..."};
+    };
+
     rsx! {
         GameInputCaptureParent {
             on_user_event,
 
-            GameDisplay { game_state }
+            GameDisplay { game_state, node_id:_user }
         }
     }
 }

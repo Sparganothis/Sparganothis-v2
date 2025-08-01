@@ -14,7 +14,11 @@ use crate::{
 declare_api_method!(LoginApiMethod, (), ());
 
 declare_api_method!(SendNewMatch, (GameMatch<NodeIdentity>,), ());
-declare_api_method!(GetLastGameStatesForMatch, GameMatch<NodeIdentity>, Vec<GameState>);
+declare_api_method!(
+    GetLastGameStatesForMatch,
+    GameMatch<NodeIdentity>,
+    Vec<GameState>
+);
 
 declare_api_method!(SendNewGameState, (GameMatch<NodeIdentity>, GameState), ());
 

@@ -5,7 +5,7 @@ use crate::{
         bot_player::BotPlayer, chat::chat_signals_hook::use_chat_signals,
         game_display::*,
     },
-    network::GlobalChatClientContext,
+    network::{GlobalChatClientContext, NetworkState},
     pages::{GameMessage, GameMessageSpam},
     route::Route,
 };
@@ -58,6 +58,10 @@ pub fn IAmARobotSingleplayer() -> Element {
                 .call(GameMessage::GameState(game));
         }
     });
+    let own_id = use_context::<NetworkState>().current_node_id;
+    let Some(own_id) = own_id.read().clone() else {
+        return rsx! {"loading..."};
+    };
 
     rsx! {
         article { style: "height: 80dvh; display: flex;",
@@ -70,7 +74,7 @@ pub fn IAmARobotSingleplayer() -> Element {
             }
             BotPlayer { game_state }
 
-            GameDisplay { game_state }
+            GameDisplay { game_state, node_id : own_id}
         }
     }
 }

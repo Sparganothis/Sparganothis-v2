@@ -296,7 +296,9 @@ pub fn get_1v1_player_state_manager(
             let arg = (match_info.clone(), s);
             api.call_method::<SendNewGameState>(arg).await?;
             let finish = s.game_over();
-            tracing::info!("game_state_manager SEND TO DB game_finish={finish}");
+            tracing::info!(
+                "game_state_manager SEND TO DB game_finish={finish}"
+            );
         }
         anyhow::Ok(())
     });

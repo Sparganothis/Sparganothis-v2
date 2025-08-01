@@ -1,5 +1,6 @@
 use dioxus::prelude::*;
 use game::tet::{BoardMatrix, CellValue, GameOverReason, GameState, Tet};
+use protocol::user_identity::NodeIdentity;
 
 // const INTER_BOX_PADDING: &'static str = "0px";
 const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";
@@ -71,7 +72,10 @@ pub fn YouDied(
 }
 
 #[component]
-pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
+pub fn GameDisplay(
+    game_state: ReadOnlySignal<GameState>,
+    node_id: ReadOnlySignal<NodeIdentity>,
+) -> Element {
     rsx! {
         div { style: "
                 width: 100%;
@@ -100,6 +104,7 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
 
                 YouDied {
                     game_state,
+                    GameDisplayOverlayTitle {node_id},
                     GameDisplayInner { game_state }
                 }
             }
@@ -111,6 +116,22 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                     align-items: center;
                     justify-content: center;
                 " }
+        }
+    }
+}
+
+#[component]
+fn GameDisplayOverlayTitle(node_id: ReadOnlySignal<NodeIdentity>) -> Element {
+    rsx! {
+        div {
+            style: "position: relative; width: 0; height: 0; margin: 0; padding: 0; top: 0px; left: 0px;",
+            div {
+                style: "position: absolute; width: 30cqw; height: 10cqh; color: red; z-index: 666; top: 45cqh; left: -48cqh; text-align: right;",
+                h1 {
+                    style: "z-index: 666; font-size: 1rem; border: 1px solid black;",
+                    "{node_id.read().clone():?}"
+                }
+            }
         }
     }
 }

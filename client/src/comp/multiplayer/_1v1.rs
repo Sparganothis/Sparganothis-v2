@@ -189,6 +189,21 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
             });
         }
     });
+    let Some(our_user) =
+        use_context::<NetworkState>().current_node_id.read().clone()
+    else {
+        return rsx! {"loading..."};
+    };
+    let Some(other_user) = cc
+        .match_info
+        .users
+        .iter()
+        .filter(|x| **x != our_user)
+        .next()
+        .cloned()
+    else {
+        return rsx! {"loading..."};
+    };
 
     rsx! {
         div {
@@ -196,12 +211,12 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
             GameInputCaptureParent {
                 on_user_event,
 
-                GameStateManagerDisplay {manager: play_state_manager}
+                GameStateManagerDisplay {manager: play_state_manager, node_id:our_user, }
             }
         }
         div {
             style: "width: 50cqw; height: 100cqh;",
-            GameStateManagerDisplay {manager: spectator_manager}
+            GameStateManagerDisplay {manager: spectator_manager, node_id: other_user}
         }
     }
 }
@@ -223,7 +238,10 @@ pub fn Spectate1v1FullScreenWindow(
 }
 
 #[component]
-fn GameStateManagerDisplay(manager: GameStateManager) -> Element {
+fn GameStateManagerDisplay(
+    manager: GameStateManager,
+    node_id: ReadOnlySignal<NodeIdentity>,
+) -> Element {
     let mut game_state = use_signal(GameState::new_random);
 
     let _coro = use_coroutine(move |_rx: UnboundedReceiver<()>| {
@@ -250,6 +268,6 @@ fn GameStateManagerDisplay(manager: GameStateManager) -> Element {
     });
 
     rsx! {
-        GameDisplay {game_state }
+        GameDisplay {game_state, node_id }
     }
 }

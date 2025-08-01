@@ -48,7 +48,8 @@ impl RenderElement for GameMessageSpam {
                 rsx! {
                     div {
                         style:"height: 500px; min-height: 500px;",
-                        GameDisplay { game_state }
+                        // GameDisplay { game_state }
+                        "GameDisplay game_state "
                     }
                 }
             }

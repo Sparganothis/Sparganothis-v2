@@ -1,10 +1,13 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use dioxus::prelude::*;
 use game::tet::GameState;
-use protocol::server_chat_api::api_declarations::{
-    GetGameStateRowsForMatch, GetReplayMatchDetail, GetReplayMatchList,
-    MatchRow2,
+use protocol::{
+    server_chat_api::api_declarations::{
+        GetGameStateRowsForMatch, GetReplayMatchDetail, GetReplayMatchList,
+        MatchRow2,
+    },
+    user_identity::NodeIdentity,
 };
 
 use crate::{
@@ -110,6 +113,10 @@ pub fn Replay1v1Match(match_id: ReadOnlySignal<String>) -> Element {
 fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
     let match_info = use_memo(move || match_info.read().clone());
     let match_info = match_info.read().clone();
+    let Some(match_info_real) = &match_info.match_info else {
+        return rsx! {"no match info!"};
+    };
+    let match_users = match_info_real.users.clone();
     let err = use_signal(move || String::new());
     let mut match_row = use_signal(move || vec![]);
 
@@ -138,7 +145,7 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
 
     let rows2 = use_memo(move || {
         let rows1 = match_row.read().clone();
-        let mut rows2 = HashMap::<String, Vec<GameState>>::new();
+        let mut rows2 = BTreeMap::<String, Vec<GameState>>::new();
         for row in rows1 {
             let ins = rows2.entry(row.user_id).or_default();
             let Some(state) = &row.state_data else {
@@ -148,6 +155,16 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
         }
 
         rows2
+    });
+    let rows3 = use_memo(move || {
+        let rows2 = rows2.read();
+        let mut r3: BTreeMap<NodeIdentity, Vec<_>> = BTreeMap::new();
+        for k in match_users.iter().cloned() {
+            let k_str = format!("{:?}", k);
+            let moved_val = rows2.get(&k_str).unwrap_or(&vec![]).clone();
+            r3.insert(k, moved_val);
+        }
+        r3
     });
 
     rsx! {
@@ -159,8 +176,8 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
             div {
                 style: "width: 100%;
                  height: 100%; flex-direction:row; display:flex;",
-                for x in rows2.read().iter() {
-                    GameStateBrowser {data: (x.1).clone()}
+                for x in rows3.read().iter() {
+                    GameStateBrowser {data: (x.1).clone(), node_id: * x.0}
                 }
             }
         }
@@ -168,7 +185,10 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
 }
 
 #[component]
-pub fn GameStateBrowser(data: ReadOnlySignal<Vec<GameState>>) -> Element {
+pub fn GameStateBrowser(
+    data: ReadOnlySignal<Vec<GameState>>,
+    node_id: ReadOnlySignal<NodeIdentity>,
+) -> Element {
     let idx = use_signal(move || 0);
     let max = use_signal(move || {
         let i = data.read().len() as i32;
@@ -205,7 +225,7 @@ pub fn GameStateBrowser(data: ReadOnlySignal<Vec<GameState>>) -> Element {
             div {
                 style: "width: 100%; height: 80%;border:1px solid black;",
                 if let Some(state) = state.read().as_ref() {
-                    GameDisplay {game_state: state.clone()}
+                    GameDisplay {game_state: state.clone(), node_id}
                 }
             }
         }

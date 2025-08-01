@@ -11,7 +11,7 @@ use protocol::{
         api_declarations::LoginApiMethod,
         client_api_manager::{connect_api_manager, ClientApiManager},
     },
-    user_identity::UserIdentitySecrets,
+    user_identity::{NodeIdentity, UserIdentitySecrets},
 };
 use tracing::{info, warn};
 
@@ -33,6 +33,7 @@ pub struct NetworkState {
     pub bootstrap_idx: ReadOnlySignal<Option<u32>>,
     pub debug_info_txt: ReadOnlySignal<String>,
     pub client_api_manager: ReadOnlySignal<Option<ClientApiManager>>,
+    pub current_node_id: ReadOnlySignal<Option<NodeIdentity>>,
 }
 
 #[component]
@@ -243,6 +244,13 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         *is_connected.read() && client_api_manager.read().is_some()
     });
 
+    let own_id = use_memo(move || {
+        let Some(mm) = mm_signal.read().clone() else {
+            return None;
+        };
+        Some(mm.own_node_identity())
+    });
+
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
         global_mm_loading: loading2.into(),
@@ -251,6 +259,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         debug_info_txt: debug_info_txt.into(),
         bootstrap_idx: bootstrap_idx.into(),
         client_api_manager: client_api_manager.into(),
+        current_node_id: own_id.into(),
     });
 
     children
