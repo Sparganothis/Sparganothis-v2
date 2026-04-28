@@ -24,15 +24,15 @@ pub fn Nav() -> Element {
                 li {
                     Link { to: Route::PlaySingleplayerPage { }, small { "singleplayer" } }
                 }
-                li {
-                    Link { to: Route::IAmARobotSingleplayer { }, small { "robot" } }
-                }
+                // li {
+                //     Link { to: Route::IAmARobotSingleplayer { }, small { "robot" } }
+                // }
                 li {
                     Link { to: Route::MatchmakingPage { }, small { "1v1 matchmaking" } }
                 }
-                li {
-                    Link { to: Route::ReplayHomePage { }, small { "replay" } }
-                }
+                // li {
+                //     Link { to: Route::ReplayHomePage { }, small { "replay" } }
+                // }
             }
 
             ul {
@@ -55,6 +55,7 @@ pub fn Nav() -> Element {
                 li {
                     a {
                         href: "https://github.com/Sparganothis/Sparganothis-v2",
+                        target: "_blank",
                         style: "display: flex; flex-direction:row; align-items: center;",
                         GithubIcon {},
                         "GitHub",
