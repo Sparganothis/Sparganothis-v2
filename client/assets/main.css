@@ -89,12 +89,14 @@
   border-radius: 8px;
   padding: 4px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  box-sizing: content-box;
 }
 
 .game-cell {
   width: 24px;
   height: 24px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
 }
 
 .game-overlay {

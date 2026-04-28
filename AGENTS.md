@@ -136,7 +136,13 @@ You will run the following after every code change:
 
 You will then open a browser at 127.0.0.1:8080 and view the output to make sure it is correct.
 
-## UI
+## UI Development / CSS 
+
+Read the "*CSS_*.md" files for a past planning of changing some UI - the files will probably be the same or around the listed files.
+
+Run the following bash script to run the UI: `bash start_web.sh` in a simple bash shell 
 
 Run the browser at 127.0.0.1:8080 after every build and click all the main pages to test them. Take screenshots that you place in docs/ folder and crate a new "SCREENSHOT_DIFF.md" file that takes note of the differences between the desired UI from chat and the actual UI. Maintain it along with any changes noted, the user will be deleting this file.
+
+After the changes are recorded, change the patch such that it will match the target UI. Then, run the build again. If it passes, do the test scripts, then do clippy, and then format. Finally, run the browser again until satisfied the output matches, if it does not match, change the patch again and repeat the process.
 

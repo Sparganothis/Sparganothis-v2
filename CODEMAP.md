@@ -9,7 +9,7 @@
 ├── client/                 # Dioxus web client (frontend)
 │   ├── assets/             # CSS, images, and other static assets
 │   │   ├── main.css        # Primary application styles
-│   │   └── pico.jade.min.css # Pico CSS base theme
+│   │   └── pico.jade.min.css # Pico CSS base theme - DO NOT EDIT
 │   └── src/                # Rust source code for the client
 │       ├── comp/           # Reusable Dioxus components
 │       ├── pages/          # Page-level components (homepage, etc.)

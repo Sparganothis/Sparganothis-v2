@@ -108,19 +108,19 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
         div { class: "flex items-center justify-center w-full h-full",
             div { 
                 class: "flex items-center justify-center",
-                style: "position: relative; width: calc(min(100cqw, 50cqh)); height: calc(min(100cqh, min(100cqh, 200cqw)));",
+                style: "position: relative; height: 100%;",
                 div { 
-                    class: "h-full",
-                    style: "position:absolute; top: 0; left: -74cqw; width: 73cqw;",
+                    class: "h-full flex flex-col justify-center",
+                    style: "margin-right: 20px;",
                     GameDetailsLeftPane { game_state }
                 }
 
-                div { class: "w-full h-full flex",
+                div { class: "flex items-center justify-center",
                     GameBoardDisplayMainGrid { game_state }
                 }
                 div { 
-                    class: "h-full",
-                    style: "position:absolute; top: 0; left: 101cqw; width: 73cqw;",
+                    class: "h-full flex flex-col justify-center",
+                    style: "margin-left: 20px;",
                     GameDetailsRightPane { game_state }
                 }
             }
@@ -209,9 +209,8 @@ fn GameBoardGridParent(
             class: "game-board-wrapper",
             style: "
                 display: grid;
-                grid-template-columns: repeat({column_count}, minmax(0, 1fr));
-                grid-template-rows: repeat({row_count}, auto);
-                aspect-ratio: {column_count}/{row_count};
+                grid-template-columns: repeat({column_count}, 24px);
+                grid-template-rows: repeat({row_count}, 24px);
             ",
             {children}
         }
