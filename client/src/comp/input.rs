@@ -24,13 +24,8 @@ pub fn GameInputCaptureParent(
     rsx! {
         div {
             id: "event_input_capture_parent",
+            class: "input-capture-parent",
             tabindex: 0,
-            style: "
-                margin: 0px;
-                padding: 0px; 
-                border: 1px solid pink; 
-                width: 100%; height: 100%;
-                ",
             // onkeypress: move |_e| {
             //     info!("onkeypress: {:#?}", _e);
             //     if let Some(key) = keyboard_data_to_game_key(&_e.data()) {

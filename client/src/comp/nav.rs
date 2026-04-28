@@ -13,36 +13,34 @@ pub fn Nav() -> Element {
     let my_nickname = use_memo(move || {
         my_secrets.read().user_identity().nickname().to_string()
     });
+    
+    // Online count (mocked or from context if available)
+    let online_count = 4; 
+
     rsx! {
         nav {
             ul {
                 li {
-                    Link { to: Route::Home {},   strong { "{APP_TITLE}" } }
+                    Link { 
+                        class: "brand",
+                        to: Route::Home {},   
+                        "{APP_TITLE}" 
+                        span { "Strategic. Competitive. Timeless." }
+                    }
                 }
             }
             ul {
                 li {
-                    Link { to: Route::PlaySingleplayerPage { }, small { "singleplayer" } }
+                    Link { to: Route::PlaySingleplayerPage { }, "Singleplayer" }
                 }
-                // li {
-                //     Link { to: Route::IAmARobotSingleplayer { }, small { "robot" } }
-                // }
                 li {
-                    Link { to: Route::MatchmakingPage { }, small { "1v1 matchmaking" } }
+                    Link { to: Route::MatchmakingPage { }, "1v1 matchmaking" }
                 }
-                // li {
-                //     Link { to: Route::ReplayHomePage { }, small { "replay" } }
-                // }
             }
 
             ul {
                 li {
-                    NetworkConnectionStatusIcon {}
-                }
-            }
-            ul {
-                li {
-                    LinkDropdownProfile{my_nickname}
+                    div { class: "online-indicator", "• {online_count} ONLINE" }
                 }
                 li {
                     Link { to: Route::GlobalChatPage { }, "Chat" }
@@ -51,17 +49,21 @@ pub fn Nav() -> Element {
                     Link { to: Route::UsersRootDirectoryPage { }, "Top Players" }
                 }
             }
+            
             ul {
+                li {
+                    LinkDropdownProfile{my_nickname}
+                }
                 li {
                     a {
                         href: "https://github.com/Sparganothis/Sparganothis-v2",
                         target: "_blank",
-                        style: "display: flex; flex-direction:row; align-items: center;",
+                        class: "flex items-center gap-1",
                         GithubIcon {},
                         "GitHub",
                         img {
                             src: "https://github.com/Sparganothis/Sparganothis-v2/actions/workflows/rust.yml/badge.svg",
-                            style: "height: 1rem; padding-left: 0.2rem; margin-left: 0.2rem;",
+                            style: "height: 1rem;",
                         }
                     }
                 }
@@ -70,12 +72,13 @@ pub fn Nav() -> Element {
     }
 }
 
+
 #[component]
 fn GithubIcon() -> Element {
     let sstr = include_str!("../../assets/github.svg.html");
     rsx! {
         div {
-            style: "width: 1rem; height: 1rem; padding-right: 0.2rem; margin-right: 0.2rem; margin-top: -0.7rem;",
+            class: "github-icon-wrapper",
             dangerous_inner_html: sstr,
         }
     }

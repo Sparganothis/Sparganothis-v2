@@ -55,14 +55,11 @@ pub fn YouDied(
     });
     rsx! {
         if game_state.read().game_over() {
-            div {
-                style: "position: relative; width: 0; height: 0; margin: 0; padding: 0; top: 0px; left: 0px;",
-                div {
-                    style: "position: absolute; width: 20cqw; height: 20cqh; color: red; z-index: 666;",
-                    h3 {
-                        style: "color:{color}; z-index: 666; font-size: 6rem; transform: rotate(-45deg); background-color: black; width: fit-content; height: fit-content;",
-                        "{msg}"
-                    }
+            div { class: "game-overlay",
+                h3 { 
+                    class: "text-center",
+                    style: "color: {color}; font-size: 5rem; text-shadow: 0 0 20px rgba(0,0,0,0.5);",
+                    "{msg}"
                 }
             }
         }
@@ -73,44 +70,11 @@ pub fn YouDied(
 #[component]
 pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
-        div { style: "
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                container-type:size;
-            ",
-
-            div { style: "
-                    width: 30%;
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                " }
-
-            div { style: "
-                    width: 40%;
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ",
-
-                YouDied {
-                    game_state,
-                    GameDisplayInner { game_state }
-                }
+        div { class: "flex items-center justify-center w-full h-full",
+            YouDied {
+                game_state,
+                GameDisplayInner { game_state }
             }
-
-            div { style: "
-                    width: 30%;
-                    height: 100%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                " }
         }
     }
 }
@@ -118,22 +82,10 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
 #[component]
 fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
-        div { style: "
-                width: 100%;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: end;
-                justify-content: start;
-                gap: 20px;
-            ",
-            div { style: "
-                    width: 50%;
-                    align:right;
-                ",
+        div { class: "flex flex-col items-end justify-start gap-2 w-full h-full",
+            div { class: "w-full text-right",
                 GameBoardDisplayHoldGrid { game_state }
             }
-
             GameStateInfo { game_state }
         }
     }
@@ -142,21 +94,10 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
 #[component]
 fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
-        div { style: "
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: start;
-                justify-content: start;
-            ",
-            div { style: "
-                    width: 50%;
-                    margin-bottom: auto;
-                    align:left;
-                ",
+        div { class: "flex items-start justify-start w-full h-full",
+            div { class: "w-full mb-auto text-left",
                 GameBoardDisplayNextGrid { game_state }
             }
-
         }
     }
 }
@@ -164,53 +105,25 @@ fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
 #[component]
 fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
-        div { style: "
-                width: 100%;
-                height: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                container-type:size;
-            ",
-            div { style: "
-                    position: relative;
-                    width: calc(min(100cqw, 50cqh));
-                    height: calc(min(100cqh, min(100cqh, 200cqw)));
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    container-type:size;
-                ",
-                div { style: "
-                    position:absolute;
-                        top: 0; 
-                        left: -74cqw;
-                        width: 73cqw;
-                        height: 99cqh;
-                    ",
+        div { class: "flex items-center justify-center w-full h-full",
+            div { 
+                class: "flex items-center justify-center",
+                style: "position: relative; width: calc(min(100cqw, 50cqh)); height: calc(min(100cqh, min(100cqh, 200cqw)));",
+                div { 
+                    class: "h-full",
+                    style: "position:absolute; top: 0; left: -74cqw; width: 73cqw;",
                     GameDetailsLeftPane { game_state }
                 }
 
-                div { style: "
-                        padding: 0px;
-                        width: 100%;
-                        height: 100%;
-                        container-type:size;
-                        display: flex;
-                    ",
+                div { class: "w-full h-full flex",
                     GameBoardDisplayMainGrid { game_state }
                 }
-                div { style: "
-                    position:absolute;
-                        top: 0; 
-                        left: 101cqw;
-                        width: 73cqw;
-                        height: 99cqh;
-                    ",
+                div { 
+                    class: "h-full",
+                    style: "position:absolute; top: 0; left: 101cqw; width: 73cqw;",
                     GameDetailsRightPane { game_state }
                 }
             }
-
         }
     }
 }
@@ -292,18 +205,12 @@ fn GameBoardGridParent(
     children: Element,
 ) -> Element {
     rsx! {
-        div { style: "
-                position: relative;
+        div { 
+            class: "game-board-wrapper",
+            style: "
                 display: grid;
                 grid-template-columns: repeat({column_count}, minmax(0, 1fr));
                 grid-template-rows: repeat({row_count}, auto);
-                grid-column-gap: 0px;
-                grid-row-gap: 0px;
-                width: 100%;
-                height: 100%;
-                background-color:{GAMEBOARD_GRID_COLOR};
-                padding: 0px;
-                border: 1px solid {GAMEBOARD_GRID_COLOR};
                 aspect-ratio: {column_count}/{row_count};
             ",
             {children}
@@ -320,22 +227,12 @@ fn GridCellDisplay(
     col_count: i8,
 ) -> Element {
     let cell_color = use_memo(move || get_cell_color(cell.read().clone()));
-    //         position: absolute;
-    // width: calc(100cqw/{col_count});
-    // height: calc(100cqh/{row_count});
-    // top: calc((100cqh/{row_count}) * {row});
-    // left: calc((100cqw/{col_count}) * {col});
     rsx! {
-        div { style: "
-                padding: 0;
-            ",
-            div { style: "
-                background-color: {cell_color};
-                width: 100%;
-                height: 100%;
-                aspect-ratio: 1/1;
-                border: 0.1cqmin solid {GAMEBOARD_GRID_COLOR};
-                " }
+        div { class: "p-0",
+            div { 
+                class: "game-cell",
+                style: "background-color: {cell_color};",
+            }
         }
     }
 }
@@ -346,43 +243,38 @@ fn GameStateInfo(game_state: ReadOnlySignal<GameState>) -> Element {
     rsx! {
         div {
             id: "game-state-info",
-
-            style: "
-                width: 100%;
-                font-family: monospace;
-                font-size: 1.2em;
-                text-align: right;
-                padding-right: 20px;
-                color: black;
-            ",
-            div { "Score: {state.score}" }
-            div { "Lines: {state.total_lines}" }
-            div { "Moves: {state.total_moves}" }
-            div { "Combo: {state.combo_counter}" }
-            div { "Time: {state.current_time_string()}" }
-            div { "Lines Sent: {state.total_garbage_sent}"}
-            div { "Lines Recv: {state.garbage_recv}"}
-            div { "Lines Applied: {state.garbage_applied}"}
-
+            class: "game-stats-list w-full text-right p-2",
+            
+            div { class: "game-stat-entry",
+                span { class: "game-stat-label", "Score" }
+                span { class: "game-stat-value", "{state.score}" }
+            }
+            div { class: "game-stat-entry",
+                span { class: "game-stat-label", "Lines" }
+                span { class: "game-stat-value", "{state.total_lines}" }
+            }
+            div { class: "game-stat-entry",
+                span { class: "game-stat-label", "Moves" }
+                span { class: "game-stat-value", "{state.total_moves}" }
+            }
+            div { class: "game-stat-entry",
+                span { class: "game-stat-label", "Combo" }
+                span { class: "game-stat-value", "{state.combo_counter}" }
+            }
+            div { class: "game-stat-entry",
+                span { class: "game-stat-label", "Time" }
+                span { class: "game-stat-value", "{state.current_time_string()}" }
+            }
 
             // Show B2B and T-spin indicators if active
             if state.is_b2b {
-                div { style: "color: #ffd700;", // Gold color for special states
-                    "Back-to-Back!"
-                }
+                div { class: "text-gold mt-1", "Back-to-Back!" }
             }
-
             if state.is_t_spin {
-                div { style: "color: #ff69b4;", // Pink color for T-spin
-                    "T-Spin!"
-                }
+                div { class: "text-pink mt-1", "T-Spin!" }
             }
-
-            // Show garbage info if any
             if state.garbage_recv > 0 {
-                div { style: "color: #ff4444;", // Red color for garbage
-                    "Incoming: {state.garbage_recv - state.garbage_applied}"
-                }
+                div { class: "text-red mt-1", "Incoming: {state.garbage_recv - state.garbage_applied}" }
             }
         }
     }

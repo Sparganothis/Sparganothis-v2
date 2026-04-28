@@ -101,28 +101,23 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
     };
     rsx! {
         li {
+            class: "flex items-center gap-1",
             key: "{identity.node_id()}",
-            style: "width: calc(90%-30px); color: {color}; position: relative;",
+            style: "color: {color};",
             "data-tooltip": "
                 {identity.user_id().fmt_short()}@{identity.node_id().fmt_short()}
                 (last seen: {last_seen_txt})
             ",
             "data-placement": "bottom",
             {element}
-            small { small {
-                style: "float: right; color: #666;",
+            div { class: "chat-meta",
                 if let Some(rtt) = rtt.read().clone() {
                     "{rtt} ms"
                 } else if is_own_node.read().clone() {
                     "(you)"
                 }
-            }}
-            div {
-                style: "
-                left: -2.1rem;
-                top: 0.5rem;
-                position:absolute;
-                ",
+            }
+            div { class: "chat-portrait",
                 ChatUserPortraitBox {  own_color: own_color }
             }
         }
@@ -133,12 +128,8 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
 fn ChatUserPortraitBox(own_color: ReadOnlySignal<String>) -> Element {
     rsx! {
         div {
-            style: "
-            width: 1.8rem;
-            height: 1.8rem;
-            border: 0.5rem solid {own_color};
-            z-index:1;
-            "
+            class: "portrait-box",
+            style: "border-color: {own_color};",
         }
     }
 }
@@ -148,24 +139,13 @@ pub fn ChatHistoryDisplay<T: ChatMessageType>(
     history: ReadOnlySignal<ChatHistory<T>>,
 ) -> Element {
     rsx! {
-        div {
-            style: "
-                height: 100%;
-                overflow: hidden;
-            ",
-            article {
-                style: "
-                    height: 100%;
-                    overflow-y: auto;
-                    overflow-x: hidden;
-                ",
+        div { class: "chat-container",
+            article { class: "h-full overflow-y-auto",
                 for message in history.read().messages.iter() {
                     ChatMessageOrErrorDisplay::<T> { message: message.clone() }
                 }
                 if history.read().messages.is_empty() {
-                    i {
-                        "No messages."
-                    }
+                    i { class: "text-muted", "No messages." }
                 }
             }
         }
@@ -241,56 +221,32 @@ fn ChatMessageDisplay<T: ChatMessageType>(
         }
     });
 
+    let is_self = from.user_id() == &my_user_id;
+    let bubble_class = if is_self { "chat-bubble chat-bubble-self" } else { "chat-bubble" };
+
     rsx! {
         div {
             key: "{_message_id:?}",
-            style: "width: 100%; height: fit-content; display: flex; justify-content: {align};",
+            class: "w-full flex mb-2",
+            style: "justify-content: {align};",
             article {
-                style: "
-                    max-width: 70%;
-                    min-width: 30%; 
-                    width: fit-content; 
-                    text-align: {align}; 
-                    float: {align};
-                    padding: 10px;
-                    margin: 10px;
-                ",
+                class: "{bubble_class}",
                 onmounted: move |_e| async move {
                     let _e = _e.scroll_to(ScrollBehavior::Instant).await;
                     if let Err(e) = _e {
                         warn!("Failed to scroll to bottom: {}", e);
                     }
                 },
-                header {
-                    style: "display: flex; justify-content: space-between;",
-                    b {
-                        "{from_nickname}"
-                    }
-                    small {
-                        style: "padding-top: 0px; margin-top: 0px; color: #666;",
-                        small {
-                            "{last_seen_txt}"
-                        }
-                    }
+                header { class: "flex justify-between items-center mb-1",
+                    b { "{from_nickname}" }
+                    span { class: "chat-meta", "{last_seen_txt}" }
                 }
-                p {
-                    style: "position:relative;",
-                    div {
-                        style: "
-                        padding-{align}: 3rem;
-                        ",
-                        {text},
+                div { class: "flex items-start gap-1",
+                    div { class: "portrait-wrapper",
+                        ChatUserPortraitBox { own_color: from_color }
                     }
-                    div {
-                        style: "
-                        {align}: 0rem;
-                        top: -0.2rem;
-                        position:absolute;
-                        ",
-                        ChatUserPortraitBox {  own_color: from_color }
-                    }
+                    div { class: "message-text", {text} }
                 }
-                // footer {                }
             }
         }
     }
