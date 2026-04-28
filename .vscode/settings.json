@@ -2,5 +2,11 @@
     "terminal.integrated.shellIntegration.enabled": false,
     "files.eol": "\n",
     "workbench.editor.showTabs": "multiple",
-    "workbench.editor.enablePreview": false ,
-} 
+    "workbench.editor.enablePreview": false,
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    "terminal.integrated.automationProfile.windows": {
+        "path": "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+        "args": [],
+        "icon": "terminal-bash"
+    },
+}
