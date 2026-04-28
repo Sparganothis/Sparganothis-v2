@@ -1,0 +1,6 @@
+- DM window
+  - send dm to user
+  - receive dms in tab under dropdown with notification counter
+  - send 1v1 invite messaage
+  - send invite into private room
+  - 
