@@ -3,7 +3,7 @@ use game::tet::{BoardMatrix, CellValue, GameOverReason, GameState, Tet};
 use rand::Rng;
 
 // const INTER_BOX_PADDING: &'static str = "0px";
-const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";
+const GAMEBOARD_GRID_COLOR: &'static str = "rgba(0, 0, 0, 0)";
 
 // Add this function to map Tet to color
 fn get_tet_color(tet: &Tet) -> RgbaColor {
@@ -114,6 +114,9 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
                 align-items: center;
                 justify-content: center;
                 container-type:size;
+
+                
+                background-color: rgba(0,0,0,0.3);
             ",
 
             div { style: "
@@ -364,6 +367,39 @@ fn GridCellDisplay(
     let cell2 = cell_color.read().string();
     let rot_deg = rot_deg();
 
+    let mut cell3 = cell_color.read().darken().darken().darken().darken().darken();
+    cell3.a *= 0.3;
+    
+    let cell3 = cell3.string();
+    let mut cell4 = cell_color.read().clone();
+    cell4.a *= 0.25;
+    let cell4 = cell4.string();
+
+
+    let zindex = use_memo(move || {
+        let c = cell.read().clone();
+        match c {
+            None | Some(CellValue::Empty) => {
+                78
+            }
+            Some(_x) => {
+                6
+            }
+        }
+    });
+    let shadow =  {
+        match  cell.read().clone() {
+            None | Some(CellValue::Empty) => {
+                format!("")
+            }
+            Some(_x) => {
+      
+                        format!(" box-shadow: 
+                        inset 0cqmin 0cqmin  0.5cqmin  0.5cqmin {cell3}, 
+                        0cqmin 0cqmin  37cqmin  0cqmin {cell4};")
+            }
+        }
+    };
 
 
     //         position: absolute;
@@ -375,19 +411,22 @@ fn GridCellDisplay(
 
     
                 // background-color: linear-gradient({rot_deg}deg, {cell1}, 
-
+// 
     rsx! {
         div { style: "
                 padding: 0;
             ",
             div { style: "
                  background-image: linear-gradient({rot_deg}deg, {cell2}, {cell1});
-                 box-shadow: 120px 80px 40px 20px {cell1};
+                 
+                {shadow}
                 width: 100%;
                 height: 100%;
                 aspect-ratio: 1/1;
-                border: 0.1cqmin solid {GAMEBOARD_GRID_COLOR};
-                " }
+                border: 0.5cqmin solid {GAMEBOARD_GRID_COLOR};
+                z-index: {zindex};
+                ",
+            }
         }
     }
 }
