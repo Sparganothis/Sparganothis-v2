@@ -1,28 +1,62 @@
 use dioxus::prelude::*;
 use game::tet::{BoardMatrix, CellValue, GameOverReason, GameState, Tet};
+use rand::Rng;
 
 // const INTER_BOX_PADDING: &'static str = "0px";
 const GAMEBOARD_GRID_COLOR: &'static str = "rgb(0, 0, 0)";
 
 // Add this function to map Tet to color
-fn get_tet_color(tet: &Tet) -> &'static str {
+fn get_tet_color(tet: &Tet) -> RgbaColor {
     match tet {
-        Tet::I => "rgb(40, 218, 182)", // Cyan
-        Tet::J => "rgb(26, 53, 196)",  // Blue
-        Tet::L => "rgb(223, 131, 20)", // Orange
-        Tet::O => "rgb(228, 196, 15)", // Yellow
-        Tet::S => "rgb(31, 204, 89)",  // Green
-        Tet::T => "rgb(199, 41, 151)", // Purple
-        Tet::Z => "rgb(197, 57, 32)",  // Red
+        Tet::I => RgbaColor::rgb(40, 218, 182), // Cyan
+        Tet::J => RgbaColor::rgb(26, 53, 196),  // Blue
+        Tet::L => RgbaColor::rgb(223, 131, 20), // Orange
+        Tet::O => RgbaColor::rgb(228, 196, 15), // Yellow
+        Tet::S => RgbaColor::rgb(31, 204, 89),  // Green
+        Tet::T => RgbaColor::rgb(199, 41, 151), // Purple
+        Tet::Z => RgbaColor::rgb(197, 57, 32),  // Red
     }
 }
 
-fn get_cell_color(cell_value: Option<CellValue>) -> &'static str {
+#[derive(Clone, PartialEq, Copy)]
+struct RgbaColor {
+    r: u8,
+    g: u8,
+    b: u8,
+    a: f32,
+}
+
+impl RgbaColor {
+    fn rgb(r: u8, g: u8, b: u8) -> RgbaColor {
+        RgbaColor {
+            r,g,b,a: 1.0,
+        }
+    }
+    fn rgba(r: u8, g: u8, b: u8, a: f32) -> RgbaColor {
+        RgbaColor {
+            r,g,b,a,
+        }
+    }
+    fn string(&self) -> String {
+        format!("rgba({},{},{},{})", self.r, self.g, self.b, self.a)
+    }
+    fn darken(&self) -> Self {
+        let Self{r,g,b,a} = *self;
+        RgbaColor {
+            r: (r as f32 * 0.9) as u8,
+            g: (g as f32 * 0.9) as u8,
+            b: (b as f32 * 0.9) as u8,
+            a: a * 0.8_f32,
+        }
+    }
+}
+
+fn get_cell_color(cell_value: Option<CellValue>) -> RgbaColor {
     match cell_value {
         Some(CellValue::Piece(tet)) => get_tet_color(&tet),
-        Some(CellValue::Ghost) => "rgb(109, 109, 109)",
-        Some(CellValue::Garbage) => "rgba(128, 128, 128, 0.8)",
-        _ => "rgb(26, 26, 26)",
+        Some(CellValue::Ghost) => RgbaColor::rgb(109, 109, 109),
+        Some(CellValue::Garbage) => RgbaColor::rgba(128, 128, 128, 0.8_f32),
+        _ => RgbaColor::rgb(26, 26, 26)
     }
 }
 
@@ -320,17 +354,34 @@ fn GridCellDisplay(
     col_count: i8,
 ) -> Element {
     let cell_color = use_memo(move || get_cell_color(cell.read().clone()));
+    let rot_deg = use_memo(move || {
+        let rng = &mut rand::thread_rng();
+        rng.gen_range(0.0_f32..360.0_f32)
+        
+    });
+
+    let cell1 = cell_color.read().darken().string();
+    let cell2 = cell_color.read().string();
+    let rot_deg = rot_deg();
+
+
+
     //         position: absolute;
     // width: calc(100cqw/{col_count});
     // height: calc(100cqh/{row_count});
     // top: calc((100cqh/{row_count}) * {row});
     // left: calc((100cqw/{col_count}) * {col});
+
+
+    
+                // background-color: linear-gradient({rot_deg}deg, {cell1}, 
+
     rsx! {
         div { style: "
                 padding: 0;
             ",
             div { style: "
-                background-color: {cell_color};
+                 background-image: linear-gradient({rot_deg}deg, {cell2}, {cell1});
                 width: 100%;
                 height: 100%;
                 aspect-ratio: 1/1;
