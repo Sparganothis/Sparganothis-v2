@@ -16,7 +16,7 @@ pub fn App() -> Element {
         document::Link { rel: "stylesheet", href: MAIN_CSS }
         document::Title { "{APP_TITLE}" }
         div {
-            "data-theme": "light",
+            "data-theme": "dark",
             class: "global_parent",
             UrlHolderParent {
                 LocalStorageParent {
