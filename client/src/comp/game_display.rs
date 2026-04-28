@@ -382,6 +382,7 @@ fn GridCellDisplay(
             ",
             div { style: "
                  background-image: linear-gradient({rot_deg}deg, {cell2}, {cell1});
+                 box-shadow: 120px 80px 40px 20px {cell1};
                 width: 100%;
                 height: 100%;
                 aspect-ratio: 1/1;
