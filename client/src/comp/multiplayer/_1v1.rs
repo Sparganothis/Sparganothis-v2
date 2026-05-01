@@ -145,8 +145,8 @@ fn Play1v1FullScreenWindowInner(cc: Game1v1MatchChatController) -> Element {
     // ============ ON GAME OVER REDIRECT TO 1v1 OUTCOME PAGE
     let play_state2 = play_state_manager.clone();
     let spectator_state2 = spectator_manager.clone();
-    let match_info2 = (&cc.match_info).clone();
-    let mm2 = (&cc._mm).clone();
+    let match_info2 = cc.match_info.clone();
+    let mm2 = cc._mm.clone();
     let _c = use_coroutine(move |_: UnboundedReceiver<()>| {
         let play_state2 = play_state2.clone();
         let spectator_state2 = spectator_state2.clone();

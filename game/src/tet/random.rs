@@ -14,7 +14,7 @@ fn get_rng(seed: &GameSeed) -> ChaCha20Rng {
 }
 
 pub fn get_random_seed() -> GameSeed {
-    (&mut rand::rng()).random()
+    rand::rng().random()
 }
 
 pub fn get_determinist_val<T>(seed: &GameSeed) -> T

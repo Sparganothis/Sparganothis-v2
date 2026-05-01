@@ -120,12 +120,12 @@ impl CellValueRow10 {
     }
     #[inline(always)]
     fn get(&self, idx: i8) -> CellValue {
-        assert!(idx >= 0 && idx <= 9, "bad idx: {idx} expected: 0..=4");
+        assert!((0..=9).contains(&idx), "bad idx: {idx} expected: 0..=4");
         self.v_r[idx as usize / 2].get(idx % 2)
     }
     #[inline(always)]
     fn set(&mut self, idx: i8, new: CellValue) {
-        assert!(idx >= 0 && idx <= 9, "bad idx: {idx} expected: 0..=4");
+        assert!((0..=9).contains(&idx), "bad idx: {idx} expected: 0..=4");
         self.v_r[idx as usize / 2].set(idx % 2, new);
     }
     #[inline(always)]
@@ -156,7 +156,7 @@ impl<const R: usize, const C: usize> BoardMatrix<R, C> {
 
         // move all things up
         for i in (0..(R - 2)).rev() {
-            self.vv[i as usize + 1] = self.vv[i as usize];
+            self.vv[i + 1] = self.vv[i];
         }
 
         for x in 0..(C as i8) {
@@ -172,13 +172,13 @@ impl<const R: usize, const C: usize> BoardMatrix<R, C> {
         if x < 0 || y < 0 || x >= (C as i8) || y >= (R as i8) {
             None
         } else {
-            Some(self.vv[y as usize].get(x as i8))
+            Some(self.vv[y as usize].get(x))
         }
     }
 
     #[inline(always)]
     pub fn set_cell(&mut self, y: i8, x: i8, v: CellValue) {
-        self.vv[y as usize].set(x as i8, v);
+        self.vv[y as usize].set(x, v);
     }
 
     pub fn rows(&self) -> Vec<Vec<CellValue>> {

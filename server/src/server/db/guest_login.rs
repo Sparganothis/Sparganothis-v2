@@ -66,7 +66,7 @@ pub async fn db_add_guest_login(
             .bind(user_id.clone())
             .fetch_all::<u64>()
             .await?;
-        let count = *cursor.get(0).context("no count row??")?;
+        let count = *cursor.first().context("no count row??")?;
         count
     };
 

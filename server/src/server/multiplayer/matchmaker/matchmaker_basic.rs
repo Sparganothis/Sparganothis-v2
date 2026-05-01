@@ -116,7 +116,7 @@ async fn _wait_through_matchmaking_global_limit(
             return Ok(());
         }
 
-        let _rand_sleep2 = (&mut thread_rng()).gen_range(exp / 20..exp / 2);
+        let _rand_sleep2 = thread_rng().gen_range(exp / 20..exp / 2);
         sleep(Duration::from_millis(_rand_sleep2 as u64)).await;
     }
     tracing::error!("Matchmaking global limit for {game_type}: FAIL TIMEOUT!");
@@ -132,7 +132,7 @@ pub async fn increment_redis_counter(
     // set lock
     let mut conn = redis_connection().await?;
     let _r = redis::cmd("SET")
-        .arg(&key)
+        .arg(key)
         .arg(0_i32)
         .arg("nx")
         .arg("px")
@@ -140,7 +140,7 @@ pub async fn increment_redis_counter(
         .query_async::<Value>(&mut conn)
         .await?;
     let _r = redis::cmd("INCRBY")
-        .arg(&key)
+        .arg(key)
         .arg(1)
         .query_async::<Value>(&mut conn)
         .await?;
@@ -150,7 +150,7 @@ pub async fn increment_redis_counter(
         sleep(Duration::from_millis((min_duration as i64 - dt) as u64)).await;
     }
     let _r = redis::cmd("GET")
-        .arg(&key)
+        .arg(key)
         .query_async::<i32>(&mut conn)
         .await?;
 
@@ -160,7 +160,7 @@ pub async fn increment_redis_counter(
         sleep(Duration::from_millis((min_duration as i64 - dt) as u64)).await;
     }
     let _r3 = redis::cmd("DEL")
-        .arg(&key)
+        .arg(key)
         .query_async::<Value>(&mut conn)
         .await?;
 
@@ -183,7 +183,7 @@ async fn player_matchmaking_run1(
     let player_lot = fetch_player_slot(
         user_id,
         fetch_time,
-        &game_type,
+        game_type,
         fetch_time as i64 * 2,
         round_player_count,
     );
@@ -204,7 +204,7 @@ async fn player_matchmaking_run1(
         let mut interesting_ids = vec![];
         let root_id = player_lot.0 - player_lot.0 % match_user_count as i32;
         for i in root_id..(root_id + match_user_count as i32) {
-            interesting_ids.push(make_key(&game_type, i))
+            interesting_ids.push(make_key(game_type, i))
         }
 
         let read_retry_count = 3;
@@ -272,7 +272,7 @@ async fn fetch_player_slot(
         numbers.push(round_player_count + i);
     }
     for i in numbers {
-        let key = make_key(&game_type, i);
+        let key = make_key(game_type, i);
         all_keys.push(key.clone());
         key_to_i.insert(key, i);
     }

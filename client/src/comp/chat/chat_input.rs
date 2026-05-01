@@ -19,8 +19,8 @@ pub fn ChatInput<T: ChatMessageType>(
     });
     let disabled = use_memo(move || {
         let m = message_input.read().clone();
-        let is_connected = is_connected.read().clone();
-        if m.trim().len() < 1 {
+        let is_connected = *is_connected.read();
+        if m.trim().is_empty() {
             return true;
         }
         if !is_connected {

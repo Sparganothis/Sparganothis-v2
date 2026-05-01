@@ -44,7 +44,7 @@ pub fn Game1v1OutcomePage(
             match last_states {
                 Err(e) => {
                     error_str.set(Some(format!("{e:#}")));
-                    return vec![];
+                    vec![]
                 }
                 Ok(lst) => lst,
             }
@@ -79,7 +79,7 @@ pub fn Game1v1OutcomePage(
                         style:"width:50cqw; height:80cqh",
                         if *is_loaded.read() {
                             GameDisplay {
-                                game_state: last_moves.read()[0].clone(),
+                                game_state: last_moves.read()[0],
                             }
                         } else {
                             "loading..."
@@ -89,7 +89,7 @@ pub fn Game1v1OutcomePage(
                         style:"width:50cqw; height:80cqh",
                         if  *is_loaded.read() {
                             GameDisplay {
-                                game_state: last_moves.read()[1].clone(),
+                                game_state: last_moves.read()[1],
                             }
                         } else {
                             "loading..."

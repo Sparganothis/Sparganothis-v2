@@ -51,7 +51,7 @@ pub fn IAmARobotSingleplayer() -> Element {
         }),
     );
     let _on_game_change_send_to_chat = use_resource(move || {
-        let game = game_state.read().clone();
+        let game = *game_state.read();
         async move {
             game_chat
                 .send_broadcast_user_message

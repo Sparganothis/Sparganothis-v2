@@ -1,5 +1,4 @@
 use game::timestamp::get_timestamp_now_ms;
-use n0_future::time::Instant;
 use std::time::Duration;
 
 use crate::network::NetworkState;
@@ -24,10 +23,10 @@ pub fn ChatPresenceDisplay<T: ChatMessageType>(
             for PresenceListItem{presence_flag,last_seen, identity, payload, rtt} in presence.read().0.iter() {
                 ChatPresenceDisplayItem::<T> {
                     presence_flag: presence_flag.clone(),
-                    last_seen: last_seen.clone(),
-                    identity: identity.clone(),
+                    last_seen: *last_seen,
+                    identity: *identity,
                     payload: payload.clone() as Option<T::P>,
-                    rtt: rtt.clone(),
+                    rtt: *rtt,
                 }
             }
             if presence.read().0.is_empty() {
@@ -57,7 +56,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
             let Some(mm) = mm else {
                 return;
             };
-            own_node_id.set(Some(mm.own_node_identity().node_id().clone()));
+            own_node_id.set(Some(*mm.own_node_identity().node_id()));
             loop {
                 let elapsed = (1
                     + (get_timestamp_now_ms() - *last_seen.peek()) / 1000)
@@ -73,11 +72,11 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
         }
     });
     let is_own_node = use_memo(move || {
-        let own_node_id = own_node_id.read().clone();
-        let identity = identity.read().clone();
-        own_node_id == Some(identity.node_id().clone())
+        let own_node_id = *own_node_id.read();
+        let identity = *identity.read();
+        own_node_id == Some(*identity.node_id())
     });
-    let identity = identity.read().clone();
+    let identity = *identity.read();
     let own_color = identity.html_color();
 
     let color = match presence_flag.read().clone() {
@@ -111,9 +110,9 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
             {element}
             small { small {
                 style: "float: right; color: #666;",
-                if let Some(rtt) = rtt.read().clone() {
+                if let Some(rtt) = *rtt.read() {
                     "{rtt} ms"
-                } else if is_own_node.read().clone() {
+                } else if *is_own_node.read() {
                     "(you)"
                 }
             }}
@@ -180,7 +179,7 @@ fn ChatMessageOrErrorDisplay<T: ChatMessageType>(
     let Some(mm) = mm.read().clone() else {
         return rsx! {};
     };
-    let my_user_id = mm.user().user_id().clone();
+    let my_user_id = *mm.user().user_id();
     match message {
         Ok(message) => rsx! {
             ChatMessageDisplay::<T> { message, my_user_id}
@@ -227,9 +226,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
                 return;
             };
             loop {
-                let elapsed = (1 + datetime_now().timestamp()
-                    - timestamp.timestamp())
-                .abs() as u64;
+                let elapsed = (1 + datetime_now().timestamp() - timestamp.timestamp()).unsigned_abs();
                 let elapsed_txt = pretty_duration::pretty_duration(
                     &Duration::from_secs(elapsed),
                     None,

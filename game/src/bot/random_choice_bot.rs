@@ -9,7 +9,7 @@ pub struct RandomChoiceBot;
 use once_cell::sync::Lazy;
 
 pub static ALL_MOVE_CHAINS: Lazy<Vec<Vec<TetAction>>> =
-    Lazy::new(|| make_all_move_chains());
+    Lazy::new(make_all_move_chains);
 pub fn get_all_move_chains() -> Vec<Vec<TetAction>> {
     ALL_MOVE_CHAINS.clone()
 }
@@ -71,7 +71,7 @@ where
 
         let new_result = match cache.get(&_prev_chain).expect("prev chain must exist") {
             Ok(ref state) => {
-                let mut state = state.clone();
+                let mut state = *state;
                 let r = state.apply_action_if_works(action, 0);
                 if state.game_over() {
                     anyhow::Result::Err(anyhow::anyhow!("game over"))
@@ -88,11 +88,10 @@ where
     let state = cache
         .get(action_chain)
         .expect("result not found in cache after iterating");
-    let mut state = match state {
+    let mut state = *match state {
         Err(e) => anyhow::bail!("{e}"),
         Ok(state) => state,
-    }
-    .clone();
+    };
 
     if state.game_over() {
         anyhow::bail!("action leads to game over");
@@ -128,10 +127,10 @@ where
     let mut best_acction_score = f64::MIN;
     let mut action_result_cache =
         collections::HashMap::<Vec<TetAction>, anyhow::Result<GameState>>::new();
-    action_result_cache.insert(vec![], Ok(game_state.clone()));
+    action_result_cache.insert(vec![], Ok(*game_state));
     for act in all_action_chains {
         if let Ok(sccore) =
-            get_action_chain_score(&game_state, &act, &f, &mut action_result_cache)
+            get_action_chain_score(game_state, &act, &f, &mut action_result_cache)
         {
             if sccore > best_acction_score {
                 best_acction_score = sccore;

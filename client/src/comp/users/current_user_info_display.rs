@@ -10,15 +10,11 @@ use crate::{
 #[component]
 pub fn CurrentUserInfoDisplay() -> Element {
     let user = use_context::<LocalStorageContext>().persistent.user_secrets;
-    let user_id = use_memo(move || user.read().user_identity().clone());
+    let user_id = use_memo(move || *user.read().user_identity());
 
     let node_info = use_context::<NetworkState>().global_mm;
     let node_id = use_memo(move || {
-        if let Some(mm) = node_info.read().clone() {
-            Some(mm.own_node_identity().clone())
-        } else {
-            None
-        }
+        node_info.read().clone().map(|mm| mm.own_node_identity())
     });
     let node_id: ReadSignal<Option<NodeIdentity>> = node_id.into();
 
@@ -28,7 +24,7 @@ pub fn CurrentUserInfoDisplay() -> Element {
                 height: 400px;
                 overflow: auto;
             ",
-            UserInfoDisplay { info: user_id.read().clone(), node_id }
+            UserInfoDisplay { info: *user_id.read(), node_id }
             h1 {
                 Link {
                     to: Route::MyMainSettings {  },
@@ -43,7 +39,7 @@ pub fn CurrentUserInfoDisplay() -> Element {
             }
             h1 {
                 Link {
-                    to: Route::UsersProfilePage { user_id: UrlParam(user_id.read().clone()) },
+                    to: Route::UsersProfilePage { user_id: UrlParam(*user_id.read()) },
                     "Your Public Profile"
                 }
             }

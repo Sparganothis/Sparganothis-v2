@@ -36,7 +36,7 @@ pub fn UsersRootDirectoryPage() -> Element {
 pub fn UsersProfilePage(
     user_id: ReadSignal<UrlParam<UserIdentity>>,
 ) -> Element {
-    let user_id = use_memo(move || user_id.read().0.clone());
+    let user_id = use_memo(move || user_id.read().0);
     let net = use_context::<NetworkState>();
     let mm = net.global_mm;
     let api = net.client_api_manager;
@@ -45,7 +45,7 @@ pub fn UsersProfilePage(
             "loading..."
         };
     };
-    let user_id = user_id.read().clone();
+    let user_id = *user_id.read();
 
     rsx! {
         article {

@@ -15,8 +15,8 @@ use crate::{
 
 #[component]
 pub fn ReplayHomePage() -> Element {
-    let err = use_signal(move || String::new());
-    let mut data = use_signal(move || vec![]);
+    let err = use_signal(String::new);
+    let mut data = use_signal(std::vec::Vec::new);
 
     let api = use_context::<NetworkState>().client_api_manager;
     let api = api.read().clone();
@@ -31,10 +31,9 @@ pub fn ReplayHomePage() -> Element {
         async move {
             let Ok(r) = api2.call_method::<GetReplayMatchList>(()).await else {
                 tracing::warn!("call error!");
-                return ();
+                return ;
             };
             data.set(r);
-            return ();
         }
     });
 
@@ -65,7 +64,7 @@ pub fn ReplayHomePage() -> Element {
 
 #[component]
 pub fn Replay1v1Match(match_id: ReadSignal<String>) -> Element {
-    let err = use_signal(move || String::new());
+    let err = use_signal(String::new);
     let mut match_row = use_signal(move || None);
 
     let api = use_context::<NetworkState>().client_api_manager;
@@ -83,10 +82,9 @@ pub fn Replay1v1Match(match_id: ReadSignal<String>) -> Element {
                 api2.call_method::<GetReplayMatchDetail>(match_id).await
             else {
                 tracing::warn!("call error!");
-                return ();
+                return ;
             };
             match_row.set(Some(r));
-            return ();
         }
     });
 
@@ -110,8 +108,8 @@ pub fn Replay1v1Match(match_id: ReadSignal<String>) -> Element {
 fn DisplayReplayDetails(match_info: ReadSignal<MatchRow2>) -> Element {
     let match_info = use_memo(move || match_info.read().clone());
     let match_info = match_info.read().clone();
-    let err = use_signal(move || String::new());
-    let mut match_row = use_signal(move || vec![]);
+    let err = use_signal(String::new);
+    let mut match_row = use_signal(std::vec::Vec::new);
 
     let api = use_context::<NetworkState>().client_api_manager;
     let api = api.read().clone();
@@ -129,10 +127,9 @@ fn DisplayReplayDetails(match_info: ReadSignal<MatchRow2>) -> Element {
                 api2.call_method::<GetGameStateRowsForMatch>(match_id).await
             else {
                 tracing::warn!("call error!");
-                return ();
+                return ;
             };
             match_row.set(r);
-            return ();
         }
     });
 
@@ -144,7 +141,7 @@ fn DisplayReplayDetails(match_info: ReadSignal<MatchRow2>) -> Element {
             let Some(state) = &row.state_data else {
                 continue;
             };
-            ins.push(state.clone());
+            ins.push(*state);
         }
 
         rows2
@@ -205,7 +202,7 @@ pub fn GameStateBrowser(data: ReadSignal<Vec<GameState>>) -> Element {
             div {
                 style: "width: 100%; height: 80%;border:1px solid black;",
                 if let Some(state) = state.read().as_ref() {
-                    GameDisplay {game_state: state.clone()}
+                    GameDisplay {game_state: *state}
                 }
             }
         }

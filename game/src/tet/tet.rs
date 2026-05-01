@@ -36,21 +36,21 @@ impl Tet {
     pub fn spawn_pos(&self) -> (i8, i8) {
         const O_SPAWN_POS: (i8, i8) = (SPAWN_POS.0 + 1, SPAWN_POS.1 + 1);
         const I_SPAWN_POS: (i8, i8) = (SPAWN_POS.0 - 1, SPAWN_POS.1);
-        match self {
-            &Self::I => I_SPAWN_POS,
-            &Self::O => O_SPAWN_POS,
+        match *self {
+            Self::I => I_SPAWN_POS,
+            Self::O => O_SPAWN_POS,
             _ => SPAWN_POS,
         }
     }
     pub fn name(&self) -> &str {
-        match self {
-            &Self::I => "I",
-            &Self::L => "L",
-            &Self::J => "J",
-            &Self::T => "T",
-            &Self::S => "S",
-            &Self::Z => "Z",
-            &Self::O => "O",
+        match *self {
+            Self::I => "I",
+            Self::L => "L",
+            Self::J => "J",
+            Self::T => "T",
+            Self::S => "S",
+            Self::Z => "Z",
+            Self::O => "O",
         }
     }
 
@@ -86,39 +86,39 @@ impl Tet {
     }
 
     fn make_orig_shape(&self) -> Shape {
-        match self {
-            &Self::I => vec![
+        match *self {
+            Self::I => vec![
                 vec![false, false, false, false],
                 vec![false, false, false, false],
                 vec![true, true, true, true],
                 vec![false, false, false, false],
             ],
-            &Self::L => vec![
+            Self::L => vec![
                 vec![false, false, false],
                 vec![true, true, true],
                 vec![false, false, true],
             ],
-            &Self::J => vec![
+            Self::J => vec![
                 vec![false, false, false],
                 vec![true, true, true],
                 vec![true, false, false],
             ],
-            &Self::T => vec![
+            Self::T => vec![
                 vec![false, false, false],
                 vec![true, true, true],
                 vec![false, true, false],
             ],
-            &Self::S => vec![
+            Self::S => vec![
                 vec![false, false, false],
                 vec![true, true, false],
                 vec![false, true, true],
             ],
-            &Self::Z => vec![
+            Self::Z => vec![
                 vec![false, false, false],
                 vec![false, true, true],
                 vec![true, true, false],
             ],
-            &Self::O => vec![vec![true, true], vec![true, true]],
+            Self::O => vec![vec![true, true], vec![true, true]],
         }
     }
     pub fn random() -> Self {

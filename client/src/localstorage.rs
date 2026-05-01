@@ -53,13 +53,13 @@ pub fn LocalStorageParent(children: Element) -> Element {
     );
     let game_settings_w = use_synced_storage::<LocalStorage, GameSettings>(
         "game_settings_1".to_string(),
-        || GameSettings::default(),
+        GameSettings::default,
     );
-    let game_settings = use_memo(move || game_settings_w.read().clone());
+    let game_settings = use_memo(move || *game_settings_w.read());
 
     let button_settings_w = use_synced_storage::<LocalStorage, ButtonSettings>(
         "button_settings_1".to_string(),
-        || ButtonSettings::default(),
+        ButtonSettings::default,
     );
     let button_settings = use_memo(move || button_settings_w.read().clone());
 
@@ -78,11 +78,10 @@ pub fn LocalStorageParent(children: Element) -> Element {
 }
 
 pub fn use_game_settings() -> GameSettings {
-    let x = use_context::<LocalStorageContext>()
+    let x = *use_context::<LocalStorageContext>()
         .persistent
         .game_settings
-        .read()
-        .clone();
+        .read();
     x
 }
 

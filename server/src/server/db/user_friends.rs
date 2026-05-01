@@ -17,10 +17,10 @@ pub async fn user_add_friend(
     _from: NodeIdentity,
     _arg: UserIdentity,
 ) -> anyhow::Result<()> {
-    let userid_str = _from.user_id().as_bytes().clone();
+    let userid_str = *_from.user_id().as_bytes();
     let userid_str = serialize_base64(&userid_str)?;
 
-    let arg_userid = _arg.user_id().as_bytes().clone();
+    let arg_userid = *_arg.user_id().as_bytes();
     let arg_userid = serialize_base64(&arg_userid)?;
 
     let friend_exists = friend_exists(&userid_str, &arg_userid).await?;
@@ -46,10 +46,10 @@ pub async fn user_delete_friend(
     _from: NodeIdentity,
     _arg: UserIdentity,
 ) -> anyhow::Result<()> {
-    let userid_str = _from.user_id().as_bytes().clone();
+    let userid_str = *_from.user_id().as_bytes();
     let userid_str = serialize_base64(&userid_str)?;
 
-    let arg_userid = _arg.user_id().as_bytes().clone();
+    let arg_userid = *_arg.user_id().as_bytes();
     let arg_userid = serialize_base64(&arg_userid)?;
 
     let friend_exists = friend_exists(&userid_str, &arg_userid).await?;
@@ -85,7 +85,7 @@ pub async fn user_list_friends(
     _from: NodeIdentity,
     _arg: (),
 ) -> anyhow::Result<Vec<FriendInfo>> {
-    let userid_str = _from.user_id().as_bytes().clone();
+    let userid_str = *_from.user_id().as_bytes();
     let userid_str = serialize_base64(&userid_str)?;
 
     let client = get_clickhouse_client();

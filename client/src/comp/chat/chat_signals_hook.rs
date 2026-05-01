@@ -101,7 +101,7 @@ fn use_chat_controller_signal<
         }
     });
     let chat =
-        use_memo(move || chat.read().as_ref().map(|c| c.clone()).flatten());
+        use_memo(move || chat.read().as_ref().and_then(|c| c.clone()));
     let r = chat.into();
     if shutdown_on_drop {
         use_drop(move || {
@@ -136,7 +136,7 @@ fn use_chat_presence_signal<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
 ) -> ReadSignal<PresenceList<T::P>> {
     let mut presence_list_w =
-        use_signal(move || PresenceList::<T::P>::default());
+        use_signal(PresenceList::<T::P>::default);
     let presence_list = use_memo(move || presence_list_w.read().clone());
     let _poll_presence = use_resource(move || {
         let cc = chat.read().clone();
@@ -182,7 +182,7 @@ fn use_chat_send_broadcast_message_callback<T: ChatMessageType>(
     let coro =
         use_coroutine(move |mut n: UnboundedReceiver<T::M>| async move {
             while let Some(message) = n.next().await {
-                match chat_do_broadcast_send_message(chat.into(), message).await
+                match chat_do_broadcast_send_message(chat, message).await
                 {
                     Some(r) => {
                         history.write().push(Ok(r));
@@ -195,11 +195,10 @@ fn use_chat_send_broadcast_message_callback<T: ChatMessageType>(
                 }
             }
         });
-    let on_user_message =
-        Callback::new(move |message: <T as IChatRoomType>::M| {
+    
+    Callback::new(move |message: <T as IChatRoomType>::M| {
             coro.send(message.clone());
-        });
-    on_user_message
+        })
 }
 
 fn use_chat_send_direct_message_callback<T: ChatMessageType>(
@@ -209,7 +208,7 @@ fn use_chat_send_direct_message_callback<T: ChatMessageType>(
     let coro = use_coroutine(
         move |mut n: UnboundedReceiver<(NodeIdentity, T::M)>| async move {
             while let Some((to, message)) = n.next().await {
-                match chat_do_send_direct_message(chat.into(), to, message)
+                match chat_do_send_direct_message(chat, to, message)
                     .await
                 {
                     Some(r) => {
@@ -224,12 +223,12 @@ fn use_chat_send_direct_message_callback<T: ChatMessageType>(
             }
         },
     );
-    let on_user_message = Callback::new(
+    
+    Callback::new(
         move |(to, message): (NodeIdentity, <T as IChatRoomType>::M)| {
             coro.send((to, message.clone()));
         },
-    );
-    on_user_message
+    )
 }
 
 pub fn use_chat_signals<

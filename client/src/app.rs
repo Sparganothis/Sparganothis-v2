@@ -36,9 +36,9 @@ fn UrlHolderParent(children: Element) -> Element {
     let route = use_signal(move || Route::Home {});
     let route_r = use_memo(move || route.read().clone());
     use_context_provider(move || GlobalUrlContext {
-        url_w: url.into(),
+        url_w: url,
         url: url_r.into(),
-        route_w: route.into(),
+        route_w: route,
         route: route_r.into(),
     });
     children

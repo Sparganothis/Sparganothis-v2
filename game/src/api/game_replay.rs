@@ -15,11 +15,11 @@ impl GameSegmentId {
         let seg1 = u16::MAX;
 
         let v0 = GameSegmentId {
-            game_id: game.clone(),
+            game_id: *game,
             segment_id: seg0,
         };
         let v1 = GameSegmentId {
-            game_id: game.clone(),
+            game_id: *game,
             segment_id: seg1,
         };
         v0..=v1
@@ -51,12 +51,12 @@ impl GameId {
         let time1 = i64::MAX;
 
         let v0 = GameId {
-            user_id: user.clone(),
+            user_id: *user,
             init_seed: seed0,
             start_time: time0,
         };
         let v1 = GameId {
-            user_id: user.clone(),
+            user_id: *user,
             init_seed: seed1,
             start_time: time1,
         };

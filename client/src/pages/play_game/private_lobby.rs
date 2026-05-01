@@ -57,16 +57,16 @@ pub fn PrivateLobbyPage(
 ) -> Element {
     let url = use_memo(move || {
         let owner_id = owner_id.read().clone();
-        let room_uuid = room_uuid.read().clone();
+        let room_uuid = *room_uuid.read();
         let _u1 = Route::PrivateLobbyPage {
             room_uuid,
             owner_id,
         }
         .to_string();
-        let u2 = retrieve_href().as_string();
-        u2
+        
+        retrieve_href().as_string()
     });
-    let owner_id = use_memo(move || owner_id.read().0.clone());
+    let owner_id = use_memo(move || owner_id.read().0);
     let mut copied = use_signal(move || false);
 
     rsx! {
@@ -75,7 +75,7 @@ pub fn PrivateLobbyPage(
 
 
             article {
-                PrivateLobbyChatBox {owner_id: owner_id.read().clone(), room_uuid: room_uuid.read().clone(),
+                PrivateLobbyChatBox {owner_id: *owner_id.read(), room_uuid: *room_uuid.read(),
 
 
 
@@ -108,7 +108,7 @@ pub fn PrivateLobbyPage(
                             }
                         }
                     }
-                    RoomControlComponent {owner_id: owner_id.read().clone(), room_uuid: room_uuid.read().clone()}
+                    RoomControlComponent {owner_id: *owner_id.read(), room_uuid: *room_uuid.read()}
 
 
 
@@ -120,7 +120,7 @@ pub fn PrivateLobbyPage(
 
 fn write_to_clipboard(string: String) {
     use wasm_bindgen_futures::spawn_local;
-    let _task = spawn_local(async move {
+    spawn_local(async move {
         let window = web_sys::window().expect("window"); // { obj: val };
         let a = window.navigator().clipboard();
         let p = a.write_text(&string);
@@ -150,7 +150,7 @@ fn RoomControlComponent(
         article {
             style:"padding:10px;margin:10px;",
 
-            if our_id == owner_id.read().clone() {
+            if our_id == *owner_id.read() {
                 RoomControlAdmin{our_id, owner_id, room_uuid, chat}
             } else {
                 RoomControlPlayer{our_id, owner_id, room_uuid, chat}
@@ -212,9 +212,9 @@ fn RoomControlAdmin(
             disabled: !*enable_start_button.read(),
             onclick: move |_| {
                 let mut users: Vec<NodeIdentity> = vec![];
-                users.push(owner_id.read().clone());
+                users.push(*owner_id.read());
                 for x in ready_users.read().iter() {
-                    users.push(x.clone());
+                    users.push(*x);
                 }
                 users.truncate(2);
                 let chat3_send = chat3_send.clone();
@@ -269,7 +269,7 @@ fn RoomControlPlayer(
     };
     let chat_send = chat.sender();
 
-    if our_id.read().user_id().clone() == owner_id.read().user_id().clone() {
+    if *our_id.read().user_id() == *owner_id.read().user_id() {
         return rsx! {
             h1 {"Player (also you)"}
             "You have opened your own link. It works. Please share it with another user."

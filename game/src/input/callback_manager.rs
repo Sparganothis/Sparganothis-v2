@@ -83,7 +83,7 @@ impl CallbackManager {
         stream! {
             pin_mut!(_r);
             loop {
-                let game_settings = {settings.read().await.clone()};
+                let game_settings = {*settings.read().await};
                 let (mut duration_ms, items) =
                     callback_manager.get_sleep_duration_ms().await;
                 for _move in items {
@@ -115,7 +115,7 @@ impl CallbackManager {
                             break;
                         };
 
-                        let settings =  {settings.read().await.clone()};
+                        let settings =  {*settings.read().await};
                         let event = input_manager
                             .on_user_keyboard_event(kbd_event, settings, &state);
                         let y = callback_manager.accept_user_event(event).await;

@@ -19,8 +19,8 @@ pub fn ButtonsForm() -> Element {
     for btn_event in keys {
         let entry = btn2.entry(btn_event).or_insert(vec![]);
         entry.sort_by_key(|c| {
-            let b = bincode::serialize(&c).unwrap();
-            b
+            
+            bincode::serialize(&c).unwrap()
         });
     }
 

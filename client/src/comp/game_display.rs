@@ -3,7 +3,7 @@ use game::tet::{BoardMatrix, CellValue, GameOverReason, GameState, Tet};
 use rand::Rng;
 
 // const INTER_BOX_PADDING: &'static str = "0px";
-const GAMEBOARD_GRID_COLOR: &'static str = "rgba(0, 0, 0, 0)";
+const GAMEBOARD_GRID_COLOR: &str = "rgba(0, 0, 0, 0)";
 
 // Add this function to map Tet to color
 fn get_tet_color(tet: &Tet) -> RgbaColor {
@@ -66,7 +66,7 @@ pub fn YouDied(
     children: Element,
 ) -> Element {
     let msg = use_memo(move || {
-        let r = game_state.read().clone().game_over_reason;
+        let r = game_state.read().game_over_reason;
         match r {
             None => "",
             Some(GameOverReason::Win) => "YOU WIN",
@@ -77,7 +77,7 @@ pub fn YouDied(
         .to_string()
     });
     let color = use_memo(move || {
-        let r = game_state.read().clone().game_over_reason;
+        let r = game_state.read().game_over_reason;
         match r {
             None => "",
             Some(GameOverReason::Win) => "green",
@@ -290,8 +290,8 @@ fn BoardGrid<const R: usize, const C: usize>(
                     for col_id in 0..column_count {
                         BoardGridCell {
                             board,
-                            row: (row_count - 1 - row_id) as i8,
-                            col: col_id as i8,
+                            row: row_count - 1 - row_id ,
+                            col: col_id,
                             row_count,
                             col_count: column_count,
                         }
@@ -356,7 +356,7 @@ fn GridCellDisplay(
     row_count: i8,
     col_count: i8,
 ) -> Element {
-    let cell_color = use_memo(move || get_cell_color(cell.read().clone()));
+    let cell_color = use_memo(move || get_cell_color(*cell.read()));
     let rot_deg = use_memo(move || {
         let rng = &mut rand::thread_rng();
         rng.gen_range(0.0_f32..360.0_f32)
@@ -371,13 +371,13 @@ fn GridCellDisplay(
     cell3.a *= 0.3;
     
     let cell3 = cell3.string();
-    let mut cell4 = cell_color.read().clone();
+    let mut cell4 = *cell_color.read();
     cell4.a *= 0.25;
     let cell4 = cell4.string();
 
 
     let zindex = use_memo(move || {
-        let c = cell.read().clone();
+        let c = *cell.read();
         match c {
             None | Some(CellValue::Empty) => {
                 78
@@ -388,9 +388,9 @@ fn GridCellDisplay(
         }
     });
     let shadow =  {
-        match  cell.read().clone() {
+        match  *cell.read() {
             None | Some(CellValue::Empty) => {
-                format!("")
+                String::new()
             }
             Some(_x) => {
       

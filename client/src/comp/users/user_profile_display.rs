@@ -20,7 +20,7 @@ pub fn UserProfileDisplay(
 
     let data = use_resource(move || {
         let api = api.read().clone();
-        let user_id = user_id.read().clone();
+        let user_id = *user_id.read();
         async move {
             let x = api
                 .call_method::<GetUserProfile>(user_id)
@@ -32,7 +32,7 @@ pub fn UserProfileDisplay(
             x
         }
     });
-    let data = use_memo(move || data.read().clone().map(|x| x.ok()).flatten());
+    let data = use_memo(move || data.read().clone().and_then(|x| x.ok()));
 
     rsx! {
 
@@ -42,7 +42,7 @@ pub fn UserProfileDisplay(
         if let Some(d) = data.read().as_ref() {
             DisplayUserProfileCard {item: d.clone()}
         }
-        if err.read().len() > 0 {
+        if !err.read().is_empty() {
             div {
                 style:"color:red;",
                 "{err}"

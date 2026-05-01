@@ -23,7 +23,7 @@ pub fn PlayersWithMostMatchesTable(
                 .map_err(|e| format!("{e:?}"))
         }
     });
-    let data = use_memo(move || data.read().clone().map(|x| x.ok()).flatten());
+    let data = use_memo(move || data.read().clone().and_then(|x| x.ok()));
 
     let Some(data) = data.read().clone() else {
         return rsx! {"loading..."};
@@ -36,7 +36,7 @@ pub fn PlayersWithMostMatchesTable(
 
             for item in data {
                 Link {
-                    to: Route::UsersProfilePage { user_id: UrlParam(item.user.clone()) },
+                    to: Route::UsersProfilePage { user_id: UrlParam(item.user) },
                     DisplayUserProfileCard {item}
                 }
             }

@@ -72,7 +72,7 @@ fn InitialRepeatDelaySlider() -> Element {
     let label_initial = use_signal(|| "Initial Repeat Delay (ms)".to_string());
     let slidr_delay_init = use_signal(|| old_init);
     use_effect(move || {
-        let init = slidr_delay_init.read().clone();
+        let init = *slidr_delay_init.read();
         let init = init.clamp(4, 666);
         if init != old_init {
             let mut new_settings = old_settings;
@@ -102,7 +102,7 @@ fn AfterRepeatDelaySlider() -> Element {
     let label_initial = use_signal(|| "Repeat Delay (ms)".to_string());
     let slidr_delay_after = use_signal(|| old_init);
     use_effect(move || {
-        let init = slidr_delay_after.read().clone();
+        let init = *slidr_delay_after.read();
         let init = init.clamp(4, 666);
         if init != old_init {
             let mut new_settings = old_settings;
@@ -141,7 +141,7 @@ fn GameDifficultyAutoSoftdropSlider() -> Element {
         use_signal(|| "Auto Soft Drop Interval (ms)".to_string());
     let slider_softdrop = use_signal(|| old_init);
     use_effect(move || {
-        let init = slider_softdrop.read().clone();
+        let init = *slider_softdrop.read();
         let init = init.clamp(4, 1111);
         if init != old_init {
             let mut new_settings = old_settings;

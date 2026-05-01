@@ -28,11 +28,11 @@ impl PartialEq for GameStateManager {
 
 impl GameStateManager {
     pub async fn get_state(&self) -> GameState {
-        self.state.read().await.clone()
+        *self.state.read().await
     }
     pub fn new(game_seed: &GameSeed, start_time: i64) -> Self {
         let state = GameState::new(game_seed, start_time);
-        let id: u64 = (&mut rng()).random();
+        let id: u64 = rng().random();
         tracing::info!("INIT GAME MANAGER {id}");
 
         Self {
@@ -120,12 +120,12 @@ impl GameStateManager {
         let notify_arc = self.notify.clone();
 
         stream! {
-            let mut state = {state_arc.read().await.clone()};
+            let mut state = {*state_arc.read().await};
             tracing::info!("StateManager state_stream() --- init");
             yield state;
             loop {
                 let _x = notify_arc.notified().await;
-                let new_state =  {state_arc.read().await.clone()};
+                let new_state =  {*state_arc.read().await};
                 if new_state != state {
                     state = new_state;
                     yield state;

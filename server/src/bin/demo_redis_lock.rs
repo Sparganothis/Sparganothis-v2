@@ -194,7 +194,7 @@ async fn get_lock_for_match(
 
     let mut event_rx = MATCHMAKING_SUCCESS_BROADCAST.rx.activate_cloned();
     let idx =
-        (&mut rand::thread_rng()).gen_range(0..{ possible_insert_keys.len() });
+        rand::thread_rng().gen_range(0..{ possible_insert_keys.len() });
     let insert_key = possible_insert_keys[idx].clone();
 
     let _lock =
@@ -212,7 +212,7 @@ async fn get_lock_for_match(
             ))
             .await;
             for key in lock_keys.iter() {
-                let val = get_lock_value(&key).await?;
+                let val = get_lock_value(key).await?;
                 lock_values.insert(key.clone(), val);
             }
             // check if all are in
@@ -293,8 +293,8 @@ async fn get_lock_for_match(
 
     let f3 = f1.or(f2);
 
-    let f4 = f3.map(|v| (v, _lock));
-    f4
+    
+    f3.map(|v| (v, _lock))
 
     // let final_value = n0_future::future::race(fut_someone_else_found_group, fut_we_found_group).await;
 
@@ -336,7 +336,7 @@ async fn main_run() -> anyhow::Result<()> {
             ))
             .await;
 
-            let random: u128 = (&mut thread_rng()).gen();
+            let random: u128 = thread_rng().gen();
             let random = format!("{}", random)[0..6].to_string();
 
             (
@@ -423,7 +423,7 @@ async fn player_matchmaking_run1(
                 return Ok(_r);
             }
 
-            let random_sleep: i32 = (&mut rand::thread_rng())
+            let random_sleep: i32 = rand::thread_rng()
                 .gen_range(iter_timeout_ms / 20..iter_timeout_ms / 10);
 
             sleep(Duration::from_millis(random_sleep as u64)).await;

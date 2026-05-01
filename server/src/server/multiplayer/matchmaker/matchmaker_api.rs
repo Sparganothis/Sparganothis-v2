@@ -20,7 +20,7 @@ pub async fn run_multiplayer_matchmaker_1(
     arg: GameMatchType,
 ) -> anyhow::Result<Vec<NodeIdentity>> {
     /* RATE LIMIT 1 matchmaking / 5s / player */
-    let userid_str = _from.user_id().as_bytes().clone();
+    let userid_str = *_from.user_id().as_bytes();
     let userid_str = serialize_base64(&userid_str)?;
     let userid_str = format!("_userid_ratelimit_{userid_str}");
     let _l = set_lock(&userid_str, &get_timestamp_now_ms().to_string(), 5000).await.context("limited by too many matchmaking requests for your user id (pls wait 5s)")?;
@@ -37,7 +37,7 @@ pub async fn run_multiplayer_matchmaker_1(
         .iter()
         .map(|x| deserialize_base64(x.to_string()))
         .collect::<anyhow::Result<Vec<NodeIdentity>>>()?;
-    return Ok(match_identities);
+    Ok(match_identities)
 }
 
 pub async fn run_multiplayer_matchmaker_2(
@@ -46,7 +46,7 @@ pub async fn run_multiplayer_matchmaker_2(
 ) -> anyhow::Result<GameMatch<NodeIdentity>> {
     let combo_key = match_identities
         .iter()
-        .map(|x| serialize_base64(x))
+        .map(serialize_base64)
         .collect::<anyhow::Result<Vec<_>>>()?;
     let combo_key = combo_key.join("_");
     let n = GameMatchType::get_match_num_players(&Some(arg.clone()));
@@ -69,7 +69,7 @@ pub async fn run_multiplayer_matchmaker_2(
         anyhow::bail!("final match counter is not = n");
     }
     let val = get_lock_values(vec![info_key]).await?;
-    let val = val.get(0).context("no match in lockfile!")?.to_string();
+    let val = val.first().context("no match in lockfile!")?.to_string();
     let val: GameMatch<NodeIdentity> = deserialize_base64(val)?;
     tracing::debug!(
         "Matchmaking for {} finished - {}",

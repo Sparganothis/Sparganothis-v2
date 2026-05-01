@@ -11,6 +11,12 @@ pub struct GameInputManager {
     old_held: BTreeSet<TetAction>,
 }
 
+impl Default for GameInputManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GameInputManager {
     pub fn new() -> Self {
         Self {
@@ -84,8 +90,8 @@ impl GameInputManager {
         }
         // TODO: smartter refresh interval to avoid floating
         // if action == TetAction::HardDrop {
-        if action != TetAction::AutoSoftDrop && action != TetAction::UserSoftDrop {
-            if game_state.try_action(action, 0).is_ok() {
+        if action != TetAction::AutoSoftDrop && action != TetAction::UserSoftDrop
+            && game_state.try_action(action, 0).is_ok() {
                 cb.push(CallbackTicket {
                     request_type: CallbackRequestType::SetCallback(
                         game_settings.game.auto_softdrop_interval,
@@ -93,7 +99,6 @@ impl GameInputManager {
                     move_type: CallbackMoveType::AutoSoftDrop,
                 });
             }
-        }
 
         let event = UserEvent {
             callback_tickets: cb,

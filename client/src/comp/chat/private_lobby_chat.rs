@@ -1,19 +1,15 @@
 use std::collections::BTreeSet;
 
 use crate::{
-    comp::{
-        chat::{
+    comp::chat::{
             chat_signals_hook::{use_chat_signals, ChatSignals},
             chat_traits::{FromUserInput, RenderElement},
             chat_window_fullscreen::FullscreenChatRoom,
         },
-        game_display::GameDisplay,
-    },
     route::{Route, UrlParam},
 };
 use dioxus::prelude::*;
-use game::{api::game_match::GameMatch, tet::GameState};
-use iroh::NodeId;
+use game::api::game_match::GameMatch;
 use protocol::{
     chat::chat_ticket::ChatTicket, global_matchmaker::GlobalMatchmaker,
     user_identity::NodeIdentity, IChatRoomType as ChatMessageType2,
@@ -97,8 +93,8 @@ pub fn PrivateLobbyChatBox(
             };
             let chat_ticket = &format!("{room_uuid}")[..30];
             let chat_ticket = ChatTicket::new_str_bs(
-                &chat_ticket,
-                BTreeSet::from([owner_id.node_id().clone()]),
+                chat_ticket,
+                BTreeSet::from([*owner_id.node_id()]),
             );
             let Ok(chat) =
                 nn.join_chat::<PrivateLobyRoomType>(&chat_ticket).await

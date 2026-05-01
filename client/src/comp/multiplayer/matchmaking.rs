@@ -66,7 +66,7 @@ pub fn MatchmakingWindow(
 ) -> Element {
     let mut clicked = use_signal(|| false);
     let mut timer_w = use_signal(move || 0);
-    let timer = use_memo(move || timer_w.read().clone());
+    let timer = use_memo(move || *timer_w.read());
 
     let coro = use_coroutine(move |mut _r| {
         let api = api.clone();
@@ -85,7 +85,7 @@ pub fn MatchmakingWindow(
                 let game = loop {
                     tokio::select! {
                         _ = n0_future::time::sleep(Duration::from_secs(1)).fuse() => {
-                            let old = timer.peek().clone() + 1;
+                            let old = *timer.peek() + 1;
                             timer_w.set(old);
 
                             continue;
@@ -160,6 +160,5 @@ pub async fn send_new_match(m: GameMatch<NodeIdentity>) {
     };
     if let Err(e) = api.call_method::<SendNewMatch>((m,)).await {
         warn!("FAILED TO SEND SendNewMatch method to backend! {e:#?}");
-        return;
     }
 }

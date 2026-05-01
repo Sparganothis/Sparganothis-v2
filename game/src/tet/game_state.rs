@@ -140,7 +140,7 @@ impl GameState {
     }
 
     pub fn new(seed: &GameSeed, start_time: i64) -> Self {
-        let (bag1, seed1) = shuffle_tets(&seed, start_time);
+        let (bag1, seed1) = shuffle_tets(seed, start_time);
         let (bag2, seed2) = shuffle_tets(&seed1, start_time);
         let mut next_pcs_bags = [Tet::I; 14];
         for i in 0..7 {
@@ -335,7 +335,7 @@ impl GameState {
             };
         }
         self.is_b2b = (lines == 4) || (self.is_t_spin);
-        self.score += (score + score2 + score3) as i32;
+        self.score += (score + score2 + score3);
         self.is_t_spin = false;
         self.is_t_mini_spin = false;
         if lines > 0 {
@@ -374,7 +374,7 @@ impl GameState {
         let new_seed = accept_event(&self.seed, event, event_time, idx as u32);
         let new_slice = GameReplaySlice {
             idx,
-            event: event.clone(),
+            event: *event,
             new_seed,
             event_timestamp: event_time,
             new_garbage_recv: self.garbage_recv,
@@ -455,14 +455,12 @@ impl GameState {
             if slice.idx != prev_slice.idx + 1 {
                 anyhow::bail!("duplicate slice mismatch");
             }
-        } else {
-            if slice.idx != 0 {
-                anyhow::bail!(
-                    "first slice mismatch: got slice {} expected slice {}",
-                    slice.idx,
-                    0
-                );
-            }
+        } else if slice.idx != 0 {
+            anyhow::bail!(
+                "first slice mismatch: got slice {} expected slice {}",
+                slice.idx,
+                0
+            );
         }
         // TODO FIGURE OUT BEFORE OR AFTER
         self.garbage_recv = slice.new_garbage_recv;
@@ -519,7 +517,7 @@ impl GameState {
     fn try_hold(&mut self, event_time: i64) -> anyhow::Result<()> {
         let current_pcs = self.current_pcs.context("no current pcs")?;
 
-        let old_hold = self.hold_pcs.clone();
+        let old_hold = self.hold_pcs;
         if let Some(ref old_hold) = old_hold {
             if !old_hold.can_use {
                 anyhow::bail!("can_use=false for hold");
@@ -536,11 +534,7 @@ impl GameState {
         }
         self.current_pcs = None;
 
-        let maybe_old_hold = if let Some(ref old_hold) = old_hold {
-            Some(old_hold.tet)
-        } else {
-            None
-        };
+        let maybe_old_hold = old_hold.as_ref().map(|old_hold| old_hold.tet);
         self.put_next_piece(event_time, maybe_old_hold)?;
         self.hold_pcs = Some(HoldPcsInfo {
             tet: current_pcs.tet,
@@ -564,7 +558,7 @@ impl GameState {
     }
 
     fn try_user_softdrop(&mut self, event_time: i64) -> anyhow::Result<()> {
-        let mut z = self.clone();
+        let mut z = *self;
         z.try_auto_softdrop(event_time)?;
         // user soft drop does not work if it would lock pcs, so if
         // z.nextpcs != self.nextpcs
@@ -635,10 +629,10 @@ impl GameState {
         let before = &current_pcs.rs;
         let after = &current_pcs.rs.rotate(rot);
 
-        for (_try_idx, (x, y)) in
-            super::rot::srs_offsets(*before, *after, *(&current_pcs.tet))
+        for (x, y) in
+            super::rot::srs_offsets(*before, *after, current_pcs.tet)
                 .iter()
-                .enumerate()
+                
         {
             let mut new_current_pcs: CurrentPcsInfo = current_pcs;
             new_current_pcs.rs = *after;
@@ -686,7 +680,7 @@ impl GameState {
             // tracing::warn!("gamem over cannot try_action");
             anyhow::bail!("game over");
         }
-        let mut new = self.clone();
+        let mut new = *self;
         new.last_action = action;
 
         match action {
@@ -730,7 +724,7 @@ impl GameState {
     }
 
     fn put_ghost(&mut self) {
-        let mut ghost_board = self.main_board.clone();
+        let mut ghost_board = self.main_board;
         let info = self.current_pcs.unwrap();
         ghost_board
             .delete_piece(&info)
@@ -739,16 +733,14 @@ impl GameState {
         let mut final_ghost_board = None;
 
         for y in (-3..info.pos.0).rev() {
-            let mut ghost_info = info.clone();
+            let mut ghost_info = info;
             ghost_info.pos.0 = y;
             if ghost_board.spawn_piece(&ghost_info).is_err() {
                 ghost_info.pos.0 += 1;
                 final_ghost_board = Some(ghost_info);
                 break;
-            } else {
-                if ghost_board.delete_piece(&ghost_info).is_err() {
-                    tracing::warn!("cannot delete temporary ghost");
-                }
+            } else if ghost_board.delete_piece(&ghost_info).is_err() {
+                tracing::warn!("cannot delete temporary ghost");
             }
         }
 
@@ -799,7 +791,7 @@ impl GameState {
 }
 
 pub fn segments_to_states(all_segments: &Vec<GameReplaySegment>) -> Vec<GameState> {
-    let mut current_state = match all_segments.get(0) {
+    let mut current_state = match all_segments.first() {
         Some(GameReplaySegment::Init(_replay)) => {
             GameState::new(&_replay.init_seed, _replay.start_time)
         }
@@ -809,7 +801,7 @@ pub fn segments_to_states(all_segments: &Vec<GameReplaySegment>) -> Vec<GameStat
         }
     };
     let mut all_states = vec![];
-    all_states.push(current_state.clone());
+    all_states.push(current_state);
     for segment in &all_segments[1..] {
         match segment {
             GameReplaySegment::Init(_) => {
@@ -823,10 +815,10 @@ pub fn segments_to_states(all_segments: &Vec<GameReplaySegment>) -> Vec<GameStat
                 }
             }
             GameReplaySegment::GameOver(reason) => {
-                current_state.game_over_reason = Some(reason.clone());
+                current_state.game_over_reason = Some(*reason);
             }
         }
-        all_states.push(current_state.clone());
+        all_states.push(current_state);
     }
     all_states
 }

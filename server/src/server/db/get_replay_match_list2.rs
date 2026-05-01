@@ -26,8 +26,8 @@ pub async fn db_get_list_matches(
             .bind(Identifier("matches"))
             .fetch_all::<MatchRow>()
             .await?;
-        let count = cursor;
-        count
+        
+        cursor
     };
 
     let all2 = all_matches
@@ -60,8 +60,8 @@ pub async fn db_get_detail_match(
             .bind(_arg)
             .fetch_all::<MatchRow>()
             .await?;
-        let count = cursor;
-        count
+        
+        cursor
     };
 
     let all2 = all_matches
@@ -76,7 +76,7 @@ pub async fn db_get_detail_match(
             match_info: deserialize_base64(i.match_info).ok(),
         })
         .collect::<Vec<_>>();
-    let all2 = all2.get(0).context("no result!")?;
+    let all2 = all2.first().context("no result!")?;
     Ok(all2.clone())
 }
 
@@ -107,8 +107,8 @@ pub async fn db_get_game_states_for_match(
             .bind(_arg.game_seed)
             .fetch_all::<GameStateRow>()
             .await?;
-        let count = cursor;
-        count
+        
+        cursor
     };
 
     let all2 = all_matches
@@ -146,7 +146,7 @@ pub async fn get_last_game_states_for_match(
         v.push(
             get_last_game_state_for_match_and_user(
                 _match.clone(),
-                user.clone(),
+                *user,
             )
             .await?,
         );
@@ -196,12 +196,12 @@ async fn get_last_game_state_for_match_and_user(
 
     let x = data
         .into_iter()
-        .map(|s| deserialize_base64::<GameState>(s))
+        .map(deserialize_base64::<GameState>)
         .collect::<Result<Vec<_>, _>>()?;
 
     if x.is_empty() {
         anyhow::bail!("no data found!");
     }
 
-    Ok(x.last().unwrap().clone())
+    Ok(*x.last().unwrap())
 }

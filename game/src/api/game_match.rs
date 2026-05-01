@@ -29,11 +29,11 @@ impl UserAndMatchId {
         let m0 = uuid::uuid!("00000000-0000-0000-0000-000000000000");
         let m1 = uuid::uuid!("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF");
         let v0 = UserAndMatchId {
-            user_id: user.clone(),
+            user_id: *user,
             match_id: m0,
         };
         let v1 = UserAndMatchId {
-            user_id: user.clone(),
+            user_id: *user,
             match_id: m1,
         };
         v0..=v1
@@ -86,8 +86,7 @@ impl GameMatchType {
             "4v4" => Some(Self::_4v4),
             "10v10" => Some(Self::_10v10),
             _ => {
-                if s.starts_with("bot_") {
-                    let bot_name = &s[4..];
+                if let Some(bot_name) = s.strip_prefix("bot_") {
                     Some(Self::ManVsCar(bot_name.to_string()))
                 } else {
                     anyhow::bail!("bad url!");

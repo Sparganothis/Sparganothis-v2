@@ -43,7 +43,7 @@ impl IChatRoomType for Game1v1RoomType {
     type M = GameMessage;
     type P = ();
     fn default_presence() -> Self::P {
-        ()
+        
     }
 }
 
@@ -72,19 +72,18 @@ pub async fn join_1v1_match(
         game_match
             .users
             .iter()
-            .map(|m| m.node_id().clone())
+            .map(|m| *m.node_id())
             .collect(),
     );
 
     let node = mm.own_node().await.context("no node")?;
     tracing::info!("joining game: {:?}", ticket);
     let chat = node.join_chat::<Game1v1RoomType>(&ticket).await?;
-    let opponent_id = game_match
+    let opponent_id = *game_match
         .users
         .iter()
         .find(|m| *m != node.node_identity())
-        .context("no opponent")?
-        .clone();
+        .context("no opponent")?;
     Ok(Game1v1MatchChatController {
         _mm: mm,
         chat,
@@ -115,7 +114,7 @@ impl Game1v1MatchChatController {
     pub async fn opponent_move_stream(
         &self,
     ) -> impl Stream<Item = GameState> + Send + 'static {
-        let opponent_id = self.opponent_id.clone();
+        let opponent_id = self.opponent_id;
         let receiver = self.chat.receiver().await;
         stream! {
             while let Some(ReceivedMessage {
@@ -136,7 +135,7 @@ impl Game1v1MatchChatController {
     pub async fn opponent_message_stream(
         &self,
     ) -> impl Stream<Item = String> + Send + 'static {
-        let opponent_id = self.opponent_id.clone();
+        let opponent_id = self.opponent_id;
         let receiver = self.chat.receiver().await;
         stream! {
             while let Some(ReceivedMessage {

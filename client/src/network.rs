@@ -66,7 +66,7 @@ fn use_global_chat_controller_signal() -> ChatSignals<GlobalChatRoomType> {
     use_chat_signals(
         true,
         Callback::new(move |mm: GlobalMatchmaker| async move {
-            Some(mm.global_chat_controller().await?)
+            mm.global_chat_controller().await
         }),
     )
 }
@@ -80,16 +80,16 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
 
     let mut mm_signal_loading_w = use_signal(move || false);
     let mm_signal_loading =
-        use_memo(move || mm_signal_loading_w.read().clone());
+        use_memo(move || *mm_signal_loading_w.read());
 
     let mut is_connected_w = use_signal(move || false);
-    let is_connected = use_memo(move || is_connected_w.read().clone());
+    let is_connected = use_memo(move || *is_connected_w.read());
 
     let mut debug_info_txt_w = use_signal(move || "".to_string());
     let debug_info_txt = use_memo(move || debug_info_txt_w.read().clone());
 
     let mut bootstrap_idx_w: Signal<Option<u32>> = use_signal(move || None);
-    let bootstrap_idx = use_memo(move || bootstrap_idx_w.read().clone());
+    let bootstrap_idx = use_memo(move || *bootstrap_idx_w.read());
 
     let _coro =
         use_coroutine(move |mut m_b: UnboundedReceiver<()>| async move {
@@ -169,8 +169,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
                 bootstrap_idx_w.set(
                     mm.bs_node()
                         .await
-                        .map(|n| n.node_identity().bootstrap_idx())
-                        .flatten(),
+                        .and_then(|n| n.node_identity().bootstrap_idx()),
                 );
             }
         }
@@ -246,7 +245,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     use_context_provider(move || NetworkState {
         global_mm: mm_signal.into(),
         global_mm_loading: loading2.into(),
-        reset_network: reset_network.clone(),
+        reset_network,
         is_connected: is_connected2.into(),
         debug_info_txt: debug_info_txt.into(),
         bootstrap_idx: bootstrap_idx.into(),
@@ -275,7 +274,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
     } = use_context::<NetworkState>();
 
     let mut peer_w = use_signal(move || 0);
-    let peer = use_memo(move || peer_w.read().clone());
+    let peer = use_memo(move || *peer_w.read());
 
     let chat = use_context::<GlobalChatClientContext>().chat.chat;
     let _ = use_resource(move || {

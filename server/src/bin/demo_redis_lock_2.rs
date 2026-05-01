@@ -39,7 +39,7 @@ async fn main_run() -> anyhow::Result<()> {
             let user_secrets = UserIdentitySecrets::generate();
             let node_identity = NodeIdentity::new(
                 *user_secrets.user_identity(),
-                user_secrets.user_identity().user_id().clone(),
+                *user_secrets.user_identity().user_id(),
                 None,
             );
 
@@ -63,7 +63,7 @@ async fn main_run() -> anyhow::Result<()> {
                 Some(x) => Ok(x),
                 None => Err(anyhow::anyhow!("fail.")),
             };
-            (i, node_identity.clone(), rf)
+            (i, node_identity, rf)
         });
     }
     let mut ok_count = 0;
