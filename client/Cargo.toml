@@ -9,8 +9,8 @@ workspace = true
 [features]
 default = ["web"]
 web = ["dioxus/web"]
-desktop = ["dioxus/desktop" , "dep:dioxus-native"]
-mobile = ["dioxus/mobile"]
+# desktop = ["dioxus/desktop" , "dep:dioxus-native"]
+# mobile = ["dioxus/mobile"]
 
 
 
@@ -45,7 +45,7 @@ wasm-bindgen-futures = "0.4.50"
 wasm-streams = "0.4.2"
 chrono = "0.4.40"
 pretty-duration = "0.1.1"
-dioxus-native = { version = "0.1.0-alpha.1", optional = true }
+# dioxus-native = { version = "0.1.0-alpha.1", optional = true }
 futures-util = "0.3.31"
 keyboard-types = {version = "0.7.0", features = ["serde"]}
 bincode = "1"

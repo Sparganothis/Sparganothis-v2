@@ -21,7 +21,7 @@ chrono = {version="0.4.38", features=["serde", "wasmbind"] }
 time = {version="0.3.36", features=["serde"]}
 # seahash = "4"
 getrandom = { workspace = true }
-tokio = { version = "1.43.0", default-features = false, features = ["sync"] }
+tokio = { version = "1.43.0", default-features = false, features = ["sync", "macros"] }
 # tokio-stream = { version = "0.1.17", default-features = false, features = ["sync"] }
 
 

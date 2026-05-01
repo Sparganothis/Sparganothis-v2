@@ -10,6 +10,6 @@ rustup target add wasm32-unknown-unknown
 
 curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
 
-cargo binstall dioxus-cli@0.6.3  wasm-bindgen-cli@0.2.100  --no-confirm --force
+cargo binstall dioxus-cli@0.7.7 wasm-bindgen-cli@0.2.100  --no-confirm --force
 
 
