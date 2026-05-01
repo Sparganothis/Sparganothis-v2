@@ -42,9 +42,7 @@ pub struct Game1v1RoomType;
 impl IChatRoomType for Game1v1RoomType {
     type M = GameMessage;
     type P = ();
-    fn default_presence() -> Self::P {
-        
-    }
+    fn default_presence() -> Self::P {}
 }
 
 #[derive(Debug, Clone)]
@@ -69,11 +67,7 @@ pub async fn join_1v1_match(
 ) -> anyhow::Result<Game1v1MatchChatController> {
     let ticket = ChatTicket::new_str_bs(
         &format!("1v1-{}", game_match.match_id),
-        game_match
-            .users
-            .iter()
-            .map(|m| *m.node_id())
-            .collect(),
+        game_match.users.iter().map(|m| *m.node_id()).collect(),
     );
 
     let node = mm.own_node().await.context("no node")?;

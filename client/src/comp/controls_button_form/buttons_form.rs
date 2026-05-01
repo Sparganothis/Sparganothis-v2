@@ -17,10 +17,7 @@ pub fn ButtonsForm() -> Element {
     let keys = btn2.keys().cloned().collect::<Vec<_>>();
     for btn_event in keys {
         let entry = btn2.entry(btn_event).or_insert(vec![]);
-        entry.sort_by_key(|c| {
-            
-            bincode::serialize(&c).unwrap()
-        });
+        entry.sort_by_key(|c| bincode::serialize(&c).unwrap());
     }
 
     rsx! {

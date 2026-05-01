@@ -31,7 +31,7 @@ pub fn ReplayHomePage() -> Element {
         async move {
             let Ok(r) = api2.call_method::<GetReplayMatchList>(()).await else {
                 tracing::warn!("call error!");
-                return ;
+                return;
             };
             data.set(r);
         }
@@ -82,7 +82,7 @@ pub fn Replay1v1Match(match_id: ReadSignal<String>) -> Element {
                 api2.call_method::<GetReplayMatchDetail>(match_id).await
             else {
                 tracing::warn!("call error!");
-                return ;
+                return;
             };
             match_row.set(Some(r));
         }
@@ -127,7 +127,7 @@ fn DisplayReplayDetails(match_info: ReadSignal<MatchRow2>) -> Element {
                 api2.call_method::<GetGameStateRowsForMatch>(match_id).await
             else {
                 tracing::warn!("call error!");
-                return ;
+                return;
             };
             match_row.set(r);
         }

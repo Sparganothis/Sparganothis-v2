@@ -28,20 +28,16 @@ struct RgbaColor {
 
 impl RgbaColor {
     fn rgb(r: u8, g: u8, b: u8) -> RgbaColor {
-        RgbaColor {
-            r,g,b,a: 1.0,
-        }
+        RgbaColor { r, g, b, a: 1.0 }
     }
     fn rgba(r: u8, g: u8, b: u8, a: f32) -> RgbaColor {
-        RgbaColor {
-            r,g,b,a,
-        }
+        RgbaColor { r, g, b, a }
     }
     fn string(&self) -> String {
         format!("rgba({},{},{},{})", self.r, self.g, self.b, self.a)
     }
     fn darken(&self) -> Self {
-        let Self{r,g,b,a} = *self;
+        let Self { r, g, b, a } = *self;
         RgbaColor {
             r: (r as f32 * 0.9) as u8,
             g: (g as f32 * 0.9) as u8,
@@ -56,7 +52,7 @@ fn get_cell_color(cell_value: Option<CellValue>) -> RgbaColor {
         Some(CellValue::Piece(tet)) => get_tet_color(&tet),
         Some(CellValue::Ghost) => RgbaColor::rgb(109, 109, 109),
         Some(CellValue::Garbage) => RgbaColor::rgba(128, 128, 128, 0.8_f32),
-        _ => RgbaColor::rgb(26, 26, 26)
+        _ => RgbaColor::rgb(26, 26, 26),
     }
 }
 
@@ -360,47 +356,45 @@ fn GridCellDisplay(
     let rot_deg = use_memo(move || {
         let rng = &mut rand::thread_rng();
         rng.gen_range(0.0_f32..360.0_f32)
-        
     });
 
     let cell1 = cell_color.read().darken().string();
     let cell2 = cell_color.read().string();
     let rot_deg = rot_deg();
 
-    let mut cell3 = cell_color.read().darken().darken().darken().darken().darken();
+    let mut cell3 = cell_color
+        .read()
+        .darken()
+        .darken()
+        .darken()
+        .darken()
+        .darken();
     cell3.a *= 0.3;
-    
+
     let cell3 = cell3.string();
     let mut cell4 = *cell_color.read();
     cell4.a *= 0.25;
     let cell4 = cell4.string();
 
-
     let zindex = use_memo(move || {
         let c = *cell.read();
         match c {
-            None | Some(CellValue::Empty) => {
-                78
-            }
-            Some(_x) => {
-                6
-            }
+            None | Some(CellValue::Empty) => 78,
+            Some(_x) => 6,
         }
     });
-    let shadow =  {
-        match  *cell.read() {
-            None | Some(CellValue::Empty) => {
-                String::new()
-            }
+    let shadow = {
+        match *cell.read() {
+            None | Some(CellValue::Empty) => String::new(),
             Some(_x) => {
-      
-                        format!(" box-shadow: 
+                format!(
+                    " box-shadow: 
                         inset 0cqmin 0cqmin  0.5cqmin  0.5cqmin {cell3}, 
-                        0cqmin 0cqmin  37cqmin  0cqmin {cell4};")
+                        0cqmin 0cqmin  37cqmin  0cqmin {cell4};"
+                )
             }
         }
     };
-
 
     //         position: absolute;
     // width: calc(100cqw/{col_count});
@@ -408,10 +402,8 @@ fn GridCellDisplay(
     // top: calc((100cqh/{row_count}) * {row});
     // left: calc((100cqw/{col_count}) * {col});
 
-
-    
-                // background-color: linear-gradient({rot_deg}deg, {cell1}, 
-// 
+    // background-color: linear-gradient({rot_deg}deg, {cell1},
+    //
     rsx! {
         div { style: "
                 padding: 0;

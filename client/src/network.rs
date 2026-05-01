@@ -79,8 +79,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     let mm_signal = use_memo(move || mm_signal_w.read().clone());
 
     let mut mm_signal_loading_w = use_signal(move || false);
-    let mm_signal_loading =
-        use_memo(move || *mm_signal_loading_w.read());
+    let mm_signal_loading = use_memo(move || *mm_signal_loading_w.read());
 
     let mut is_connected_w = use_signal(move || false);
     let is_connected = use_memo(move || *is_connected_w.read());

@@ -2,10 +2,10 @@ use std::collections::BTreeSet;
 
 use crate::{
     comp::chat::{
-            chat_signals_hook::{use_chat_signals, ChatSignals},
-            chat_traits::{FromUserInput, RenderElement},
-            chat_window_fullscreen::FullscreenChatRoom,
-        },
+        chat_signals_hook::{use_chat_signals, ChatSignals},
+        chat_traits::{FromUserInput, RenderElement},
+        chat_window_fullscreen::FullscreenChatRoom,
+    },
     route::{Route, UrlParam},
 };
 use dioxus::prelude::*;

@@ -226,7 +226,9 @@ fn ChatMessageDisplay<T: ChatMessageType>(
                 return;
             };
             loop {
-                let elapsed = (1 + datetime_now().timestamp() - timestamp.timestamp()).unsigned_abs();
+                let elapsed = (1 + datetime_now().timestamp()
+                    - timestamp.timestamp())
+                .unsigned_abs();
                 let elapsed_txt = pretty_duration::pretty_duration(
                     &Duration::from_secs(elapsed),
                     None,

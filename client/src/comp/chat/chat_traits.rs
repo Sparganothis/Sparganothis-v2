@@ -32,14 +32,16 @@ impl FromUserInput for GlobalChatRoomType {
 impl RenderElement for GlobalChatRoomType {
     fn render_message(message: <Self as ChatMessageType2>::M) -> Element {
         match message {
-            GlobalChatMessageContent::TextMessage { text } => rsx!{
+            GlobalChatMessageContent::TextMessage { text } => rsx! {
                 {text}
             },
             _x => {
                 // format!("{:#?}", _x)
-                dioxus::logger::tracing::info!("global chat message: {:#?}", _x);
-                rsx! {
-                }
+                dioxus::logger::tracing::info!(
+                    "global chat message: {:#?}",
+                    _x
+                );
+                rsx! {}
             }
         }
     }

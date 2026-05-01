@@ -63,7 +63,7 @@ pub fn PrivateLobbyPage(
             owner_id,
         }
         .to_string();
-        
+
         retrieve_href().as_string()
     });
     let owner_id = use_memo(move || owner_id.read().0);

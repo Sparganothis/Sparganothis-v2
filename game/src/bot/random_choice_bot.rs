@@ -8,8 +8,7 @@ pub struct RandomChoiceBot;
 
 use once_cell::sync::Lazy;
 
-pub static ALL_MOVE_CHAINS: Lazy<Vec<Vec<TetAction>>> =
-    Lazy::new(make_all_move_chains);
+pub static ALL_MOVE_CHAINS: Lazy<Vec<Vec<TetAction>>> = Lazy::new(make_all_move_chains);
 pub fn get_all_move_chains() -> Vec<Vec<TetAction>> {
     ALL_MOVE_CHAINS.clone()
 }

@@ -100,7 +100,7 @@ impl<T: Serialize + for<'a> Deserialize<'a>> FromStr for UrlParam<T> {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let bytes = BASE64_URL_SAFE.decode(s).unwrap_or_default();
-        
+
         bincode::deserialize(&bytes)
     }
 }

@@ -26,7 +26,7 @@ pub async fn db_get_list_matches(
             .bind(Identifier("matches"))
             .fetch_all::<MatchRow>()
             .await?;
-        
+
         cursor
     };
 
@@ -60,7 +60,7 @@ pub async fn db_get_detail_match(
             .bind(_arg)
             .fetch_all::<MatchRow>()
             .await?;
-        
+
         cursor
     };
 
@@ -107,7 +107,7 @@ pub async fn db_get_game_states_for_match(
             .bind(_arg.game_seed)
             .fetch_all::<GameStateRow>()
             .await?;
-        
+
         cursor
     };
 
@@ -144,11 +144,8 @@ pub async fn get_last_game_states_for_match(
 
     for user in _match.users.iter() {
         v.push(
-            get_last_game_state_for_match_and_user(
-                _match.clone(),
-                *user,
-            )
-            .await?,
+            get_last_game_state_for_match_and_user(_match.clone(), *user)
+                .await?,
         );
     }
     Ok(v)

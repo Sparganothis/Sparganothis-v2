@@ -24,9 +24,7 @@ pub struct GameMessageSpam;
 impl ChatMessageType2 for GameMessageSpam {
     type M = GameMessage;
     type P = ();
-    fn default_presence() -> Self::P {
-        
-    }
+    fn default_presence() -> Self::P {}
 }
 
 impl FromUserInput for GameMessageSpam {
