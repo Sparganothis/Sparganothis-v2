@@ -21,11 +21,11 @@ pub struct LocalStorageContext {
 
 #[derive(Clone)]
 pub struct LocalPersistentStorage {
-    pub user_secrets: ReadOnlySignal<Arc<UserIdentitySecrets>>,
-    pub game_settings: ReadOnlySignal<GameSettings>,
+    pub user_secrets: ReadSignal<Arc<UserIdentitySecrets>>,
+    pub game_settings: ReadSignal<GameSettings>,
     __game_settings_w: Signal<GameSettings>,
 
-    pub button_settings: ReadOnlySignal<ButtonSettings>,
+    pub button_settings: ReadSignal<ButtonSettings>,
     __button_settings_w: Signal<ButtonSettings>,
 }
 
@@ -42,7 +42,7 @@ pub fn LocalStorageParent(children: Element) -> Element {
             "user_secrets_3".to_string(),
             || Arc::new(UserIdentitySecrets::generate()),
         );
-    let user_secrets: ReadOnlySignal<Arc<UserIdentitySecrets>> =
+    let user_secrets: ReadSignal<Arc<UserIdentitySecrets>> =
         use_memo(move || user_secrets.read().clone()).into();
     use_effect(move || {
         info!("REFRESH user_secrets: {:#?}", user_secrets.read());

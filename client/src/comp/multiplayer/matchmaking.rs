@@ -60,7 +60,7 @@ async fn run_matchmaker(
 pub fn MatchmakingWindow(
     mm: GlobalMatchmaker,
     api: ClientApiManager,
-    user_match_type: ReadOnlySignal<GameMatchType>,
+    user_match_type: ReadSignal<GameMatchType>,
     on_opponent_confirm: Callback<GameMatch<NodeIdentity>>,
     on_matchmaking_failed: Callback<String>,
 ) -> Element {

@@ -64,7 +64,7 @@ pub fn ReplayHomePage() -> Element {
 }
 
 #[component]
-pub fn Replay1v1Match(match_id: ReadOnlySignal<String>) -> Element {
+pub fn Replay1v1Match(match_id: ReadSignal<String>) -> Element {
     let err = use_signal(move || String::new());
     let mut match_row = use_signal(move || None);
 
@@ -107,7 +107,7 @@ pub fn Replay1v1Match(match_id: ReadOnlySignal<String>) -> Element {
 }
 
 #[component]
-fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
+fn DisplayReplayDetails(match_info: ReadSignal<MatchRow2>) -> Element {
     let match_info = use_memo(move || match_info.read().clone());
     let match_info = match_info.read().clone();
     let err = use_signal(move || String::new());
@@ -168,7 +168,7 @@ fn DisplayReplayDetails(match_info: ReadOnlySignal<MatchRow2>) -> Element {
 }
 
 #[component]
-pub fn GameStateBrowser(data: ReadOnlySignal<Vec<GameState>>) -> Element {
+pub fn GameStateBrowser(data: ReadSignal<Vec<GameState>>) -> Element {
     let idx = use_signal(move || 0);
     let max = use_signal(move || {
         let i = data.read().len() as i32;

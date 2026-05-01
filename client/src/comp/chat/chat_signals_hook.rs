@@ -38,7 +38,7 @@ impl<T: ChatMessageType> ChatHistory<T> {
 }
 
 async fn chat_do_broadcast_send_message<T: ChatMessageType>(
-    chat: ReadOnlySignal<Option<ChatController<T>>>,
+    chat: ReadSignal<Option<ChatController<T>>>,
     message: T::M,
 ) -> Option<ReceivedMessage<T>> {
     let Some(controller) = chat.peek().clone() else {
@@ -55,7 +55,7 @@ async fn chat_do_broadcast_send_message<T: ChatMessageType>(
 }
 
 async fn chat_do_send_direct_message<T: ChatMessageType>(
-    chat: ReadOnlySignal<Option<ChatController<T>>>,
+    chat: ReadSignal<Option<ChatController<T>>>,
     to: NodeIdentity,
     message: T::M,
 ) -> Option<ReceivedMessage<T>> {
@@ -72,12 +72,12 @@ async fn chat_do_send_direct_message<T: ChatMessageType>(
     }
 }
 
-pub type ChatControllerSignal<T> = ReadOnlySignal<Option<ChatController<T>>>;
+pub type ChatControllerSignal<T> = ReadSignal<Option<ChatController<T>>>;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ChatSignals<T: ChatMessageType> {
     pub chat: ChatControllerSignal<T>,
-    pub presence: ReadOnlySignal<PresenceList<T::P>>,
+    pub presence: ReadSignal<PresenceList<T::P>>,
     pub history: Signal<ChatHistory<T>>,
     pub send_broadcast_user_message: Callback<T::M>,
     pub send_direct_user_message: Callback<(NodeIdentity, T::M)>,
@@ -134,7 +134,7 @@ fn use_chat_controller_signal<
 
 fn use_chat_presence_signal<T: ChatMessageType>(
     chat: ChatControllerSignal<T>,
-) -> ReadOnlySignal<PresenceList<T::P>> {
+) -> ReadSignal<PresenceList<T::P>> {
     let mut presence_list_w =
         use_signal(move || PresenceList::<T::P>::default());
     let presence_list = use_memo(move || presence_list_w.read().clone());

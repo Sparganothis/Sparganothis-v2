@@ -26,13 +26,13 @@ use crate::{
 
 #[derive(Clone)]
 pub struct NetworkState {
-    pub global_mm: ReadOnlySignal<Option<GlobalMatchmaker>>,
-    pub global_mm_loading: ReadOnlySignal<bool>,
-    pub is_connected: ReadOnlySignal<bool>,
+    pub global_mm: ReadSignal<Option<GlobalMatchmaker>>,
+    pub global_mm_loading: ReadSignal<bool>,
+    pub is_connected: ReadSignal<bool>,
     pub reset_network: Callback<()>,
-    pub bootstrap_idx: ReadOnlySignal<Option<u32>>,
-    pub debug_info_txt: ReadOnlySignal<String>,
-    pub client_api_manager: ReadOnlySignal<Option<ClientApiManager>>,
+    pub bootstrap_idx: ReadSignal<Option<u32>>,
+    pub debug_info_txt: ReadSignal<String>,
+    pub client_api_manager: ReadSignal<Option<ClientApiManager>>,
 }
 
 #[component]

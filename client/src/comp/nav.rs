@@ -82,7 +82,7 @@ fn GithubIcon() -> Element {
 }
 
 #[component]
-fn LinkDropdownProfile(my_nickname: ReadOnlySignal<String>) -> Element {
+fn LinkDropdownProfile(my_nickname: ReadSignal<String>) -> Element {
     rsx! {
         details {
             class: "dropdown",

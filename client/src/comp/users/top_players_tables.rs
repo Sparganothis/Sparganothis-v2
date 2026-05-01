@@ -12,8 +12,8 @@ use crate::route::{Route, UrlParam};
 
 #[component]
 pub fn PlayersWithMostMatchesTable(
-    api: ReadOnlySignal<ClientApiManager>,
-    mm: ReadOnlySignal<GlobalMatchmaker>,
+    api: ReadSignal<ClientApiManager>,
+    mm: ReadSignal<GlobalMatchmaker>,
 ) -> Element {
     let data = use_resource(move || {
         let api = api.read().clone();

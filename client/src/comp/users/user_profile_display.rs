@@ -11,9 +11,9 @@ use crate::comp::users::top_players_tables::DisplayUserProfileCard;
 
 #[component]
 pub fn UserProfileDisplay(
-    api: ReadOnlySignal<ClientApiManager>,
-    mm: ReadOnlySignal<GlobalMatchmaker>,
-    user_id: ReadOnlySignal<UserIdentity>,
+    api: ReadSignal<ClientApiManager>,
+    mm: ReadSignal<GlobalMatchmaker>,
+    user_id: ReadSignal<UserIdentity>,
 ) -> Element {
     let nickname = user_id.read().nickname();
     let mut err = use_signal(String::new);

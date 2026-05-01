@@ -62,7 +62,7 @@ fn get_cell_color(cell_value: Option<CellValue>) -> RgbaColor {
 
 #[component]
 pub fn YouDied(
-    game_state: ReadOnlySignal<GameState>,
+    game_state: ReadSignal<GameState>,
     children: Element,
 ) -> Element {
     let msg = use_memo(move || {
@@ -105,7 +105,7 @@ pub fn YouDied(
 }
 
 #[component]
-pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
+pub fn GameDisplay(game_state: ReadSignal<GameState>) -> Element {
     rsx! {
         div { style: "
                 width: 100%;
@@ -153,7 +153,7 @@ pub fn GameDisplay(game_state: ReadOnlySignal<GameState>) -> Element {
 }
 
 #[component]
-fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameDetailsLeftPane(game_state: ReadSignal<GameState>) -> Element {
     rsx! {
         div { style: "
                 width: 100%;
@@ -177,7 +177,7 @@ fn GameDetailsLeftPane(game_state: ReadOnlySignal<GameState>) -> Element {
 }
 
 #[component]
-fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameDetailsRightPane(game_state: ReadSignal<GameState>) -> Element {
     rsx! {
         div { style: "
                 width: 100%;
@@ -199,7 +199,7 @@ fn GameDetailsRightPane(game_state: ReadOnlySignal<GameState>) -> Element {
 }
 
 #[component]
-fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameDisplayInner(game_state: ReadSignal<GameState>) -> Element {
     rsx! {
         div { style: "
                 width: 100%;
@@ -253,7 +253,7 @@ fn GameDisplayInner(game_state: ReadOnlySignal<GameState>) -> Element {
 }
 
 #[component]
-fn GameBoardDisplayMainGrid(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameBoardDisplayMainGrid(game_state: ReadSignal<GameState>) -> Element {
     let main_board = use_memo(move || game_state.read().main_board);
     rsx! {
         BoardGrid { board: main_board }
@@ -261,14 +261,14 @@ fn GameBoardDisplayMainGrid(game_state: ReadOnlySignal<GameState>) -> Element {
 }
 
 #[component]
-fn GameBoardDisplayNextGrid(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameBoardDisplayNextGrid(game_state: ReadSignal<GameState>) -> Element {
     let next_board = use_memo(move || game_state.read().get_next_board());
     rsx! {
         BoardGrid { board: next_board }
     }
 }
 #[component]
-fn GameBoardDisplayHoldGrid(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameBoardDisplayHoldGrid(game_state: ReadSignal<GameState>) -> Element {
     let hold_board = use_memo(move || game_state.read().get_hold_board());
     rsx! {
         BoardGrid { board: hold_board }
@@ -277,7 +277,7 @@ fn GameBoardDisplayHoldGrid(game_state: ReadOnlySignal<GameState>) -> Element {
 
 #[component]
 fn BoardGrid<const R: usize, const C: usize>(
-    board: ReadOnlySignal<BoardMatrix<R, C>>,
+    board: ReadSignal<BoardMatrix<R, C>>,
 ) -> Element {
     let column_count = C as i8;
     let row_count = (R as i8).min(20);
@@ -304,7 +304,7 @@ fn BoardGrid<const R: usize, const C: usize>(
 
 #[component]
 fn BoardGridCell<const R: usize, const C: usize>(
-    board: ReadOnlySignal<BoardMatrix<R, C>>,
+    board: ReadSignal<BoardMatrix<R, C>>,
     row: i8,
     col: i8,
     row_count: i8,
@@ -350,7 +350,7 @@ fn GameBoardGridParent(
 
 #[component]
 fn GridCellDisplay(
-    cell: ReadOnlySignal<Option<CellValue>>,
+    cell: ReadSignal<Option<CellValue>>,
     row: i8,
     col: i8,
     row_count: i8,
@@ -432,7 +432,7 @@ fn GridCellDisplay(
 }
 
 #[component]
-fn GameStateInfo(game_state: ReadOnlySignal<GameState>) -> Element {
+fn GameStateInfo(game_state: ReadSignal<GameState>) -> Element {
     let state = game_state.read();
     rsx! {
         div {

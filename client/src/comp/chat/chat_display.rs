@@ -17,7 +17,7 @@ use super::{chat_signals_hook::ChatHistory, chat_traits::ChatMessageType};
 
 #[component]
 pub fn ChatPresenceDisplay<T: ChatMessageType>(
-    presence: ReadOnlySignal<PresenceList<T::P>>,
+    presence: ReadSignal<PresenceList<T::P>>,
 ) -> Element {
     rsx! {
         ul {
@@ -41,11 +41,11 @@ pub fn ChatPresenceDisplay<T: ChatMessageType>(
 
 #[component]
 fn ChatPresenceDisplayItem<T: ChatMessageType>(
-    presence_flag: ReadOnlySignal<PresenceFlag>,
-    last_seen: ReadOnlySignal<i64>,
-    identity: ReadOnlySignal<NodeIdentity>,
-    payload: ReadOnlySignal<Option<T::P>>,
-    rtt: ReadOnlySignal<Option<u16>>,
+    presence_flag: ReadSignal<PresenceFlag>,
+    last_seen: ReadSignal<i64>,
+    identity: ReadSignal<NodeIdentity>,
+    payload: ReadSignal<Option<T::P>>,
+    rtt: ReadSignal<Option<u16>>,
 ) -> Element {
     let mut last_seen_txt = use_signal(|| "".to_string());
     let payload = use_memo(move || T::render_presence(payload.read().clone()));
@@ -130,7 +130,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
 }
 
 #[component]
-fn ChatUserPortraitBox(own_color: ReadOnlySignal<String>) -> Element {
+fn ChatUserPortraitBox(own_color: ReadSignal<String>) -> Element {
     rsx! {
         div {
             style: "
@@ -145,7 +145,7 @@ fn ChatUserPortraitBox(own_color: ReadOnlySignal<String>) -> Element {
 
 #[component]
 pub fn ChatHistoryDisplay<T: ChatMessageType>(
-    history: ReadOnlySignal<ChatHistory<T>>,
+    history: ReadSignal<ChatHistory<T>>,
 ) -> Element {
     rsx! {
         div {

@@ -15,7 +15,7 @@ use crate::{
 
 #[component]
 pub fn Game1v1OutcomePage(
-    game_match: ReadOnlySignal<UrlParam<GameMatch<NodeIdentity>>>,
+    game_match: ReadSignal<UrlParam<GameMatch<NodeIdentity>>>,
 ) -> Element {
     let game_match = use_memo(move || game_match.read().0.clone());
     let Some(mm) = use_context::<NetworkState>().global_mm.read().clone()

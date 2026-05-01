@@ -13,7 +13,7 @@ use crate::{
 
 #[component]
 pub fn Play1v1Page(
-    game_match: ReadOnlySignal<UrlParam<GameMatch<NodeIdentity>>>,
+    game_match: ReadSignal<UrlParam<GameMatch<NodeIdentity>>>,
 ) -> Element {
     let NetworkState { global_mm, .. } = use_context::<NetworkState>();
 

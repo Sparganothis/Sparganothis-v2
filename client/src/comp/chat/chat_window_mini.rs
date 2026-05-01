@@ -113,8 +113,8 @@ fn MiniChatRoomOverlayButton(onclick: Callback<()>) -> Element {
 #[component]
 fn MiniChatImpl<T: ChatMessageType>(
     tabs_select: Signal<MiniChatTabSelection>,
-    presence: ReadOnlySignal<PresenceList<T::P>>,
-    history: ReadOnlySignal<ChatHistory<T>>,
+    presence: ReadSignal<PresenceList<T::P>>,
+    history: ReadSignal<ChatHistory<T>>,
     on_user_message: Callback<T::M>,
 ) -> Element {
     rsx! {
@@ -241,8 +241,8 @@ fn MiniChatTopBar(selected: Signal<MiniChatTabSelection>) -> Element {
 #[component]
 fn MiniChatContent<T: ChatMessageType>(
     selected: Signal<MiniChatTabSelection>,
-    presence: ReadOnlySignal<PresenceList<T::P>>,
-    history: ReadOnlySignal<ChatHistory<T>>,
+    presence: ReadSignal<PresenceList<T::P>>,
+    history: ReadSignal<ChatHistory<T>>,
 ) -> Element {
     match *selected.read() {
         MiniChatTabSelection::Minified => rsx! {

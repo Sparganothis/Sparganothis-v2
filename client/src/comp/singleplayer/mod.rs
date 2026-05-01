@@ -35,7 +35,7 @@ pub fn SingleplayerGameBoardBasic() -> Element {
 /// User Game board without fullscreen parent
 #[component]
 pub fn GameBoardInputAndDisplay(
-    game_state: ReadOnlySignal<GameState>,
+    game_state: ReadSignal<GameState>,
     set_next_state: Callback<GameState>,
 ) -> Element {
     let ticket_manager = use_coroutine(

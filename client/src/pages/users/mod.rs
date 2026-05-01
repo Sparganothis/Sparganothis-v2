@@ -34,7 +34,7 @@ pub fn UsersRootDirectoryPage() -> Element {
 
 #[component]
 pub fn UsersProfilePage(
-    user_id: ReadOnlySignal<UrlParam<UserIdentity>>,
+    user_id: ReadSignal<UrlParam<UserIdentity>>,
 ) -> Element {
     let user_id = use_memo(move || user_id.read().0.clone());
     let net = use_context::<NetworkState>();

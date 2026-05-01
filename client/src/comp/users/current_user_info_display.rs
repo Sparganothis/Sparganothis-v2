@@ -20,7 +20,7 @@ pub fn CurrentUserInfoDisplay() -> Element {
             None
         }
     });
-    let node_id: ReadOnlySignal<Option<NodeIdentity>> = node_id.into();
+    let node_id: ReadSignal<Option<NodeIdentity>> = node_id.into();
 
     rsx! {
         article {
@@ -54,7 +54,7 @@ pub fn CurrentUserInfoDisplay() -> Element {
 #[component]
 fn UserInfoDisplay(
     info: UserIdentity,
-    node_id: ReadOnlySignal<Option<NodeIdentity>>,
+    node_id: ReadSignal<Option<NodeIdentity>>,
 ) -> Element {
     rsx! {
         div {

@@ -52,8 +52,8 @@ pub fn retrieve_href() -> JsValue {
 
 #[component]
 pub fn PrivateLobbyPage(
-    owner_id: ReadOnlySignal<UrlParam<NodeIdentity>>,
-    room_uuid: ReadOnlySignal<uuid::Uuid>,
+    owner_id: ReadSignal<UrlParam<NodeIdentity>>,
+    room_uuid: ReadSignal<uuid::Uuid>,
 ) -> Element {
     let url = use_memo(move || {
         let owner_id = owner_id.read().clone();
@@ -133,8 +133,8 @@ fn write_to_clipboard(string: String) {
 
 #[component]
 fn RoomControlComponent(
-    owner_id: ReadOnlySignal<NodeIdentity>,
-    room_uuid: ReadOnlySignal<uuid::Uuid>,
+    owner_id: ReadSignal<NodeIdentity>,
+    room_uuid: ReadSignal<uuid::Uuid>,
 ) -> Element {
     let mm = use_context::<NetworkState>().global_mm;
     let Some(mm) = mm.read().clone() else {
@@ -161,9 +161,9 @@ fn RoomControlComponent(
 
 #[component]
 fn RoomControlAdmin(
-    our_id: ReadOnlySignal<NodeIdentity>,
-    owner_id: ReadOnlySignal<NodeIdentity>,
-    room_uuid: ReadOnlySignal<uuid::Uuid>,
+    our_id: ReadSignal<NodeIdentity>,
+    owner_id: ReadSignal<NodeIdentity>,
+    room_uuid: ReadSignal<uuid::Uuid>,
     chat: ChatSignals<PrivateLobyRoomType>,
 ) -> Element {
     let mut ready_users = use_signal(BTreeSet::new);
@@ -257,9 +257,9 @@ fn RoomControlAdmin(
 
 #[component]
 fn RoomControlPlayer(
-    our_id: ReadOnlySignal<NodeIdentity>,
-    owner_id: ReadOnlySignal<NodeIdentity>,
-    room_uuid: ReadOnlySignal<uuid::Uuid>,
+    our_id: ReadSignal<NodeIdentity>,
+    owner_id: ReadSignal<NodeIdentity>,
+    room_uuid: ReadSignal<uuid::Uuid>,
     chat: ChatSignals<PrivateLobyRoomType>,
 ) -> Element {
     let mut clicked_ready = use_signal(|| false);

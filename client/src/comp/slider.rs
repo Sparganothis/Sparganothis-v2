@@ -5,7 +5,7 @@ use protocol::AcceptableType;
 
 #[component]
 pub fn Slider<T: Display + FromStr + AcceptableType>(
-    label: ReadOnlySignal<String>,
+    label: ReadSignal<String>,
     m: Signal<T>,
     default_value: T,
     min: T,

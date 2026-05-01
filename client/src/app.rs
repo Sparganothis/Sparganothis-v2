@@ -47,7 +47,7 @@ fn UrlHolderParent(children: Element) -> Element {
 #[derive(Clone, Debug)]
 pub struct GlobalUrlContext {
     pub url_w: Signal<String>,
-    pub url: ReadOnlySignal<String>,
+    pub url: ReadSignal<String>,
     pub route_w: Signal<Route>,
-    pub route: ReadOnlySignal<Route>,
+    pub route: ReadSignal<Route>,
 }
