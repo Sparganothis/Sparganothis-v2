@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use dioxus::events::Code;
+use dioxus::prelude::Code;
 use game::input::events::GameInputEventKey;
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Deserialize, serde::Serialize)]

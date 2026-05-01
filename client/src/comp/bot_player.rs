@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use dioxus::prelude::*;
-use dioxus_sdk::utils::timing::use_interval;
+use dioxus_sdk::time::use_interval;
 use game::{
     bot::{wordpress_blog_bot::WordpressBlogBot, TetBot},
     tet::{GameState, TetAction},
@@ -15,7 +15,7 @@ pub fn BotPlayer(game_state: Signal<GameState>) -> Element {
 
     let settings = use_game_settings();
     let _interv = settings.game.auto_softdrop_interval;
-    use_interval(_interv, move || {
+    use_interval(_interv, move |()| {
         let mut g = game_state.write();
         let mut p = pending_actions.write();
 

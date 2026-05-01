@@ -3,4 +3,6 @@
     "files.eol": "\n",
     "workbench.editor.showTabs": "multiple",
     "workbench.editor.enablePreview": false ,
+    "rust-analyzer.cargo.targetDir": "target/rust-anal",
+    "rust-analyzer.linkedProjects": ["./Cargo.toml"],
 } 

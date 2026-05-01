@@ -12,7 +12,7 @@ pub trait TetBot {
 
 pub fn get_bot(bot_name: &str) -> anyhow::Result<Box<dyn TetBot>> {
     Ok(match bot_name {
-        "random" => Box::new(RandomChoiceBot),
+        "random" => Box::new(RandomChoiceBot) as Box<dyn TetBot>,
         "wordpress" => Box::new(WordpressBlogBot),
         _ => anyhow::bail!("bot name not found."),
     })
