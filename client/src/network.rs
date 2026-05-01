@@ -175,7 +175,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
         }
     });
     // restarting resource that updates our global presence
-    let _ = use_resource(move || {
+    let _r2 = use_resource(move || {
         let url = url.read().clone();
         let platform = "browser".to_string();
         let presence = GlobalChatPresence {
@@ -201,7 +201,7 @@ fn GlobalMatchmakerParent(children: Element) -> Element {
     let client_api_manager =
         use_memo(move || client_api_manager_w.read().clone());
 
-    let _ = use_resource(move || {
+    let _r3 = use_resource(move || {
         let mm = mm_signal.read().clone();
         async move {
             let Some(mm) = mm else {
@@ -277,7 +277,7 @@ pub fn NetworkConnectionStatusIcon() -> Element {
     let peer = use_memo(move || *peer_w.read());
 
     let chat = use_context::<GlobalChatClientContext>().chat.chat;
-    let _ = use_resource(move || {
+    let _r = use_resource(move || {
         let chat = chat.read().clone();
         async move {
             let Some(chat) = chat else {

@@ -9,8 +9,8 @@ use redis::Value;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info};
 
-const REDIS_CLIENT: std::cell::OnceCell<redis::Client> =
-    std::cell::OnceCell::new();
+static REDIS_CLIENT: std::sync::OnceLock<redis::Client> =
+     std::sync::OnceLock::new();
 
 async fn redis_connection() -> anyhow::Result<redis::aio::MultiplexedConnection>
 {

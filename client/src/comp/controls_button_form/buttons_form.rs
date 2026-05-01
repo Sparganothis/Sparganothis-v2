@@ -15,7 +15,6 @@ pub fn ButtonsForm() -> Element {
         entry.push(btn_code);
     }
     let keys = btn2.keys().cloned().collect::<Vec<_>>();
-    let mut btn2 = btn2;
     for btn_event in keys {
         let entry = btn2.entry(btn_event).or_insert(vec![]);
         entry.sort_by_key(|c| {

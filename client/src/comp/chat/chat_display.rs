@@ -50,7 +50,7 @@ fn ChatPresenceDisplayItem<T: ChatMessageType>(
     let payload = use_memo(move || T::render_presence(payload.read().clone()));
     let mm = use_context::<NetworkState>().global_mm;
     let mut own_node_id = use_signal(|| None);
-    let _ = use_resource(move || {
+    let _r6 = use_resource(move || {
         let mm = mm.read().clone();
         async move {
             let Some(mm) = mm else {
@@ -219,7 +219,7 @@ fn ChatMessageDisplay<T: ChatMessageType>(
 
     let mut last_seen_txt = use_signal(|| "".to_string());
     let mm = use_context::<NetworkState>().global_mm;
-    let _ = use_resource(move || {
+    let _r5 = use_resource(move || {
         let mm = mm.read().clone();
         async move {
             let Some(mm) = mm else {

@@ -335,7 +335,7 @@ impl GameState {
             };
         }
         self.is_b2b = (lines == 4) || (self.is_t_spin);
-        self.score += (score + score2 + score3);
+        self.score += score + score2 + score3 ;
         self.is_t_spin = false;
         self.is_t_mini_spin = false;
         if lines > 0 {

@@ -41,9 +41,7 @@ async fn chat_do_broadcast_send_message<T: ChatMessageType>(
     chat: ReadSignal<Option<ChatController<T>>>,
     message: T::M,
 ) -> Option<ReceivedMessage<T>> {
-    let Some(controller) = chat.peek().clone() else {
-        return None;
-    };
+   let controller = chat.peek().clone()?;
     let sender = controller.sender();
     match sender.broadcast_message(message).await {
         Ok(r) => Some(r),
@@ -59,9 +57,7 @@ async fn chat_do_send_direct_message<T: ChatMessageType>(
     to: NodeIdentity,
     message: T::M,
 ) -> Option<ReceivedMessage<T>> {
-    let Some(controller) = chat.peek().clone() else {
-        return None;
-    };
+    let controller = chat.peek().clone()?;
     let sender = controller.sender();
     match sender.direct_message(to, message).await {
         Ok(r) => Some(r),

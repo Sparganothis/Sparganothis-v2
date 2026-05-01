@@ -88,9 +88,7 @@ pub fn PrivateLobbyChatBox(
     let chat: ChatSignals<PrivateLobyRoomType> = use_chat_signals(
         true,
         Callback::new(move |mm: GlobalMatchmaker| async move {
-            let Some(nn) = mm.own_node().await else {
-                return None;
-            };
+            let nn = mm.own_node().await?;
             let chat_ticket = &format!("{room_uuid}")[..30];
             let chat_ticket = ChatTicket::new_str_bs(
                 chat_ticket,

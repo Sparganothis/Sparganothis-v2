@@ -74,9 +74,7 @@ pub fn SpectateGamePage(node_id: NodeId) -> Element {
     let chat = use_chat_signals(
         true,
         Callback::new(move |mm: GlobalMatchmaker| async move {
-            let Some(nn) = mm.own_node().await else {
-                return None;
-            };
+            let nn = mm.own_node().await?;
             let chat_ticket =
                 ChatTicket::new_str_bs("play", BTreeSet::from([node_id]));
             let Ok(chat) = nn.join_chat::<GameMessageSpam>(&chat_ticket).await
