@@ -13,11 +13,9 @@ pub mod state_manager;
 pub mod tet;
 pub mod timestamp;
 
-
 pub use futures_channel;
 pub use futures_core;
 pub use futures_util;
-
 
 #[cfg(test)]
 pub mod tests {

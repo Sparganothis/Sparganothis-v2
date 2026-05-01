@@ -68,8 +68,7 @@ pub async fn connect_api_manager(
                     continue;
                 }
 
-                let node_idx =
-                    rand::thread_rng().gen_range(0..nodes.len());
+                let node_idx = rand::thread_rng().gen_range(0..nodes.len());
                 node = server_presence[node_idx];
                 {
                     if let Err(e) =

@@ -438,7 +438,11 @@ impl GameState {
         });
         self.current_id += 1;
 
-        if self.main_board.spawn_piece(&self.current_pcs.unwrap()).is_err() {
+        if self
+            .main_board
+            .spawn_piece(&self.current_pcs.unwrap())
+            .is_err()
+        {
             tracing::info!("tet game over");
             self.game_over_reason = Some(GameOverReason::Knockout);
             self.last_segment = GameReplaySegment::GameOver(GameOverReason::Knockout);

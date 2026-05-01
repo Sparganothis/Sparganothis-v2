@@ -240,16 +240,10 @@ impl GlobalMatchmaker {
             .map(|endpoint| endpoint.endpoint().clone())
     }
     pub async fn own_node(&self) -> Option<MainNode> {
-        self.inner
-            .read()
-            .await
-            .own_main_node.clone()
+        self.inner.read().await.own_main_node.clone()
     }
     pub async fn bs_node(&self) -> Option<MainNode> {
-        self.inner
-            .read()
-            .await
-            .bootstrap_main_node.clone()
+        self.inner.read().await.bootstrap_main_node.clone()
     }
     pub async fn bs_endpoint(&self) -> Option<Endpoint> {
         self.inner
@@ -703,9 +697,9 @@ async fn run_bs_global_chat_task(
 
         let mut list = presence.get_presence_list().await;
         list.0.retain(|x| {
-x.payload.is_some()
-&& x.payload.as_ref().unwrap().is_server.is_some()
-});
+            x.payload.is_some()
+                && x.payload.as_ref().unwrap().is_server.is_some()
+        });
         if list.0.is_empty() {
             tracing::info!("cannot answer as there are no servers found by this bootstrap. ");
             continue;
@@ -724,8 +718,8 @@ x.payload.is_some()
             last_sent.insert(from, get_timestamp_now_ms());
         }
         last_sent.retain(|_k, &mut v| {
-(get_timestamp_now_ms() - v) < answer_ratelimit_ms
-})
+            (get_timestamp_now_ms() - v) < answer_ratelimit_ms
+        })
     }
 
     anyhow::bail!("ran out of chat messages for bootstrap chat!");

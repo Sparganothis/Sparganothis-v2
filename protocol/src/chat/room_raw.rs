@@ -156,8 +156,7 @@ impl IChatRoomRaw for GossipChatRoom {
         to: NodeIdentity,
         message: Vec<u8>,
     ) -> anyhow::Result<()> {
-        let message =
-            ChatDirectMessage(self.topic_id, Arc::new(message));
+        let message = ChatDirectMessage(self.topic_id, Arc::new(message));
         self.direct_message
             .send_direct_message(*to.node_id(), message)
             .await

@@ -34,7 +34,7 @@ impl UserIdentity {
         let pubkey_bytes = self.user_id.as_bytes();
         let mut color = [0_u8; 3];
         for (i, value) in pubkey_bytes.iter().enumerate().take(32) {
-            let k = i % 3 ;
+            let k = i % 3;
             color[k] ^= value;
         }
         (color[0], color[1], color[2])
