@@ -84,12 +84,10 @@ impl MessageSigner {
         message: T,
     ) -> Result<(Vec<u8>, WireMessage<T>)> {
         let timestamp = datetime_now();
-        let from: &NodeIdentity = &self.node_identity;
-        let from = from.clone();
         let wire_message = WireMessage {
             _timestamp: timestamp,
             message: message.clone(),
-            from,
+            from: *self.node_identity,
             _message_id: uuid::Uuid::new_v4(),
         };
         let data = postcard::to_stdvec(&wire_message)?;
@@ -100,8 +98,8 @@ impl MessageSigner {
         let node_signature = self.node_secret_key.sign(&data);
         let user_signature = self.user_secrets.secret_key().sign(&data);
         let signed_message = SignedMessage {
-            node_pubkey: self.node_identity.node_id().clone(),
-            user_pubkey: self.node_identity.user_id().clone(),
+            node_pubkey: *self.node_identity.node_id(),
+            user_pubkey: *self.node_identity.user_id(),
             data,
             node_signature,
             user_signature,

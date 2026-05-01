@@ -3,10 +3,19 @@ name = "client"
 version.workspace = true
 edition.workspace = true
 
+[lints]
+workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["web"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop" , "dep:dioxus-native"]
+mobile = ["dioxus/mobile"]
+
+
 
 [dependencies]
+
 dioxus = { version = "0.7.7", features = ["router"] }
 dioxus-sdk = { version = "0.7", features = ["time", "storage"]  }
 dioxus-free-icons = { version = "0.10", features = ["bootstrap"] }
@@ -43,9 +52,3 @@ bincode = "1"
 base64 = "0.22"
 game_net = {path = "../game_net"}
 web-sys = {version = "0.3", features = ["Clipboard", "Window", "Navigator", "Permissions"] }
-
-[features]
-default = ["web"]
-web = ["dioxus/web"]
-desktop = ["dioxus/desktop" , "dep:dioxus-native"]
-mobile = ["dioxus/mobile"]

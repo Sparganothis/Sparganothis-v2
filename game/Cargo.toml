@@ -3,12 +3,10 @@ name = "game"
 version = "0.1.37"
 edition = "2021"
 
-# [profile.dev]
-# opt-level = 1
-# [profile.test]
-# opt-level = 1
-# [profile.dev.package."*"]
-# opt-level = 3
+
+[lints]
+workspace = true
+
 
 [dependencies]
 serde_with = "3.8"

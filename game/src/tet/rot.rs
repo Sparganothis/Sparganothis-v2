@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::tet::Tet;
+use super::tetpcs::Tet;
 
 #[inline(always)]
 pub fn srs_offsets(before: RotState, after: RotState, tet: Tet) -> Vec<(i8, i8)> {
@@ -93,7 +93,9 @@ impl RotState {
 }
 
 pub type Shape = Vec<Vec<bool>>;
+
 #[allow(non_snake_case)]
+#[allow(clippy::needless_range_loop)]
 pub fn rotate_shape(shape: Shape, rot: RotDirection) -> Shape {
     let mut new_shape = vec![];
 

@@ -1,5 +1,5 @@
 use super::game_state::GameReplayEvent;
-use super::tet::Tet;
+use super::tetpcs::Tet;
 use rand::{
     distr::{Distribution, StandardUniform},
     Rng, SeedableRng,
@@ -78,7 +78,7 @@ pub fn accept_event(
 #[cfg(test)]
 pub mod tests {
     use crate::tet::{
-        game_state::GameReplayEvent, random::accept_event, tet::TetAction,
+        game_state::GameReplayEvent, random::accept_event, tetpcs::TetAction,
     };
     // use pretty_assertions::assert_eq;
     use wasm_bindgen_test::*;

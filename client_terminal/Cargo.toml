@@ -4,6 +4,9 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+[lints]
+workspace = true
+
 [dependencies]
 game = { path = "../game" }
 anyhow = "1.0.95"
@@ -30,6 +33,3 @@ tui-big-text = "0.7.1"
 async-trait = "0.1.88"
 palette = "0.7.6"
 tui-widget-list = "0.13.2"
-
-[lints]
-workspace = true

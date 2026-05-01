@@ -47,7 +47,7 @@ impl Echo {
     }
     async fn handle_connection2(&self, connection: &Connection) -> Result<()> {
         // We can get the remote's node id from the connection.
-        let response_own_node_id = self.own_endpoint_node_id.as_bytes().clone();
+        let response_own_node_id = *self.own_endpoint_node_id.as_bytes();
 
         // Our protocol is a simple request-response protocol, so we expect the
         // connecting peer to open a single bi-directional stream.

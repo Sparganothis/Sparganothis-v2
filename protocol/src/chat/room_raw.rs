@@ -18,6 +18,7 @@ use n0_future::task::AbortOnDropHandle;
 use tokio::sync::RwLock;
 use tracing::{error, info, warn};
 
+#[allow(clippy::type_complexity)]
 #[derive(Debug)]
 pub struct GossipChatRoom {
     own_node_id: NodeId,
@@ -37,9 +38,9 @@ impl GossipChatRoom {
         let mut bootstrap = ticket.bootstrap.clone();
         bootstrap.remove(&node.node_id());
         let bootstrap = bootstrap.into_iter().collect::<Vec<_>>();
-        let have_bootstrap = bootstrap.len() > 0;
+        let have_bootstrap = !bootstrap.is_empty();
         let mut gossip_topic =
-            node.gossip.subscribe(ticket.topic_id.clone(), bootstrap)?;
+            node.gossip.subscribe(ticket.topic_id, bootstrap)?;
         if have_bootstrap {
             let _ = n0_future::time::timeout(
                 CONNECT_TIMEOUT,
@@ -54,7 +55,7 @@ impl GossipChatRoom {
         let room = Self {
             own_node_id: node.node_id(),
             direct_message: node.chat_direct_message.clone(),
-            topic_id: ticket.topic_id.clone(),
+            topic_id: ticket.topic_id,
             gossip_send,
             task: Arc::new(RwLock::new(None)),
             msg_recv: Arc::new(RwLock::new(Some(msg_recv))),
@@ -62,7 +63,7 @@ impl GossipChatRoom {
         {
             let task = Some(AbortOnDropHandle::new(spawn(async move {
                 let _r = task_loop(
-                    room.topic_id.clone(),
+                    room.topic_id,
                     gossip_recv,
                     direct_message_recv,
                     msg_send,
@@ -156,7 +157,7 @@ impl IChatRoomRaw for GossipChatRoom {
         message: Vec<u8>,
     ) -> anyhow::Result<()> {
         let message =
-            ChatDirectMessage(self.topic_id.clone(), Arc::new(message));
+            ChatDirectMessage(self.topic_id, Arc::new(message));
         self.direct_message
             .send_direct_message(*to.node_id(), message)
             .await

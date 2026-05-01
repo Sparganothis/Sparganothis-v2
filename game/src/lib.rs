@@ -13,6 +13,12 @@ pub mod state_manager;
 pub mod tet;
 pub mod timestamp;
 
+
+pub use futures_channel;
+pub use futures_core;
+pub use futures_util;
+
+
 #[cfg(test)]
 pub mod tests {
     use wasm_bindgen_test::*;
@@ -23,7 +29,3 @@ pub mod tests {
         assert_eq!(2 + 2, 4)
     }
 }
-
-pub use futures_channel;
-pub use futures_core;
-pub use futures_util;

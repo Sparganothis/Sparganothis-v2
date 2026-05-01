@@ -18,7 +18,7 @@ pub struct UserIdentity {
 
 impl UserIdentity {
     pub fn nickname(&self) -> String {
-        crate::_random_word::get_nickname_from_pubkey(self.user_id.clone())
+        crate::_random_word::get_nickname_from_pubkey(self.user_id)
     }
     pub const fn from_userid(user_id: PublicKey) -> Self {
         Self { user_id }
@@ -33,9 +33,9 @@ impl UserIdentity {
     pub fn rgb_color(&self) -> (u8, u8, u8) {
         let pubkey_bytes = self.user_id.as_bytes();
         let mut color = [0_u8; 3];
-        for i in 0..32 {
-            let k = i % 3 as usize;
-            color[k] = color[k] ^ pubkey_bytes[i];
+        for (i, value) in pubkey_bytes.iter().enumerate().take(32) {
+            let k = i % 3 ;
+            color[k] ^= value;
         }
         (color[0], color[1], color[2])
     }
@@ -110,7 +110,7 @@ impl NodeIdentity {
         self.user_identity.rgb_color()
     }
     pub fn user_id(&self) -> &PublicKey {
-        &self.user_identity.user_id()
+        self.user_identity.user_id()
     }
     pub fn node_id(&self) -> &PublicKey {
         &self.node_id

@@ -38,7 +38,7 @@ pub async fn connect_api_manager(
     mm: GlobalMatchmaker,
 ) -> anyhow::Result<ClientApiManager> {
     let (nodes, chat_controller) = client_join_server_chat(mm.clone()).await?;
-    let node_idx = (&mut rand::thread_rng()).gen_range(0..nodes.len());
+    let node_idx = rand::thread_rng().gen_range(0..nodes.len());
     let mut node = nodes[node_idx];
     let server_identity = Arc::new(RwLock::new(node));
 
@@ -69,7 +69,7 @@ pub async fn connect_api_manager(
                 }
 
                 let node_idx =
-                    (&mut rand::thread_rng()).gen_range(0..nodes.len());
+                    rand::thread_rng().gen_range(0..nodes.len());
                 node = server_presence[node_idx];
                 {
                     if let Err(e) =
@@ -130,16 +130,16 @@ impl ClientApiManager {
         let cc = self.chat_controller.clone();
         let sender = cc.sender();
 
-        let nonce = (&mut rand::thread_rng()).gen::<i64>();
+        let nonce = rand::thread_rng().gen::<i64>();
         let method_name = M::NAME.to_string();
 
         let request_message = ServerChatMessageContent::Request {
             method_name: method_name.clone(),
-            nonce: nonce,
+            nonce,
             req: arg_v,
         };
         let receiver = cc.receiver().await;
-        let server_identity = { self.server_identity.read().await.clone() };
+        let server_identity = { *self.server_identity.read().await };
         tracing::info!(
             "Sending direct message for method {method_name} nonce={nonce}"
         );

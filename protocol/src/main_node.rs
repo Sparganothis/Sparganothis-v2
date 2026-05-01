@@ -182,7 +182,7 @@ impl MainNode {
             Arc::new(room),
             self.message_signer.clone(),
             self.sleep_manager.clone(),
-            self.node_identity().clone(),
+            *self.node_identity(),
         );
         Ok(cc)
     }

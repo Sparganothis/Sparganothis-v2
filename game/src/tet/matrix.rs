@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::random::{get_determinist_val, GameSeed};
 
-use super::{game_state::CurrentPcsInfo, rot::RotState, tet::Tet};
+use super::{game_state::CurrentPcsInfo, rot::RotState, tetpcs::Tet};
 use serde_with::serde_as;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -129,7 +129,7 @@ impl CellValueRow10 {
         self.v_r[idx as usize / 2].set(idx % 2, new);
     }
     #[inline(always)]
-    fn to_cells(&self) -> [CellValue; 10] {
+    fn to_cells(self) -> [CellValue; 10] {
         [
             self.v_r[0].get(0),
             self.v_r[0].get(1),
@@ -311,7 +311,7 @@ impl<const R: usize, const C: usize> BoardMatrix<R, C> {
         }
         Ok(())
     }
-    pub fn spawn_nextpcs(&mut self, next_pcs: &Vec<Tet>) {
+    pub fn spawn_nextpcs(&mut self, next_pcs: &[Tet]) {
         let col: i8 = 0;
         let mut row: i8 = R as i8 - 4;
         for (i, piece) in next_pcs.iter().enumerate() {

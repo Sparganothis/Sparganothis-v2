@@ -33,6 +33,7 @@ impl FromUserInput for GameMessageSpam {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GameMessage {
     GameState(GameState),

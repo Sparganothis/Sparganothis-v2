@@ -173,12 +173,7 @@ impl TetAction {
         ]
     }
     pub fn is_repeating(&self) -> bool {
-        match self {
-            TetAction::MoveLeft | TetAction::MoveRight | TetAction::UserSoftDrop => {
-                true
-            }
-            _ => false,
-        }
+       matches!(self, TetAction::MoveLeft | TetAction::MoveRight | TetAction::UserSoftDrop)
     }
     pub fn random() -> Self {
         use rand::rng;

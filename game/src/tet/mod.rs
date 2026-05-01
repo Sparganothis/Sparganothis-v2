@@ -2,7 +2,7 @@ mod game_state;
 mod matrix;
 mod random;
 mod rot;
-mod tet;
+mod tetpcs;
 
 pub use game_state::{
     segments_to_states, CurrentPcsInfo, GameOverReason, GameReplaySegment,
@@ -11,14 +11,14 @@ pub use game_state::{
 pub use matrix::{BoardMatrix, BoardMatrixHold, BoardMatrixNext, CellValue};
 pub use random::{get_random_seed, GameSeed};
 pub use rot::RotState;
-pub use tet::{Tet, TetAction};
+pub use tetpcs::{Tet, TetAction};
 
 #[cfg(test)]
 pub mod tests {
     use super::super::timestamp::get_timestamp_now_ms;
     use super::*;
     use game_state::{GameReplaySegment, GameState};
-    use tet::TetAction;
+    use tetpcs::TetAction;
     // use pretty_assertions::assert_eq;
     use wasm_bindgen_test::*;
 
@@ -52,6 +52,7 @@ pub mod tests {
 
     #[test]
     #[wasm_bindgen_test]
+    #[allow(clippy::unnecessary_unwrap)]
     pub fn active_game_is_deterministic() {
         for i in 0..255 {
             let seed = [i; 32];
@@ -96,7 +97,7 @@ pub mod tests {
                 }
                 if let GameReplaySegment::Update(ref update) = active_game.last_segment
                 {
-                    _slices.push(update.clone());
+                    _slices.push(*update);
                 }
                 if active_game.game_over() {
                     break;

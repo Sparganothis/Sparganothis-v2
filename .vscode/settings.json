@@ -5,4 +5,5 @@
     "workbench.editor.enablePreview": false ,
     "rust-analyzer.cargo.targetDir": "target/rust-anal",
     "rust-analyzer.linkedProjects": ["./Cargo.toml"],
+    "rust-analyzer.check.command": "clippy",
 } 

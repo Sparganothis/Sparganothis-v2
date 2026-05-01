@@ -73,7 +73,7 @@ impl CallbackManager {
         (min_delay, v)
     }
 
-    pub async fn main_loop(
+    pub fn main_loop(
         &self,
         mut _r: UnboundedReceiver<(GameState, GameInputEvent)>,
         settings: Arc<RwLock<GameSettings>>,
@@ -232,7 +232,7 @@ impl InputCallbackManagerRule {
         Self {
             _cb_manager: cb_manager.clone(),
             _main_loop: AbortOnDropHandle::new(n0_future::task::spawn(async move {
-                let mut s = cb_manager.main_loop(pair_rx, settings).await;
+                let mut s = cb_manager.main_loop(pair_rx, settings);
                 while let Some(x) = s.next().await {
                     action_tx.unbounded_send(x)?;
                 }

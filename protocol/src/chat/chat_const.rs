@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-pub const GLOBAL_CHAT_TOPIC_ID: &'static str = "global";
+pub const GLOBAL_CHAT_TOPIC_ID: &str = "global";
 
 pub const PRESENCE_INTERVAL: Duration = Duration::from_secs(7);
 pub const PRESENCE_IDLE: Duration = Duration::from_secs(16);

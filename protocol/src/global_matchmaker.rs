@@ -40,7 +40,7 @@ use crate::{
 pub struct GlobalMatchmaker {
     user_secrets: Arc<UserIdentitySecrets>,
     own_public_key: Arc<PublicKey>,
-    own_private_key: Arc<SecretKey>,
+    // own_private_key: Arc<SecretKey>,
     inner: Arc<RwLock<GlobalMatchmakerInner>>,
     sleep_manager: SleepManager,
 }
@@ -115,13 +115,13 @@ impl GlobalMatchmaker {
     }
     pub fn own_node_identity(&self) -> NodeIdentity {
         NodeIdentity::new(
-            self.user_secrets().user_identity().clone(),
-            self.own_public_key.as_ref().clone(),
+            *self.user_secrets().user_identity(),
+            *self.own_public_key,
             None,
         )
     }
     pub fn user(&self) -> UserIdentity {
-        self.own_node_identity().user_identity().clone()
+        *self.own_node_identity().user_identity()
     }
 
     pub async fn global_chat_controller(
@@ -180,7 +180,7 @@ impl GlobalMatchmaker {
         let mm = Self {
             user_secrets: user.clone(),
             own_public_key: Arc::new(own_private_key.public()),
-            own_private_key: own_private_key.clone(),
+            // own_private_key: own_private_key.clone(),
             inner: Arc::new(RwLock::new(GlobalMatchmakerInner {
                 own_main_node: None,
                 bootstrap_main_node: None,
@@ -194,7 +194,7 @@ impl GlobalMatchmaker {
         };
 
         let node_identity = NodeIdentity::new(
-            user.user_identity().clone(),
+            *user.user_identity(),
             own_private_key.public(),
             None,
         );
@@ -212,11 +212,11 @@ impl GlobalMatchmaker {
         .await?;
         {
             mm.inner.write().await.own_main_node = Some(own_endpoint)
-        };
+        }
         Ok(mm)
     }
     pub fn user_identity(&self) -> UserIdentity {
-        self.user_secrets.user_identity().clone()
+        *self.user_secrets.user_identity()
     }
     pub async fn bootstrap_nodes_set(&self) -> BTreeSet<NodeId> {
         self.inner
@@ -243,17 +243,13 @@ impl GlobalMatchmaker {
         self.inner
             .read()
             .await
-            .own_main_node
-            .as_ref()
-            .map(|node| node.clone())
+            .own_main_node.clone()
     }
     pub async fn bs_node(&self) -> Option<MainNode> {
         self.inner
             .read()
             .await
-            .bootstrap_main_node
-            .as_ref()
-            .map(|bs| bs.clone())
+            .bootstrap_main_node.clone()
     }
     pub async fn bs_endpoint(&self) -> Option<Endpoint> {
         self.inner
@@ -263,9 +259,9 @@ impl GlobalMatchmaker {
             .as_ref()
             .map(|bs| bs.endpoint().clone())
     }
-    pub async fn own_private_key(&self) -> Arc<SecretKey> {
-        self.own_private_key.clone()
-    }
+    // pub fn own_private_key(&self) -> Arc<SecretKey> {
+    //     self.own_private_key.clone()
+    // }
 
     pub async fn new(
         user_identity_secrets: Arc<UserIdentitySecrets>,
@@ -300,7 +296,7 @@ impl GlobalMatchmaker {
             own_private_key.public()
         );
         let mm = Self::fresh(own_private_key, user).await?;
-        let mm = if let Ok(_) = mm.connect_to_bootstrap(true).await {
+        let mm = if mm.connect_to_bootstrap(true).await.is_ok() {
             info!("Successfully connected to foreign bootstrap node");
             mm
         } else {
@@ -493,6 +489,7 @@ impl GlobalMatchmaker {
         Ok(true)
     }
 
+    #[allow(clippy::redundant_closure_call)]
     async fn connect_to_bootstrap(&self, exit_early: bool) -> Result<()> {
         let mut fut = FuturesUnordered::new();
         let endpoint = self
@@ -705,15 +702,11 @@ async fn run_bs_global_chat_task(
         }
 
         let mut list = presence.get_presence_list().await;
-        list.0 = list
-            .0
-            .into_iter()
-            .filter(|x| {
-                x.payload.is_some()
-                    && x.payload.as_ref().unwrap().is_server.is_some()
-            })
-            .collect();
-        if list.0.len() == 0 {
+        list.0.retain(|x| {
+x.payload.is_some()
+&& x.payload.as_ref().unwrap().is_server.is_some()
+});
+        if list.0.is_empty() {
             tracing::info!("cannot answer as there are no servers found by this bootstrap. ");
             continue;
         }
@@ -727,15 +720,12 @@ async fn run_bs_global_chat_task(
             );
             continue;
         }
-        if list.0.len() > 0 {
+        if !list.0.is_empty() {
             last_sent.insert(from, get_timestamp_now_ms());
         }
-        last_sent = last_sent
-            .into_iter()
-            .filter(|(_k, v)| {
-                (get_timestamp_now_ms() - *v) < answer_ratelimit_ms
-            })
-            .collect()
+        last_sent.retain(|_k, &mut v| {
+(get_timestamp_now_ms() - v) < answer_ratelimit_ms
+})
     }
 
     anyhow::bail!("ran out of chat messages for bootstrap chat!");

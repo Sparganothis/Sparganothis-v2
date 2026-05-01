@@ -73,19 +73,19 @@ impl<T: IChatRoomType> ChatPresence<T> {
         identity: &NodeIdentity,
         payload: &Option<T::P>,
     ) -> bool {
-        let identity = identity.clone();
+        let identity = *identity;
         let now = get_timestamp_now_ms();
         let mut w = self.presence.write().await;
         let old_value = w.clone();
         let old_ping = w
             .map
             .get(&identity.node_id().clone())
-            .map(|(_, _, _, rtt)| rtt.clone())
+            .map(|(_, _, _, rtt)| *rtt)
             .unwrap_or(None);
         let was_added = w
             .map
             .insert(
-                identity.node_id().clone(),
+                *identity.node_id(),
                 (now, identity, payload.clone(), old_ping),
             )
             .is_none();
@@ -107,7 +107,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
         was_added
     }
     pub async fn update_ping(&self, identity: &NodeIdentity, rtt: u16) {
-        let identity = identity.clone();
+        let identity = *identity;
         let mut w = self.presence.write().await;
         let Some(entry) = w.map.get_mut(&identity.node_id().clone()) else {
             return;
@@ -140,7 +140,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
         PresenceList(v)
     }
     pub async fn remove_presence(&self, identity: &NodeIdentity) {
-        let identity = identity.clone();
+        let identity = *identity;
         let mut w = self.presence.write().await;
         if w.map.remove(&identity.node_id().clone()).is_some() {
             self.notify.notify_waiters();
@@ -148,6 +148,7 @@ impl<T: IChatRoomType> ChatPresence<T> {
     }
 }
 
+#[allow(clippy::type_complexity)]
 #[derive(Clone, Debug, PartialEq)]
 struct ChatPresenceData<T: IChatRoomType> {
     map: BTreeMap<NodeId, (i64, NodeIdentity, Option<T::P>, Option<u16>)>,

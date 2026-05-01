@@ -154,7 +154,7 @@ pub(crate) async fn fetch_server_ids(
             }
             server_nodes.push(node_id);
         }
-        if server_nodes.len() >= 1 {
+        if !server_nodes.is_empty() {
             break;
         }
 
@@ -198,16 +198,14 @@ pub(crate) async fn client_join_server_chat(
             tracing::info!("server chat OK.");
 
             return Ok((server_nodes, chat));
+        } else if i == RETRY_COUNT {
+            tracing::error!("final error: {:#?}", chat);
+            anyhow::bail!("{chat:#?}")
         } else {
-            if i == RETRY_COUNT {
-                tracing::error!("final error: {:#?}", chat);
-                anyhow::bail!("{chat:#?}")
-            } else {
-                tracing::warn!("retry error {i}/{RETRY_COUNT}: {:?}", chat);
+            tracing::warn!("retry error {i}/{RETRY_COUNT}: {:?}", chat);
 
-                let sleep = i + RETRY_SLEEP_SECONDS;
-                n0_future::time::sleep(Duration::from_secs(sleep as u64)).await;
-            }
+            let sleep = i + RETRY_SLEEP_SECONDS;
+            n0_future::time::sleep(Duration::from_secs(sleep as u64)).await;
         }
     }
     anyhow::bail!("failed to join server chat with existing server.")

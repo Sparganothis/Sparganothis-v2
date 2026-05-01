@@ -4,6 +4,11 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+
+[lints]
+workspace = true
+
+
 [dependencies]
 game = {path = "../game"}
 iroh.workspace = true

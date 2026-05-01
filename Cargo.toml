@@ -26,12 +26,12 @@ iroh-gossip = {version = "0.34.1", default-features = false}
 iroh-net-report = {version = "0.34.0", default-features = false}
 
 [workspace.lints.rust]
-missing_debug_implementations = "warn"
+missing_debug_implementations = "allow"
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(iroh_docsrs)", "cfg(iroh_loom)"] }
 
 [workspace.lints.clippy]
 unused-async = "warn"
-
+new_without_default = "allow"
 
 
 [profile.dev]

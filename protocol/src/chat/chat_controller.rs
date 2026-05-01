@@ -178,7 +178,7 @@ impl<T: IChatRoomType> ChatController<T> {
             r
         }));
 
-        let controller = Self {
+        Self {
             _controller_id: uuid::Uuid::new_v4(),
             inner,
             presence,
@@ -189,15 +189,14 @@ impl<T: IChatRoomType> ChatController<T> {
             receiver,
             ticket,
             node_identity,
-        };
-        controller
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
     fn node_identity(&self) -> NodeIdentity {
-        self.node_identity.clone()
+        self.node_identity
     }
     fn sender(&self) -> ChatSender<T> {
         self.sender.clone()
@@ -205,10 +204,11 @@ impl<T: IChatRoomType> IChatController<T> for ChatController<T> {
     async fn receiver(&self) -> ChatReceiver<T> {
         let new_receiver = {
             let m = self.receiver.msg_receiver.write().await;
-            let new_receiver = m.clone();
+            // let new_receiver = m.clone();
             // let m2 = &mut *m;
             // std::mem::swap(m2, &mut new_receiver);
-            new_receiver
+            // new_receiver
+            m.clone()
         };
         ChatReceiver {
             msg_receiver: Arc::new(RwLock::new(new_receiver)),

@@ -72,6 +72,7 @@ macro_rules! declare_api_method {
     };
 }
 
+#[allow(clippy::type_complexity)]
 pub struct ApiMethodImpl {
     pub name: &'static str,
     pub func: fn(

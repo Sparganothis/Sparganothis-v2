@@ -4,6 +4,11 @@ version.workspace = true
 authors.workspace = true
 edition.workspace = true
 
+
+[lints]
+workspace = true
+
+
 [dependencies]
 game = {path = "../game"}
 protocol = {path = "../protocol"}
@@ -14,6 +19,3 @@ tracing = "0.1.41"
 async-trait.workspace = true
 tokio = { version = "1.43.0", default-features = false, features = ["sync"] }
 n0-future = "0.1.2"
-
-[lints]
-workspace = true

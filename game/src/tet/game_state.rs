@@ -1,10 +1,12 @@
+#![allow(clippy::manual_memcpy)]
+
 use super::random::{accept_event, shuffle_tets, GameSeed};
 use crate::{tet::get_random_seed, timestamp::get_timestamp_now_ms};
 
 use super::{
     matrix::{BoardMatrix, BoardMatrixHold, BoardMatrixNext, CellValue},
     rot::{RotDirection, RotState},
-    tet::{Tet, TetAction},
+    tetpcs::{Tet, TetAction},
 };
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
@@ -436,7 +438,7 @@ impl GameState {
         });
         self.current_id += 1;
 
-        if let Err(_) = self.main_board.spawn_piece(&self.current_pcs.unwrap()) {
+        if self.main_board.spawn_piece(&self.current_pcs.unwrap()).is_err() {
             tracing::info!("tet game over");
             self.game_over_reason = Some(GameOverReason::Knockout);
             self.last_segment = GameReplaySegment::GameOver(GameOverReason::Knockout);
@@ -636,7 +638,7 @@ impl GameState {
             new_current_pcs.pos.0 += y;
             new_current_pcs.pos.1 += x;
 
-            if let Ok(_) = self.main_board.spawn_piece(&new_current_pcs) {
+            if self.main_board.spawn_piece(&new_current_pcs).is_ok() {
                 let (t_is_blocked3, t_is_blocked2) = {
                     let (yt, xt) = new_current_pcs.pos;
                     let mut block_counter = 0;
@@ -786,7 +788,7 @@ impl GameState {
     }
 }
 
-pub fn segments_to_states(all_segments: &Vec<GameReplaySegment>) -> Vec<GameState> {
+pub fn segments_to_states(all_segments: &[GameReplaySegment]) -> Vec<GameState> {
     let mut current_state = match all_segments.first() {
         Some(GameReplaySegment::Init(_replay)) => {
             GameState::new(&_replay.init_seed, _replay.start_time)
