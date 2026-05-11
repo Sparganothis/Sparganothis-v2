@@ -155,8 +155,30 @@ services:
           max-file: "10"
 
 
+  mysql:
+    container_name: mysql
+    image: docker.io/mariadb:12.2.2-noble
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: tetris
+      MARIADB_DATABASE: tetris
+    volumes:
+      - ./db_data/mariadb:/var/lib/mysql
+      - ./db_dumps/mariadb:/db_dumps
+    ports:
+      - 127.0.0.1:3306:3306
+
+  adminer:
+    container_name: adminer
+    image: docker.io/adminer:5.4.2
+    restart: always
+    environment:
+    - ADMINER_PLUGINS=tables-filter tinymce table-indexes-structure table-structure version-noverify config sql-gemini
+    - ADMINER_DEFAULT_SERVER=mysql
+    ports:
+      - 127.0.0.1:1488:8080
+
+
 volumes:
   clickhouse_data3:
-    driver: local
-  bytebase:
     driver: local

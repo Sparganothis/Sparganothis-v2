@@ -16,7 +16,7 @@ web = ["dioxus/web"]
 
 [dependencies]
 
-dioxus = { version = "0.7.7", features = ["router"] }
+dioxus = { version = "0.7.9", features = ["router"] }
 dioxus-sdk = { version = "0.7", features = ["time", "storage"]  }
 dioxus-free-icons = { version = "0.10", features = ["bootstrap"] }
 tracing-wasm = "0.2.1"
