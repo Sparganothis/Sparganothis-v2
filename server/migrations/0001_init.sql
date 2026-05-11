@@ -35,6 +35,30 @@ CREATE TABLE IF NOT EXISTS game_states (
     data_version BIGINT      NOT NULL,
     last_action  VARCHAR(64)    NOT NULL,
     state_data   VARCHAR(2048)    NOT NULL,
+    is_finished   BOOLEAN NOT NULL,
+    game_over_reason VARCHAR(64) NOT NULL,
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (id),
+    UNIQUE  (game_type, user_id, start_time, game_seed, recv_time, score)
+) ENGINE = InnoDB
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci
+  COMMENT = 'all states in all games';
+
+CREATE TABLE IF NOT EXISTS match_outcomes (
+    game_type    VARCHAR(64)        NOT NULL,
+    user_id      VARCHAR(64)        NOT NULL,
+    start_time   BIGINT      NOT NULL,
+    game_seed    VARCHAR(64)        NOT NULL,
+    match_id      VARCHAR(64)   NOT NULL,
+    recv_time    BIGINT      NOT NULL,
+    score        BIGINT      NOT NULL,
+    data_version BIGINT      NOT NULL,
+    last_action  VARCHAR(64)    NOT NULL,
+    state_data   VARCHAR(2048)    NOT NULL,
+    is_finished   BOOLEAN NOT NULL,
+    game_over_reason VARCHAR(64) NOT NULL,
+    elo_score_percent INT  
     id           BIGINT      NOT NULL AUTO_INCREMENT,
     PRIMARY KEY (id),
     UNIQUE  (game_type, user_id, start_time, game_seed, recv_time, score)
@@ -76,6 +100,7 @@ CREATE TABLE IF NOT EXISTS matches (
     id           BIGINT      NOT NULL AUTO_INCREMENT,
     PRIMARY KEY (id),
     INDEX idx_matches_lookup (start_time)
+    UNIQUE (game_type, start_time, user_ids,  game_seed, match_id),
 ) ENGINE = InnoDB
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci
