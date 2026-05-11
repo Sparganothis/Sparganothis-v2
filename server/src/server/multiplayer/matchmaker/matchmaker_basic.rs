@@ -278,7 +278,7 @@ async fn fetch_player_slot(
     }
 
     let mut already_present_keys = BTreeSet::from_iter(
-        (get_lock_values(all_keys.clone()).await?).into_iter(),
+        get_lock_values(all_keys.clone()).await?,
     );
 
     for key in all_keys.clone() {
@@ -293,7 +293,7 @@ async fn fetch_player_slot(
         // Refresh other locks !
 
         already_present_keys = BTreeSet::from_iter(
-            (get_lock_values(all_keys.clone()).await?).into_iter(),
+            get_lock_values(all_keys.clone()).await?,
         );
         if get_timestamp_now_ms() - t0 > _fetch_time as i64 {
             break;

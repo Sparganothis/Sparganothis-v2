@@ -1,3 +1,6 @@
+- server - migrate from crackhouse to sqlite3
+
+
 - DM window
   - send dm to user
   - receive dms in tab under dropdown with notification counter
