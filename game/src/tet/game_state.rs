@@ -69,6 +69,17 @@ pub enum GameOverReason {
     Win,
 }
 
+impl GameOverReason {
+    pub fn elo_score_percent(&self) -> i32 {
+        match self {
+            Self::Knockout => 0,
+            Self::Disconnect => 0,
+            Self::Abandon => 0,
+            Self::Win => 100,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum GameReplaySegment {
     Init(GameReplayInit),

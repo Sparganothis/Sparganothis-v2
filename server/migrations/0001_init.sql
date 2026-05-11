@@ -56,16 +56,56 @@ CREATE TABLE IF NOT EXISTS match_outcomes (
     data_version BIGINT      NOT NULL,
     last_action  VARCHAR(64)    NOT NULL,
     state_data   VARCHAR(2048)    NOT NULL,
-    is_finished   BOOLEAN NOT NULL,
-    game_over_reason VARCHAR(64) NOT NULL,
-    elo_score_percent INT  
+    is_finished   BOOLEAN         NOT NULL,
+    game_over_reason VARCHAR(64)   NOT NULL,
+    elo_score_percent INT          NOT NULL,
+    own_elo                  DOUBLE              NOT NULL,
+    opponent_score_percent     INT NOT NULL,
+    opponent_elo               DOUBLE    NOT NULL,
+    new_elo                     DOUBLE         NOT NULL,
+    
     id           BIGINT      NOT NULL AUTO_INCREMENT,
     PRIMARY KEY (id),
-    UNIQUE  (game_type, user_id, start_time, game_seed, recv_time, score)
+    UNIQUE  (game_type, user_id, start_time, game_seed, match_id)
 ) ENGINE = InnoDB
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci
-  COMMENT = 'all states in all games';
+  COMMENT = 'match outcome and elo computation';
+
+
+CREATE TABLE IF NOT EXISTS user_elo_current (
+    game_type    VARCHAR(64)        NOT NULL,
+    user_id      VARCHAR(64)        NOT NULL,
+    match_id    VARCHAR(64)    NOT NULL,
+    current_elo   DOUBLE    NOT NULL,
+    recv_time    BIGINT      NOT NULL,
+    data_version BIGINT      NOT NULL,
+    
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (id),
+    UNIQUE  (game_type, user_id)
+) ENGINE = InnoDB
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci
+  COMMENT = 'current user elo per gametype';
+
+
+CREATE TABLE IF NOT EXISTS user_elo_history (
+    game_type    VARCHAR(64)        NOT NULL,
+    user_id      VARCHAR(64)        NOT NULL,
+    match_id      VARCHAR(64)   NOT NULL,
+    recv_time    BIGINT      NOT NULL,
+    new_elo                     DOUBLE         NOT NULL,
+    
+    data_version BIGINT      NOT NULL,
+    elo_outcome   VARCHAR(64)     NOT NULL,
+    id           BIGINT      NOT NULL AUTO_INCREMENT,
+    PRIMARY KEY (id),
+    UNIQUE  (game_type, user_id, match_id)
+) ENGINE = InnoDB
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci
+  COMMENT = 'history of user elo per gametype';
 
 -- -------------------------------------------------------
 -- games  (was: MergeTree ORDER BY (game_type, user_id, start_time, game_seed))
@@ -85,10 +125,7 @@ CREATE TABLE IF NOT EXISTS games (
   COLLATE utf8mb4_unicode_ci
   COMMENT = 'list of all games (without states)';
 
--- -------------------------------------------------------
--- matches  (was: MergeTree ORDER BY (game_type, start_time, user_ids, game_seed, match_id))
--- user_ids was Array(BLOB) in ClickHouse; stored as serialized VARCHAR(64) here.
--- -------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS matches (
     game_type    VARCHAR(64)        NOT NULL,
     start_time   BIGINT      NOT NULL,
@@ -99,16 +136,13 @@ CREATE TABLE IF NOT EXISTS matches (
     match_info   VARCHAR(2048)    NOT NULL,
     id           BIGINT      NOT NULL AUTO_INCREMENT,
     PRIMARY KEY (id),
-    INDEX idx_matches_lookup (start_time)
-    UNIQUE (game_type, start_time, user_ids,  game_seed, match_id),
+    INDEX idx_matches_lookup (start_time),
+    UNIQUE (game_type, start_time, user_ids,  game_seed, match_id)
 ) ENGINE = InnoDB
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci
   COMMENT = 'list of multi-user matches';
 
--- -------------------------------------------------------
--- guest_users  (was: MergeTree ORDER BY (user_id, nickname, first_login))
--- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS guest_users (
     user_id      VARCHAR(64)    NOT NULL,
     nickname     VARCHAR(64)        NOT NULL,
@@ -122,9 +156,6 @@ CREATE TABLE IF NOT EXISTS guest_users (
   COLLATE utf8mb4_unicode_ci
   COMMENT = 'guest user list';
 
--- -------------------------------------------------------
--- guest_user_login_events  (was: MergeTree ORDER BY (user_id, last_login))
--- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS guest_user_login_events (
     user_id    VARCHAR(64)    NOT NULL,
     last_login BIGINT      NOT NULL,
@@ -136,13 +167,6 @@ CREATE TABLE IF NOT EXISTS guest_user_login_events (
   COLLATE utf8mb4_unicode_ci
   COMMENT = 'guest user event logins';
 
--- -------------------------------------------------------
--- user_friends  (was: ReplacingMergeTree ORDER BY (user_id, friend_id))
--- UNIQUE KEY enforces the deduplication semantics of ReplacingMergeTree.
--- Use VARCHAR(64) for the key columns so they can participate in a UNIQUE index
--- (BLOB/VARCHAR(64) columns require a prefix length, which loses uniqueness guarantees).
--- Store full binary value in separate _bin columns if needed.
--- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS user_friends (
     user_id      VARCHAR(64)    NOT NULL,
     friend_id    VARCHAR(64)    NOT NULL,

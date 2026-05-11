@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nREPLACE  INTO user_elo_current (\n\n    game_type,\n     user_id, \n     match_id,\n\n     current_elo,\n     recv_time, \n    data_version\n   \n)\nVALUES (?, ?, ?,  ?, ?, ?)\n\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 6
+    },
+    "nullable": []
+  },
+  "hash": "a4b8565c61c7c875a43de31bc2b6bf6305cbb1635623c879f91b41169eb903e8"
+}

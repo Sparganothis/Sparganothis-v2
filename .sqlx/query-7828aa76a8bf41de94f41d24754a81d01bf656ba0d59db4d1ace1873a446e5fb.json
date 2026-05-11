@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT current_elo FROM user_elo_current WHERE game_type=? AND user_id=?",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "current_elo",
+        "type_info": {
+          "type": "Double",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 22
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "7828aa76a8bf41de94f41d24754a81d01bf656ba0d59db4d1ace1873a446e5fb"
+}
