@@ -22,12 +22,12 @@ macro_rules! api_method_impl {
 use protocol::api::api_method_macros::ApiMethodImpl;
 use protocol::impl_api_method;
 
-use crate::server::db::get_replay_match_list2::*;
-use crate::server::db::get_user_profiles::*;
-use crate::server::db::guest_login::*;
-use crate::server::db::send_new_gamestate::*;
-use crate::server::db::send_new_match::*;
-use crate::server::db::user_friends::*;
+use crate::server::db2::get_replay_match_list2::*;
+use crate::server::db2::get_user_profiles::*;
+use crate::server::db2::guest_login::*;
+use crate::server::db2::send_new_gamestate::*;
+use crate::server::db2::send_new_match::*;
+use crate::server::db2::user_friends::*;
 use crate::server::multiplayer::matchmaker::matchmaker_api::*;
 use protocol::api::api_declarations::*;
 

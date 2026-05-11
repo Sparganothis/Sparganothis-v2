@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS guest_users (
     data_version BIGINT      NOT NULL,
     id           BIGINT      NOT NULL AUTO_INCREMENT,
     PRIMARY KEY (id),
-    UNIQUE  (user_id, nickname, first_login)
+    UNIQUE  (user_id, nickname)
 ) ENGINE = InnoDB
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci

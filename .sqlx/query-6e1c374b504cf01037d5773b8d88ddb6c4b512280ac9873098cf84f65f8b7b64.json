@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT state_data FROM game_states\nWHERE game_type = ?\n  AND start_time = ?\n  AND game_seed = ?\n  AND user_id = ?\nORDER BY recv_time DESC\nLIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "state_data",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 8192
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "6e1c374b504cf01037d5773b8d88ddb6c4b512280ac9873098cf84f65f8b7b64"
+}

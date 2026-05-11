@@ -1,0 +1,64 @@
+{
+  "db_name": "MySQL",
+  "query": "\nSELECT \n    u.user_id as user_id, \n    u.nickname, \n    u.first_login, \n    e.last_login, \n    IFNULL(gc.game_count, 0) as game_count\nFROM guest_users u\nINNER JOIN (\n    SELECT user_id, MAX(last_login) as last_login \n    FROM guest_user_login_events \n    GROUP BY user_id\n) e ON u.user_id = e.user_id\nLEFT OUTER JOIN (\n    SELECT user_id, COUNT(*) as game_count \n    FROM games \n    GROUP BY user_id\n) gc ON u.user_id = gc.user_id\nWHERE u.user_id = ?\nLIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | MULTIPLE_KEY | NO_DEFAULT_VALUE",
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "nickname",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 256
+        }
+      },
+      {
+        "ordinal": 2,
+        "name": "first_login",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | NO_DEFAULT_VALUE",
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "last_login",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NO_DEFAULT_VALUE",
+          "max_size": 20
+        }
+      },
+      {
+        "ordinal": 4,
+        "name": "game_count",
+        "type_info": {
+          "type": "LongLong",
+          "flags": "NOT_NULL | BINARY",
+          "max_size": 21
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "efc46fc6ba20578f046bd0fe808bc61bf091108f6c838eef340747f918676f2c"
+}

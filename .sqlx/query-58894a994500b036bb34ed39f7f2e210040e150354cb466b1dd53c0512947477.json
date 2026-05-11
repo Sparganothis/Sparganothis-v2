@@ -1,0 +1,24 @@
+{
+  "db_name": "MySQL",
+  "query": "SELECT VERSION() as version",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "version",
+        "type_info": {
+          "type": "VarString",
+          "flags": "NOT_NULL",
+          "max_size": 88
+        }
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "58894a994500b036bb34ed39f7f2e210040e150354cb466b1dd53c0512947477"
+}

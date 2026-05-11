@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT IGNORE INTO guest_user_login_events (user_id, last_login)\nVALUES (?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "00a01f2e1fa18d1136518efbc26bed5c3c2c0086109b8d72c0f25af0815903d7"
+}

@@ -1,5 +1,6 @@
-- server - migrate from crackhouse to sqlite3
-
+- user 1v1 elo
+- user 1v1 private dm
+- user add friend / list friend / drop friend
 
 - DM window
   - send dm to user
@@ -15,4 +16,3 @@
   - right panel:
     - top: "Live Chat" minified chat 
     - bottom: "Top Players" with dropdown to select metric type
-  

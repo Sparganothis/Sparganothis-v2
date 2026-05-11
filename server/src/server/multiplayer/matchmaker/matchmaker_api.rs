@@ -7,7 +7,7 @@ use game::{
 use protocol::user_identity::NodeIdentity;
 
 use crate::server::{
-    db::guest_login::{deserialize_base64, serialize_base64},
+    db2::guest_login::{deserialize_base64, serialize_base64},
     multiplayer::matchmaker::matchmaker_basic::{
         get_lock_values, increment_redis_counter, set_lock,
     },

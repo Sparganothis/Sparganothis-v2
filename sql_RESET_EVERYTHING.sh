@@ -11,3 +11,6 @@ sleep 1
 sqlx database create
 sleep 1
 sqlx migrate run
+
+cd ..
+./sql_prepare.sh

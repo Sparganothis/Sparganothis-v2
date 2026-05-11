@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT IGNORE INTO matches (game_type, start_time, user_ids, game_seed, match_id, data_version, match_info)\nVALUES (?, ?, ?, ?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 7
+    },
+    "nullable": []
+  },
+  "hash": "a9146e74e48597250e55fc32642b0a69a92ea9c4f4c78df8e0f6a60068812372"
+}

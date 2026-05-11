@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT IGNORE INTO user_friends (user_id, friend_id, added_on, data_version)\nVALUES (?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "e79b3ae71da961b09a91e0951a2363ec31e6cd77c1405a7f62be30707c950065"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "MySQL",
+  "query": "\nINSERT IGNORE INTO guest_users (user_id, nickname, first_login, data_version)\nVALUES (?, ?, ?, ?)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 4
+    },
+    "nullable": []
+  },
+  "hash": "4089cb819c877c34682e801e9306b763dc55a37ddadb77998eaae5145eac2dbb"
+}
