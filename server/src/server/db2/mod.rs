@@ -2,12 +2,18 @@ use sqlx::{Executor, MySqlPool, query};
 use sqlx::mysql::MySqlPoolOptions;
 use tracing::info;
 
+pub mod guest_login;
+pub mod user_friends;
+pub mod send_new_gamestate;
+pub mod send_new_match;
+pub mod get_replay_match_list2;
+pub mod get_user_profiles;
 
 static SQL_POOL: tokio::sync::OnceCell<MySqlPool> =
     tokio::sync::OnceCell::const_new();
 
 
-async fn get_pool() -> sqlx::Result<&'static MySqlPool> {
+pub async fn get_pool() -> sqlx::Result<&'static MySqlPool> {
     SQL_POOL
         .get_or_try_init(move || async move{
             

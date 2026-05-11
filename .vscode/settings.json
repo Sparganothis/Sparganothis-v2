@@ -6,4 +6,12 @@
     "rust-analyzer.cargo.targetDir": "target/rust-anal",
     "rust-analyzer.linkedProjects": ["./Cargo.toml"],
     "rust-analyzer.check.command": "clippy",
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "server/.*rs"
+            }
+        ],
+        "cmd": "./sql_prepare.sh"
+    }
 } 

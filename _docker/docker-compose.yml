@@ -44,84 +44,84 @@ services:
           max-size: "1m"
           max-file: "10"
 
-  clickhouse:
-    container_name: clickhouse
-    image: clickhouse:25.5
-    cap_add:
-      - SYS_NICE
-      - NET_ADMIN
-      - IPC_LOCK
-    ulimits:
-      nofile:
-        soft: 262144
-        hard: 262144
-    environment:
-      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
-      - CLICKHOUSE_DB=sparganothis
-      - CLICKHOUSE_USER=sparganothis
-      - CLICKHOUSE_PASSWORD=sparganothis
-    ports:
-      - '127.0.0.1:8123:8123'
-      - '127.0.0.1:9000:9000'
-    volumes:
-      - clickhouse_data3:/var/lib/clickhouse
-      # - ./data:/var/lib/clickhouse/user_files
-      - ./clickhouse_log_disable.xml:/etc/clickhouse-server/config.d/z_log_disable.xml
-    healthcheck:
-      test: wget --no-verbose --tries=1 http://127.0.0.1:8123/ping || exit 1
-      interval: 13s
-      timeout: 15s
-      retries: 6
-    memswap_limit: 2000M
-    mem_limit: 2000M
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-          max-size: "1m"
-          max-file: "10"
-  clickhouse-monitoring:
-    image: ghcr.io/duyet/clickhouse-monitoring:2cc8058
-    environment:
-      - "CLICKHOUSE_HOST=http://clickhouse:8123"
-      - CLICKHOUSE_USER=sparganothis
-      - CLICKHOUSE_PASSWORD=sparganothis
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    ports:
-      - 127.0.0.1:3000:3000
-    volumes:
-      - /var/lib/clickhouse-monitoring
-    memswap_limit: 1000M
-    mem_limit: 1000M
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-          max-size: "1m"
-          max-file: "10"
+  # clickhouse:
+  #   container_name: clickhouse
+  #   image: clickhouse:25.5
+  #   cap_add:
+  #     - SYS_NICE
+  #     - NET_ADMIN
+  #     - IPC_LOCK
+  #   ulimits:
+  #     nofile:
+  #       soft: 262144
+  #       hard: 262144
+  #   environment:
+  #     - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+  #     - CLICKHOUSE_DB=sparganothis
+  #     - CLICKHOUSE_USER=sparganothis
+  #     - CLICKHOUSE_PASSWORD=sparganothis
+  #   ports:
+  #     - '127.0.0.1:8123:8123'
+  #     - '127.0.0.1:9000:9000'
+  #   volumes:
+  #     - clickhouse_data3:/var/lib/clickhouse
+  #     # - ./data:/var/lib/clickhouse/user_files
+  #     - ./clickhouse_log_disable.xml:/etc/clickhouse-server/config.d/z_log_disable.xml
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 http://127.0.0.1:8123/ping || exit 1
+  #     interval: 13s
+  #     timeout: 15s
+  #     retries: 6
+  #   memswap_limit: 2000M
+  #   mem_limit: 2000M
+  #   restart: unless-stopped
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #         max-size: "1m"
+  #         max-file: "10"
+  # clickhouse-monitoring:
+  #   image: ghcr.io/duyet/clickhouse-monitoring:2cc8058
+  #   environment:
+  #     - "CLICKHOUSE_HOST=http://clickhouse:8123"
+  #     - CLICKHOUSE_USER=sparganothis
+  #     - CLICKHOUSE_PASSWORD=sparganothis
+  #   depends_on:
+  #     clickhouse:
+  #       condition: service_healthy
+  #   ports:
+  #     - 127.0.0.1:3000:3000
+  #   volumes:
+  #     - /var/lib/clickhouse-monitoring
+  #   memswap_limit: 1000M
+  #   mem_limit: 1000M
+  #   restart: unless-stopped
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #         max-size: "1m"
+  #         max-file: "10"
 
 
-  ch-ui:
-    image: ghcr.io/caioricciuti/ch-ui:sha-6227281d8c096e4259a1b96c92aa3f8d784a3c2b
-    ports:
-      - '127.0.0.1:5521:5521'
-    depends_on:
-      clickhouse:
-        condition: service_healthy
-    memswap_limit: 1000M
-    mem_limit: 1000M
-    restart: unless-stopped
-    environment:
-      VITE_CLICKHOUSE_URL: "http://localhost:8123"
-      VITE_CLICKHOUSE_USER: "sparganothis"
-      VITE_CLICKHOUSE_PASS: "sparganothis"
-    logging:
-      driver: "json-file"
-      options:
-          max-size: "1m"
-          max-file: "10"
+  # ch-ui:
+  #   image: ghcr.io/caioricciuti/ch-ui:sha-6227281d8c096e4259a1b96c92aa3f8d784a3c2b
+  #   ports:
+  #     - '127.0.0.1:5521:5521'
+  #   depends_on:
+  #     clickhouse:
+  #       condition: service_healthy
+  #   memswap_limit: 1000M
+  #   mem_limit: 1000M
+  #   restart: unless-stopped
+  #   environment:
+  #     VITE_CLICKHOUSE_URL: "http://localhost:8123"
+  #     VITE_CLICKHOUSE_USER: "sparganothis"
+  #     VITE_CLICKHOUSE_PASS: "sparganothis"
+  #   logging:
+  #     driver: "json-file"
+  #     options:
+  #         max-size: "1m"
+  #         max-file: "10"
 
   redis:
     image: redis:8.0.3
