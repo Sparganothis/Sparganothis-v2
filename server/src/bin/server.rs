@@ -4,7 +4,7 @@ use anyhow::Result;
 use protocol::{
     global_matchmaker::GlobalMatchmaker, user_identity::UserIdentitySecrets,
 };
-use server::server::{db2::init_sqlite_migrations, main_loop::server_main_loop};
+use server::server::{db2::init_sql, main_loop::server_main_loop};
 use tracing::info;
 
 #[tokio::main]
@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
 
     info!("server START...");
 
-    init_sqlite_migrations().await?;
+    init_sql().await?;
 
     let id = UserIdentitySecrets::generate();
     let global_mm = GlobalMatchmaker::new(Arc::new(id)).await?;

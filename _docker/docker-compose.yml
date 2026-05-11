@@ -160,10 +160,10 @@ services:
     image: docker.io/mariadb:12.2.2-noble
     restart: always
     environment:
-      MARIADB_ROOT_PASSWORD: tetris
-      MARIADB_DATABASE: tetris
+      MARIADB_ROOT_PASSWORD: sparganothis
+      MARIADB_DATABASE: sparganothis
     volumes:
-      - ./db_data/mariadb:/var/lib/mysql
+      - ./db_data/mariadb2:/var/lib/mysql
       - ./db_dumps/mariadb:/db_dumps
     ports:
       - 127.0.0.1:3306:3306

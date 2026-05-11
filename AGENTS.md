@@ -44,7 +44,7 @@ See the following descriptions:
 │   └── migrations/         # SQL migration files
 ├── dist2/                  # Compiled web assets
 ├── docs/                   # Project documentation and screenshots
-├── game/                   # Core game logic crate (Tetris-like)
+├── game/                   # Core game logic crate
 ├── game_net/               # Networking logic for game sync/P2P
 ├── protocol/               # Shared API routes and data structures
 ├── server/                 # P2P server and API bots
